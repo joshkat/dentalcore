@@ -1,0 +1,299 @@
+package com.dentalcore.appointments.internal.service;
+
+import com.dentalcore.appointments.api.AppointmentCompletedEvent;
+import com.dentalcore.appointments.internal.dto.AppointmentRequest;
+import com.dentalcore.appointments.internal.dto.AppointmentResponse;
+import com.dentalcore.appointments.internal.entity.Appointment;
+import com.dentalcore.appointments.internal.entity.AppointmentProcedure;
+import com.dentalcore.appointments.internal.entity.AppointmentStatus;
+import com.dentalcore.appointments.internal.entity.Operatory;
+import com.dentalcore.appointments.internal.repository.AppointmentProcedureRepository;
+import com.dentalcore.appointments.internal.repository.AppointmentRepository;
+import com.dentalcore.appointments.internal.repository.OperatoryRepository;
+import com.dentalcore.patients.api.PatientApi;
+import com.dentalcore.patients.api.PatientSummary;
+import com.dentalcore.procedures.api.ProcedureCatalogApi;
+import com.dentalcore.procedures.api.ProcedureSummary;
+import com.dentalcore.providers.api.ProviderApi;
+import com.dentalcore.providers.api.ProviderSummary;
+import com.dentalcore.shared.error.ConflictException;
+import com.dentalcore.shared.error.InvalidRequestException;
+import com.dentalcore.shared.error.ResourceNotFoundException;
+import com.dentalcore.shared.events.AuditEvent;
+import com.dentalcore.shared.security.CurrentUser;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class AppointmentService {
+
+    private static final String ENTITY_TYPE = "Appointment";
+    private static final UUID DEFAULT_CLINIC_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000001");
+
+    private final AppointmentRepository appointmentRepository;
+    private final OperatoryRepository operatoryRepository;
+    private final AppointmentProcedureRepository procedureLinkRepository;
+    private final PatientApi patientApi;
+    private final ProviderApi providerApi;
+    private final ProcedureCatalogApi catalogApi;
+    private final AvailabilityService availabilityService;
+    private final ApplicationEventPublisher events;
+
+    public AppointmentService(AppointmentRepository appointmentRepository,
+                              OperatoryRepository operatoryRepository,
+                              AppointmentProcedureRepository procedureLinkRepository,
+                              PatientApi patientApi,
+                              ProviderApi providerApi,
+                              ProcedureCatalogApi catalogApi,
+                              AvailabilityService availabilityService,
+                              ApplicationEventPublisher events) {
+        this.appointmentRepository = appointmentRepository;
+        this.operatoryRepository = operatoryRepository;
+        this.procedureLinkRepository = procedureLinkRepository;
+        this.patientApi = patientApi;
+        this.providerApi = providerApi;
+        this.catalogApi = catalogApi;
+        this.availabilityService = availabilityService;
+        this.events = events;
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> list(Instant from, Instant to, UUID providerId,
+                                          UUID operatoryId, UUID patientId) {
+        if (!to.isAfter(from)) {
+            throw new InvalidRequestException("'to' must be after 'from'");
+        }
+        Specification<Appointment> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.lessThan(root.get("startsAt"), to));
+            predicates.add(cb.greaterThan(root.get("endsAt"), from));
+            if (providerId != null) {
+                predicates.add(cb.equal(root.get("providerId"), providerId));
+            }
+            if (operatoryId != null) {
+                predicates.add(cb.equal(root.get("operatoryId"), operatoryId));
+            }
+            if (patientId != null) {
+                predicates.add(cb.equal(root.get("patientId"), patientId));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        List<Appointment> appointments =
+                appointmentRepository.findAll(spec, Sort.by("startsAt"));
+        return toResponses(appointments);
+    }
+
+    @Transactional(readOnly = true)
+    public AppointmentResponse get(UUID id) {
+        return toResponses(List.of(findAppointment(id))).get(0);
+    }
+
+    public AppointmentResponse create(AppointmentRequest request) {
+        validateReferences(request);
+        validateTimes(request.startsAt(), request.endsAt());
+        availabilityService.requireAvailable(request.providerId(),
+                request.startsAt(), request.endsAt());
+        requireNoConflicts(request.providerId(), request.operatoryId(),
+                request.startsAt(), request.endsAt(), null);
+
+        Appointment appointment = new Appointment(
+                DEFAULT_CLINIC_ID, request.patientId(), request.providerId(),
+                request.operatoryId(), request.startsAt(), request.endsAt());
+        appointment.updateDetails(request.notes(), request.colorOverride());
+        appointment = appointmentRepository.save(appointment);
+
+        publishAudit(appointment.getId(), AuditEvent.AuditAction.CREATE, null, Map.of(
+                "patientId", request.patientId().toString(),
+                "startsAt", request.startsAt().toString()));
+        return toResponses(List.of(appointment)).get(0);
+    }
+
+    public AppointmentResponse update(UUID id, AppointmentRequest request) {
+        Appointment appointment = findAppointment(id);
+        validateReferences(request);
+        validateTimes(request.startsAt(), request.endsAt());
+        availabilityService.requireAvailable(request.providerId(),
+                request.startsAt(), request.endsAt());
+        requireNoConflicts(request.providerId(), request.operatoryId(),
+                request.startsAt(), request.endsAt(), id);
+
+        Map<String, Object> before = Map.of(
+                "startsAt", appointment.getStartsAt().toString(),
+                "providerId", appointment.getProviderId().toString(),
+                "operatoryId", appointment.getOperatoryId().toString());
+
+        appointment.reschedule(request.providerId(), request.operatoryId(),
+                request.startsAt(), request.endsAt());
+        appointment.updateDetails(request.notes(), request.colorOverride());
+
+        publishAudit(id, AuditEvent.AuditAction.UPDATE, before, Map.of(
+                "startsAt", request.startsAt().toString(),
+                "providerId", request.providerId().toString(),
+                "operatoryId", request.operatoryId().toString()));
+        return toResponses(List.of(appointment)).get(0);
+    }
+
+    public AppointmentResponse updateStatus(UUID id, String status, String cancelReason) {
+        Appointment appointment = findAppointment(id);
+        AppointmentStatus target = AppointmentStatus.valueOf(status);
+        String previous = appointment.getStatus().name();
+
+        appointment.transitionTo(target, cancelReason);
+
+        publishAudit(id, AuditEvent.AuditAction.STATUS_CHANGE,
+                Map.of("status", previous), Map.of("status", status));
+
+        if (target == AppointmentStatus.COMPLETED) {
+            List<UUID> procedureCodeIds = procedureLinkRepository
+                    .findByAppointmentId(appointment.getId()).stream()
+                    .map(AppointmentProcedure::getProcedureCodeId)
+                    .toList();
+            events.publishEvent(new AppointmentCompletedEvent(
+                    appointment.getId(), appointment.getClinicId(), appointment.getPatientId(),
+                    appointment.getProviderId(), procedureCodeIds, Instant.now()));
+        }
+        return toResponses(List.of(appointment)).get(0);
+    }
+
+    public AppointmentResponse setProcedures(UUID id, List<UUID> procedureCodeIds) {
+        Appointment appointment = findAppointment(id);
+        if (appointment.getStatus() == AppointmentStatus.COMPLETED
+                || appointment.getStatus() == AppointmentStatus.NO_SHOW) {
+            throw new InvalidRequestException(
+                    "A %s appointment cannot be modified".formatted(appointment.getStatus()));
+        }
+        Set<UUID> uniqueIds = Set.copyOf(procedureCodeIds);
+        Map<UUID, ProcedureSummary> catalog = catalogApi.findSummaries(uniqueIds);
+        for (UUID codeId : uniqueIds) {
+            ProcedureSummary entry = catalog.get(codeId);
+            if (entry == null || !entry.active()) {
+                throw new InvalidRequestException("Unknown or inactive procedure code: " + codeId);
+            }
+        }
+        procedureLinkRepository.deleteByAppointmentId(id);
+        procedureLinkRepository.saveAll(
+                uniqueIds.stream().map(codeId -> new AppointmentProcedure(id, codeId)).toList());
+
+        publishAudit(id, AuditEvent.AuditAction.UPDATE, null, Map.of(
+                "procedures", catalog.values().stream().map(ProcedureSummary::code).toList()));
+        return toResponses(List.of(appointment)).get(0);
+    }
+
+    // ---- helpers ----
+
+    private void validateReferences(AppointmentRequest request) {
+        if (!patientApi.exists(request.patientId())) {
+            throw new InvalidRequestException("Unknown patient");
+        }
+        if (!providerApi.existsAndActive(request.providerId())) {
+            throw new InvalidRequestException("Unknown or inactive provider");
+        }
+        Operatory operatory = operatoryRepository.findById(request.operatoryId())
+                .orElseThrow(() -> new InvalidRequestException("Unknown operatory"));
+        if (!operatory.isActive()) {
+            throw new InvalidRequestException("Operatory is inactive");
+        }
+    }
+
+    private void validateTimes(Instant startsAt, Instant endsAt) {
+        if (!endsAt.isAfter(startsAt)) {
+            throw new InvalidRequestException("Appointment must end after it starts");
+        }
+    }
+
+    private void requireNoConflicts(UUID providerId, UUID operatoryId,
+                                    Instant startsAt, Instant endsAt, UUID excludeId) {
+        List<Appointment> conflicts = appointmentRepository
+                .findOverlapping(providerId, operatoryId, startsAt, endsAt).stream()
+                .filter(a -> !a.getId().equals(excludeId))
+                .toList();
+        if (conflicts.isEmpty()) {
+            return;
+        }
+        boolean providerBusy = conflicts.stream()
+                .anyMatch(a -> a.getProviderId().equals(providerId));
+        throw new ConflictException(providerBusy
+                ? "The provider already has an appointment in this time slot"
+                : "The operatory is already booked in this time slot");
+    }
+
+    private Appointment findAppointment(UUID id) {
+        return appointmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", id));
+    }
+
+    private void publishAudit(UUID appointmentId, AuditEvent.AuditAction action,
+                              Map<String, Object> before, Map<String, Object> after) {
+        events.publishEvent(new AuditEvent(
+                CurrentUser.id().orElse(null), ENTITY_TYPE, appointmentId, action, before, after));
+    }
+
+    private List<AppointmentResponse> toResponses(List<Appointment> appointments) {
+        Set<UUID> patientIds = appointments.stream()
+                .map(Appointment::getPatientId).collect(Collectors.toSet());
+        Set<UUID> providerIds = appointments.stream()
+                .map(Appointment::getProviderId).collect(Collectors.toSet());
+        Map<UUID, PatientSummary> patients = patientApi.findSummaries(patientIds);
+        Map<UUID, ProviderSummary> providers = providerApi.findSummaries(providerIds);
+        Map<UUID, String> operatoryNames = operatoryRepository.findAll().stream()
+                .collect(Collectors.toMap(Operatory::getId, Operatory::getName));
+
+        List<AppointmentProcedure> links = procedureLinkRepository.findByAppointmentIdIn(
+                appointments.stream().map(Appointment::getId).toList());
+        Map<UUID, ProcedureSummary> catalog = catalogApi.findSummaries(
+                links.stream().map(AppointmentProcedure::getProcedureCodeId)
+                        .collect(Collectors.toSet()));
+        Map<UUID, List<AppointmentResponse.ProcedureDto>> proceduresByAppointment =
+                links.stream().collect(Collectors.groupingBy(
+                        AppointmentProcedure::getAppointmentId,
+                        Collectors.mapping(link -> {
+                            ProcedureSummary entry = catalog.get(link.getProcedureCodeId());
+                            return new AppointmentResponse.ProcedureDto(
+                                    link.getProcedureCodeId(),
+                                    entry != null ? entry.code() : null,
+                                    entry != null ? entry.description() : null,
+                                    entry != null ? entry.standardFee() : null);
+                        }, Collectors.toList())));
+
+        return appointments.stream().map(a -> {
+            PatientSummary patient = patients.get(a.getPatientId());
+            ProviderSummary provider = providers.get(a.getProviderId());
+            String color = a.getColorOverride() != null
+                    ? a.getColorOverride()
+                    : provider != null ? provider.color() : "#3b82f6";
+            return new AppointmentResponse(
+                    a.getId(),
+                    a.getPatientId(),
+                    patient != null ? patient.firstName() : null,
+                    patient != null ? patient.lastName() : null,
+                    a.getProviderId(),
+                    provider != null ? provider.firstName() : null,
+                    provider != null ? provider.lastName() : null,
+                    a.getOperatoryId(),
+                    operatoryNames.get(a.getOperatoryId()),
+                    a.getStartsAt(),
+                    a.getEndsAt(),
+                    a.getStatus().name(),
+                    a.getNotes(),
+                    color,
+                    a.getCancelledReason(),
+                    proceduresByAppointment.getOrDefault(a.getId(), List.of()),
+                    a.getCreatedAt(),
+                    a.getUpdatedAt());
+        }).toList();
+    }
+}

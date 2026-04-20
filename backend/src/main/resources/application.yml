@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: dentalcore
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:dentalcore}
+    username: ${DB_USER:dentalcore}
+    password: ${DB_PASSWORD:dentalcore}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: UTC
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  error:
+    include-stacktrace: never
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+dentalcore:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  storage:
+    local-path: ${DOCUMENT_STORAGE_PATH:./data/documents}
+  security:
+    cookie-secure: ${COOKIE_SECURE:false}
+    jwt:
+      # Base64-encoded HMAC-SHA512 key; MUST be overridden outside dev
+      secret: ${JWT_SECRET:}
+      access-token-ttl: 15m
+      issuer: dentalcore
+    refresh-token:
+      ttl: 7d
+    password-reset:
+      ttl: 30m
+    lockout:
+      max-failed-attempts: 5
+      lock-duration: 15m
+    rate-limit:
+      max-requests: ${AUTH_RATE_LIMIT:15}
+      window-seconds: 60
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs

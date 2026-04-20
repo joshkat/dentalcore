@@ -1,0 +1,20 @@
+dentalcore:
+  frontend-url: http://localhost:5173
+  security:
+    cookie-secure: false
+    jwt:
+      secret: dGVzdC1vbmx5LXNlY3JldC1rZXktbG9uZy1lbm91Z2gtZm9yLWhzNTEyLXNpZ25pbmctcHVycG9zZXMtMDEyMzQ1Njc4OQ==
+      access-token-ttl: 15m
+      issuer: dentalcore
+    refresh-token:
+      ttl: 7d
+    password-reset:
+      ttl: 30m
+    lockout:
+      max-failed-attempts: 5
+      lock-duration: 15m
+    rate-limit:
+      # integration suites hammer login from one IP; the dedicated rate-limit
+      # test overrides this downward
+      max-requests: 100000
+      window-seconds: 60

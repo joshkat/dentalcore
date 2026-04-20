@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    com.dentalcore: DEBUG
+    org.springframework.security: INFO
+
+dentalcore:
+  security:
+    jwt:
+      # Dev-only key. Never use in production.
+      secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWtleS1mb3ItbG9jYWwtZGV2ZWxvcG1lbnQtbXVzdC1iZS1sb25nLWVub3VnaC1mb3ItaHM1MTItc2lnbmluZy1kby1ub3QtdXNlLWluLXByb2Q=}

@@ -1,0 +1,47 @@
+package com.dentalcore.patients.internal.dto;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+public record PatientResponse(
+        UUID id,
+        String firstName,
+        String middleName,
+        String lastName,
+        LocalDate dateOfBirth,
+        String sex,
+        String email,
+        String addressLine1,
+        String addressLine2,
+        String city,
+        String state,
+        String postalCode,
+        String preferredLanguage,
+        String status,
+        String emergencyContactName,
+        String emergencyContactPhone,
+        String emergencyContactRelationship,
+        String notes,
+        List<PhoneDto> phones,
+        String preferredName,
+        String pronouns,
+        String employer,
+        String occupation,
+        String referralSource,
+        String preferredContactMethod,
+        boolean smsConsent,
+        boolean emailConsent,
+        String pharmacyName,
+        String pharmacyPhone,
+        UUID primaryProviderId,
+        String primaryProviderFirstName,
+        String primaryProviderLastName,
+        String smokingStatus,
+        int recallIntervalMonths,
+        LocalDate nextRecallDate,
+        Instant createdAt,
+        Instant updatedAt
+) {
+}

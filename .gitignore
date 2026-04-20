@@ -1,0 +1,25 @@
+.env
+*.log
+
+# Java
+backend/target/
+*.class
+backend/data/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+*.tsbuildinfo
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+.claude/
+backend/.classpath
+backend/.project
+backend/.settings/
+backend/.factorypath
