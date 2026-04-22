@@ -90,16 +90,23 @@ test.describe('split-pane workspace', () => {
     await expect(page.locator('section[data-pane="primary"] header')).toHaveCount(0);
   });
 
-  test('sidebar collapses and expands, state persists', async ({ page }) => {
-    await expect(nav(page)).toBeVisible();
+  test('collapsed sidebar keeps draggable icons with hover tooltips', async ({ page }) => {
     await page.getByRole('button', { name: 'Collapse sidebar' }).click();
-    await expect(nav(page)).toHaveCount(0);
+    await expect(page.getByText('DentalCore', { exact: true })).toHaveCount(0);
 
+    // Icon-only items keep accessible names and show a tooltip on hover.
+    const patientsLink = nav(page).getByRole('link', { name: 'Patients' });
+    await expect(patientsLink).toBeVisible();
+    await patientsLink.hover();
+    await expect(nav(page).getByText('Patients')).toBeVisible();
+
+    // Dragging from the collapsed rail still splits the workspace.
+    await dragNavToPane(page, 'Patients', 'section[data-pane="primary"]', 0.95, 0.5);
+    await expect(page.locator('section[aria-label="Pane: Patients"]')).toBeVisible();
+
+    // Collapse state persists; expanding restores labels.
     await page.reload();
-    await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible();
-    await expect(nav(page)).toHaveCount(0);
-
     await page.getByRole('button', { name: 'Expand sidebar' }).click();
-    await expect(nav(page)).toBeVisible();
+    await expect(page.getByText('DentalCore', { exact: true })).toBeVisible();
   });
 });

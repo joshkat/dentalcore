@@ -1,3 +1,16 @@
+import {
+  BarChart3,
+  BellRing,
+  Calendar,
+  ClipboardList,
+  FileText,
+  LayoutDashboard,
+  Shield,
+  Stethoscope,
+  UserCog,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { useState, type DragEvent } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
@@ -8,20 +21,21 @@ import { PANE_DRAG_TYPE, PaneProvider, usePanes } from './panes/PaneProvider';
 interface NavItem {
   to: string;
   label: string;
+  icon: LucideIcon;
   roles?: Role[];
 }
 
 const navItems: NavItem[] = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/schedule', label: 'Schedule' },
-  { to: '/patients', label: 'Patients' },
-  { to: '/recall', label: 'Recall' },
-  { to: '/providers', label: 'Providers' },
-  { to: '/procedures', label: 'Procedures' },
-  { to: '/insurance', label: 'Insurance' },
-  { to: '/claims', label: 'Claims' },
-  { to: '/reports', label: 'Reports' },
-  { to: '/users', label: 'Users', roles: ['ADMIN'] },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/schedule', label: 'Schedule', icon: Calendar },
+  { to: '/patients', label: 'Patients', icon: Users },
+  { to: '/recall', label: 'Recall', icon: BellRing },
+  { to: '/providers', label: 'Providers', icon: Stethoscope },
+  { to: '/procedures', label: 'Procedures', icon: ClipboardList },
+  { to: '/insurance', label: 'Insurance', icon: Shield },
+  { to: '/claims', label: 'Claims', icon: FileText },
+  { to: '/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/users', label: 'Users', icon: UserCog, roles: ['ADMIN'] },
 ];
 
 export function Layout() {
@@ -81,8 +95,10 @@ function LayoutShell() {
             {collapsed ? '»' : '«'}
           </button>
         </div>
-        {!collapsed && (
-        <nav className="flex-1 space-y-1 p-3" aria-label="Main navigation">
+        <nav
+          className={`flex-1 space-y-1 ${collapsed ? 'p-2' : 'p-3'}`}
+          aria-label="Main navigation"
+        >
           {navItems
             .filter((item) => !item.roles || hasRole(...item.roles))
             .map((item) => (
@@ -91,23 +107,30 @@ function LayoutShell() {
                 to={item.to}
                 end={item.to === '/'}
                 draggable
+                aria-label={item.label}
                 onDragStart={(e) => onNavDragStart(e, item)}
                 onDragEnd={() => setDragging(false)}
-                title="Drag into the workspace to open in a split pane"
+                title={collapsed ? undefined : 'Drag into the workspace to open in a split pane'}
                 className={({ isActive }) =>
-                  `block cursor-grab rounded-md px-3 py-2 text-sm font-medium active:cursor-grabbing ${
+                  `group relative flex cursor-grab items-center rounded-md text-sm font-medium active:cursor-grabbing ${
+                    collapsed ? 'justify-center py-2' : 'gap-3 px-3 py-2'
+                  } ${
                     isActive
                       ? 'bg-brand-50 text-brand-700'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`
                 }
               >
-                {item.label}
+                <item.icon size={18} className="shrink-0" aria-hidden />
+                {!collapsed && item.label}
+                {collapsed && (
+                  <span className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs font-medium text-white shadow group-hover:block">
+                    {item.label}
+                  </span>
+                )}
               </NavLink>
             ))}
         </nav>
-        )}
-        {collapsed && <div className="flex-1" />}
         {!collapsed && (
         <div className="border-t border-gray-200 p-3">
           <p className="truncate text-sm font-medium text-gray-900">
