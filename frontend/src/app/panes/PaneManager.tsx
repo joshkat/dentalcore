@@ -31,7 +31,11 @@ type DropZone = SplitSide | 'center';
 
 export function PaneManager({ children }: { children: ReactNode }) {
   const { tree } = usePanes();
-  return <div className="flex h-full min-h-0 flex-1">{renderNode(tree, children)}</div>;
+  return (
+    <div className="flex h-full min-h-0 min-w-0 max-w-full flex-1 overflow-hidden">
+      {renderNode(tree, children)}
+    </div>
+  );
 }
 
 function renderNode(node: PaneNode, primaryContent: ReactNode): ReactNode {
@@ -95,8 +99,15 @@ function PaneLeaf({ leaf, primaryContent }: { leaf: LeafNode; primaryContent: Re
     >
       {paneCount > 1 && (
         <header className="flex h-7 shrink-0 items-center justify-between border-b border-gray-200 bg-gray-50 px-2">
-          <span className="truncate text-xs font-medium text-gray-500">
-            {isPrimary ? <PrimaryTitle /> : pageTitle(leaf.path)}
+          <span className="flex min-w-0 items-center gap-2 text-xs font-medium text-gray-500">
+            <span className="truncate">
+              {isPrimary ? <PrimaryTitle /> : pageTitle(leaf.path)}
+            </span>
+            {isPrimary && (
+              <span className="shrink-0 rounded bg-brand-600 px-1.5 py-px text-[10px] font-bold uppercase tracking-wide text-white">
+                Main
+              </span>
+            )}
           </span>
           {!isPrimary && (
             <button
@@ -119,7 +130,7 @@ function PaneLeaf({ leaf, primaryContent }: { leaf: LeafNode; primaryContent: Re
 
 function PrimaryTitle() {
   const location = useLocation();
-  return <>{pageTitle(location.pathname)} · main</>;
+  return <>{pageTitle(location.pathname)}</>;
 }
 
 /**

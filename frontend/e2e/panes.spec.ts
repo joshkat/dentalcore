@@ -66,6 +66,12 @@ test.describe('split-pane workspace', () => {
     await expect(schedulePane).toBeVisible();
     await expect(page.locator('section[data-pane]')).toHaveCount(3);
 
+    // No horizontal overflow, even with the schedule grid in a split.
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+
     // 3. Navigation inside a pane stays inside that pane.
     await patientsPane.getByRole('link', { name: /Demoson/ }).first().click();
     await expect(page.locator('section[aria-label="Pane: Patient"]')).toBeVisible();
@@ -82,5 +88,18 @@ test.describe('split-pane workspace', () => {
     }
     await expect(page.locator('section[data-pane]')).toHaveCount(1);
     await expect(page.locator('section[data-pane="primary"] header')).toHaveCount(0);
+  });
+
+  test('sidebar collapses and expands, state persists', async ({ page }) => {
+    await expect(nav(page)).toBeVisible();
+    await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+    await expect(nav(page)).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible();
+    await expect(nav(page)).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Expand sidebar' }).click();
+    await expect(nav(page)).toBeVisible();
   });
 });

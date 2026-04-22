@@ -1,4 +1,4 @@
-import type { DragEvent } from 'react';
+import { useState, type DragEvent } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import type { Role } from '../types/api';
@@ -36,6 +36,16 @@ function LayoutShell() {
   const { user, logout, hasRole } = useAuth();
   const { setDragging } = usePanes();
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('dentalcore.sidebar') === 'collapsed',
+  );
+
+  const toggleSidebar = () => {
+    setCollapsed((c) => {
+      localStorage.setItem('dentalcore.sidebar', c ? 'open' : 'collapsed');
+      return !c;
+    });
+  };
 
   const onLogout = async () => {
     await logout();
@@ -50,11 +60,28 @@ function LayoutShell() {
   };
 
   return (
-    <div className="flex h-screen">
-      <aside className="flex w-56 flex-col border-r border-gray-200 bg-white">
-        <div className="flex h-14 items-center border-b border-gray-200 px-4">
-          <span className="text-lg font-bold text-brand-700">DentalCore</span>
+    <div className="flex h-screen w-screen max-w-full overflow-hidden">
+      <aside
+        className={`flex shrink-0 flex-col border-r border-gray-200 bg-white transition-all ${
+          collapsed ? 'w-12' : 'w-56'
+        }`}
+      >
+        <div
+          className={`flex h-14 items-center border-b border-gray-200 ${
+            collapsed ? 'justify-center' : 'justify-between px-4'
+          }`}
+        >
+          {!collapsed && <span className="text-lg font-bold text-brand-700">DentalCore</span>}
+          <button
+            onClick={toggleSidebar}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+          >
+            {collapsed ? '»' : '«'}
+          </button>
         </div>
+        {!collapsed && (
         <nav className="flex-1 space-y-1 p-3" aria-label="Main navigation">
           {navItems
             .filter((item) => !item.roles || hasRole(...item.roles))
@@ -79,6 +106,9 @@ function LayoutShell() {
               </NavLink>
             ))}
         </nav>
+        )}
+        {collapsed && <div className="flex-1" />}
+        {!collapsed && (
         <div className="border-t border-gray-200 p-3">
           <p className="truncate text-sm font-medium text-gray-900">
             {user?.firstName} {user?.lastName}
@@ -91,8 +121,9 @@ function LayoutShell() {
             Sign out
           </button>
         </div>
+        )}
       </aside>
-      <main className="flex min-h-0 flex-1">
+      <main className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <PaneManager>
           <Outlet />
         </PaneManager>
