@@ -106,6 +106,31 @@ export function setLeafPath(root: PaneNode, targetId: string, path: string, remo
   return walk(root);
 }
 
+/**
+ * Whitelist of pane path shapes. paneTree must stay dependency-free, so this
+ * is hardcoded — KEEP IN SYNC with the route table in ../pageRoutes.tsx.
+ * Persisted pane paths come from localStorage, which an attacker (or a stale
+ * build) can poison; anything not matching falls back to the initial layout.
+ */
+const ALLOWED_PANE_PATHS: readonly RegExp[] = [
+  /^\/$/, // Dashboard
+  /^\/schedule$/,
+  /^\/patients$/,
+  /^\/patients\/new$/,
+  /^\/patients\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, // /patients/:id (uuid)
+  /^\/providers$/,
+  /^\/procedures$/,
+  /^\/insurance$/,
+  /^\/claims$/,
+  /^\/reports$/,
+  /^\/recall$/,
+  /^\/users$/,
+];
+
+export function isAllowedPanePath(path: string): boolean {
+  return ALLOWED_PANE_PATHS.some((re) => re.test(path));
+}
+
 export function serializeTree(root: PaneNode): string {
   return JSON.stringify(root);
 }
@@ -126,7 +151,12 @@ function isValid(node: unknown): node is PaneNode {
   if (n.type === 'leaf') {
     if (typeof n.id !== 'string') return false;
     if (n.kind === 'primary') return true;
-    return n.kind === 'memory' && typeof n.path === 'string' && typeof n.generation === 'number';
+    return (
+      n.kind === 'memory' &&
+      typeof n.path === 'string' &&
+      isAllowedPanePath(n.path) &&
+      typeof n.generation === 'number'
+    );
   }
   if (n.type === 'split') {
     return (

@@ -18,6 +18,7 @@ import {
   useRoutes,
 } from 'react-router-dom';
 import { pageRoutes, pageTitle } from '../pageRoutes';
+import { PaneErrorBoundary } from './PaneErrorBoundary';
 import { PANE_DRAG_TYPE, usePanes } from './PaneProvider';
 import {
   MAX_PANES,
@@ -121,7 +122,14 @@ function PaneLeaf({ leaf, primaryContent }: { leaf: LeafNode; primaryContent: Re
         </header>
       )}
       <div className="min-h-0 flex-1 overflow-auto">
-        {isPrimary ? primaryContent : <PaneView leaf={leaf} />}
+        {isPrimary ? (
+          <PrimaryPaneBoundary>{primaryContent}</PrimaryPaneBoundary>
+        ) : (
+          // Keyed by generation: opening a new path in the pane resets the boundary.
+          <PaneErrorBoundary key={`${leaf.id}-${leaf.generation}`}>
+            <PaneView leaf={leaf} />
+          </PaneErrorBoundary>
+        )}
       </div>
       {dragging && <DropOverlay leaf={leaf} />}
     </section>
@@ -131,6 +139,12 @@ function PaneLeaf({ leaf, primaryContent }: { leaf: LeafNode; primaryContent: Re
 function PrimaryTitle() {
   const location = useLocation();
   return <>{pageTitle(location.pathname)}</>;
+}
+
+/** Keyed by the browser URL so navigating the main pane to a new path resets the boundary. */
+function PrimaryPaneBoundary({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  return <PaneErrorBoundary key={location.pathname}>{children}</PaneErrorBoundary>;
 }
 
 /**

@@ -37,10 +37,11 @@ export function useLedger(patientId: string, page = 0) {
   });
 }
 
-export function useBalance(patientId: string) {
+export function useBalance(patientId: string, enabled = true) {
   return useQuery({
     queryKey: ['balance', patientId],
     queryFn: () => api<{ balance: number }>(`/api/v1/billing/balance?patientId=${patientId}`),
+    enabled,
   });
 }
 

@@ -80,10 +80,16 @@ export function PatientDetailPage() {
   const { hasRole } = useAuth();
   const canWrite = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK');
   const canWriteClinical = hasRole('ADMIN', 'DENTIST', 'HYGIENIST');
+  // mirror the backend read gates so restricted roles don't trigger 403s
+  const canViewLedger = hasRole('ADMIN', 'BILLING', 'FRONT_DESK', 'DENTIST');
+  const canViewNotes = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'READ_ONLY');
+  const tabs = TABS.filter(
+    (t) => (t !== 'Ledger' || canViewLedger) && (t !== 'Notes' || canViewNotes),
+  );
 
   const { data: patient, isPending, isError } = usePatient(id!);
   const { data: alerts } = useAlerts(id!);
-  const { data: balanceData } = useBalance(id!);
+  const { data: balanceData } = useBalance(id!, canViewLedger);
   const updatePatient = useUpdatePatient(id!);
   const updateStatus = useUpdatePatientStatus(id!);
   const updateRecall = useUpdateRecall(id!);
@@ -173,7 +179,7 @@ export function PatientDetailPage() {
       </div>
 
       <nav className="mt-6 flex gap-1 border-b border-gray-200" aria-label="Patient sections">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -209,7 +215,7 @@ export function PatientDetailPage() {
         {tab === 'Treatment Plans' && (
           <TreatmentPlansTab patientId={patient.id} canWrite={canWriteClinical} />
         )}
-        {tab === 'Notes' && (
+        {tab === 'Notes' && canViewNotes && (
           <ClinicalNotesTab patientId={patient.id} canWriteClinical={canWriteClinical} />
         )}
         {tab === 'Insurance' && (
@@ -218,7 +224,7 @@ export function PatientDetailPage() {
             canWrite={hasRole('ADMIN', 'FRONT_DESK', 'BILLING')}
           />
         )}
-        {tab === 'Ledger' && <LedgerTab patientId={patient.id} />}
+        {tab === 'Ledger' && canViewLedger && <LedgerTab patientId={patient.id} />}
         {tab === 'Documents' && <DocumentsTab patientId={patient.id} canWrite={canWrite} />}
         {tab === 'Alerts' && <AlertsTab patientId={patient.id} canWrite={canWrite} />}
         {tab === 'Family' && <FamilyTab patientId={patient.id} canWrite={canWrite} />}

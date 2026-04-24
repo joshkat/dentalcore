@@ -5,6 +5,7 @@ import {
   deserializeTree,
   findLeaf,
   initialTree,
+  isAllowedPanePath,
   MAX_PANES,
   PRIMARY_PANE_ID,
   serializeTree,
@@ -99,6 +100,60 @@ describe('paneTree', () => {
     expect(deserializeTree('{"type":"leaf","id":"x","kind":"memory"}')).toBeNull();
     expect(deserializeTree(JSON.stringify({ type: 'leaf', id: 'x', kind: 'primary' }))).toMatchObject({
       kind: 'primary',
+    });
+  });
+
+  describe('isAllowedPanePath', () => {
+    const uuid = '0f8fad5b-d9cb-469f-a165-70867728950e';
+
+    it.each([
+      '/',
+      '/schedule',
+      '/patients',
+      '/patients/new',
+      `/patients/${uuid}`,
+      '/providers',
+      '/procedures',
+      '/insurance',
+      '/claims',
+      '/reports',
+      '/recall',
+      '/users',
+    ])('allows known route shape %s', (path) => {
+      expect(isAllowedPanePath(path)).toBe(true);
+    });
+
+    it.each([
+      'javascript:alert(1)',
+      '/patients/<script>',
+      'https://evil.com',
+      '/patients/123', // not a uuid
+      '/patients/new/extra',
+      '/admin/secret/deep/path',
+      '/schedule/whatever',
+      '',
+      '//',
+    ])('rejects unknown or malicious path %s', (path) => {
+      expect(isAllowedPanePath(path)).toBe(false);
+    });
+
+    it('rejects persisted trees containing a poisoned pane path', () => {
+      for (const bad of [
+        'javascript:alert(1)',
+        '/patients/<script>',
+        'https://evil.com',
+        '/some/deep/unknown/path',
+      ]) {
+        const tree = splitLeaf(initialTree(), PRIMARY_PANE_ID, 'right', bad);
+        expect(deserializeTree(serializeTree(tree))).toBeNull();
+      }
+    });
+
+    it('round-trips a tree of legitimate paths including /patients/<uuid>', () => {
+      let tree = splitLeaf(initialTree(), PRIMARY_PANE_ID, 'right', `/patients/${uuid}`);
+      tree = splitLeaf(tree, PRIMARY_PANE_ID, 'bottom', '/schedule');
+      const restored = deserializeTree(serializeTree(tree));
+      expect(restored).toEqual(tree);
     });
   });
 });

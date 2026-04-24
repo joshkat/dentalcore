@@ -34,7 +34,12 @@ const navItems: NavItem[] = [
   { to: '/procedures', label: 'Procedures', icon: ClipboardList },
   { to: '/insurance', label: 'Insurance', icon: Shield },
   { to: '/claims', label: 'Claims', icon: FileText },
-  { to: '/reports', label: 'Reports', icon: BarChart3 },
+  {
+    to: '/reports',
+    label: 'Reports',
+    icon: BarChart3,
+    roles: ['ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING'],
+  },
   { to: '/users', label: 'Users', icon: UserCog, roles: ['ADMIN'] },
 ];
 
