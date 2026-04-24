@@ -65,6 +65,8 @@ dentalcore:
     rate-limit:
       max-requests: ${AUTH_RATE_LIMIT:15}
       window-seconds: 60
+      # only enable behind a trusted reverse proxy that sets X-Forwarded-For
+      trust-proxy-headers: ${TRUST_PROXY_HEADERS:false}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 

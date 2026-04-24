@@ -30,13 +30,17 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private final int maxRequests;
     private final long windowMillis;
+    private final boolean trustProxyHeaders;
     private final Map<String, Deque<Long>> hits = new ConcurrentHashMap<>();
 
     public AuthRateLimitFilter(
             @Value("${dentalcore.security.rate-limit.max-requests:15}") int maxRequests,
-            @Value("${dentalcore.security.rate-limit.window-seconds:60}") int windowSeconds) {
+            @Value("${dentalcore.security.rate-limit.window-seconds:60}") int windowSeconds,
+            @Value("${dentalcore.security.rate-limit.trust-proxy-headers:false}")
+            boolean trustProxyHeaders) {
         this.maxRequests = maxRequests;
         this.windowMillis = windowSeconds * 1000L;
+        this.trustProxyHeaders = trustProxyHeaders;
     }
 
     @Override
@@ -77,10 +81,17 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * X-Forwarded-For is client-controlled, so it is only honored when the
+     * deployment explicitly declares a trusted reverse proxy in front of the
+     * backend; otherwise an attacker could rotate the header to dodge the limit.
+     */
     private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        if (trustProxyHeaders) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                return forwarded.split(",")[0].trim();
+            }
         }
         return request.getRemoteAddr();
     }

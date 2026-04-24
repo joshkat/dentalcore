@@ -142,7 +142,12 @@ public class DocumentService {
     private String sanitizeFilename(String original) {
         String name = (original == null || original.isBlank()) ? "document" : original;
         name = name.replaceAll("[\\\\/\\p{Cntrl}]", "_");
-        return name.length() > 255 ? name.substring(name.length() - 255) : name;
+        if (name.length() <= 255) {
+            return name;
+        }
+        // truncate the base name from the end, keeping the extension intact
+        String extension = extensionOf(name);
+        return name.substring(0, 255 - extension.length()) + extension;
     }
 
     private String extensionOf(String filename) {

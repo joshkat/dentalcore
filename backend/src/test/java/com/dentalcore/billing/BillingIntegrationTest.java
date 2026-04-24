@@ -110,7 +110,7 @@ class BillingIntegrationTest extends IntegrationTest {
         assertThat(balance()).isEqualTo(50.0);
 
         ResponseEntity<Map<String, Object>> ledger =
-                api.get("/api/v1/billing/ledger?patientId=" + patientId, readOnly);
+                api.get("/api/v1/billing/ledger?patientId=" + patientId, frontDesk);
         assertThat(ledger.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat((List<?>) ledger.getBody().get("content")).hasSize(3);
         assertThat(((Number) ledger.getBody().get("balance")).doubleValue()).isEqualTo(50.0);
@@ -220,9 +220,16 @@ class BillingIntegrationTest extends IntegrationTest {
 
     @Test
     void rbacIsEnforced() {
-        // read-only can view, not post
-        assertThat(api.get("/api/v1/billing/ledger?patientId=" + patientId, readOnly)
+        // billing-capable roles can view the ledger and balance
+        assertThat(api.get("/api/v1/billing/ledger?patientId=" + patientId, frontDesk)
                 .getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(api.get("/api/v1/billing/balance?patientId=" + patientId, frontDesk)
+                .getStatusCode()).isEqualTo(HttpStatus.OK);
+        // read-only can neither view financials nor post
+        assertThat(api.get("/api/v1/billing/ledger?patientId=" + patientId, readOnly)
+                .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(api.get("/api/v1/billing/balance?patientId=" + patientId, readOnly)
+                .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(api.post("/api/v1/billing/payments", readOnly, Map.of(
                 "patientId", patientId, "amount", 10, "method", "CASH")).getStatusCode())
                 .isEqualTo(HttpStatus.FORBIDDEN);

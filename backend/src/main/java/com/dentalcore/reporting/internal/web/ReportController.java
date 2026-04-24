@@ -26,6 +26,10 @@ public class ReportController {
     /** Financial reports stay with billing-capable roles. */
     private static final String FINANCIAL = "hasAnyRole('ADMIN','BILLING')";
 
+    /** Operational reports for staff roles; READ_ONLY only sees the dashboard. */
+    private static final String OPERATIONAL =
+            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','FRONT_DESK','BILLING')";
+
     private final ReportingService service;
 
     public ReportController(ReportingService service) {
@@ -39,6 +43,7 @@ public class ReportController {
     }
 
     @GetMapping("/appointments-by-provider")
+    @PreAuthorize(OPERATIONAL)
     @Operation(summary = "Appointment counts per provider, broken out by status")
     public List<ProviderAppointmentsRow> appointmentsByProvider(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -56,6 +61,7 @@ public class ReportController {
     }
 
     @GetMapping("/patient-growth")
+    @PreAuthorize(OPERATIONAL)
     @Operation(summary = "New patients per month with cumulative total")
     public List<PatientGrowthRow> patientGrowth(
             @RequestParam(defaultValue = "12") int months) {
@@ -63,6 +69,7 @@ public class ReportController {
     }
 
     @GetMapping("/provider-utilization")
+    @PreAuthorize(OPERATIONAL)
     @Operation(summary = "Booked vs completed chair time per provider")
     public List<ProviderUtilizationRow> providerUtilization(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

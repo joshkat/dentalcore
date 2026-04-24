@@ -37,6 +37,10 @@ public class Claim extends BaseEntity {
     @Column(name = "notes", length = 2000)
     private String notes;
 
+    /** Portion of the plan deductible consumed by this claim (set when PAID). */
+    @Column(name = "deductible_applied", nullable = false, precision = 10, scale = 2)
+    private BigDecimal deductibleApplied = BigDecimal.ZERO;
+
     @OneToMany(mappedBy = "claim", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt ASC")
     private List<ClaimProcedure> procedures = new ArrayList<>();
@@ -108,6 +112,14 @@ public class Claim extends BaseEntity {
 
     public Instant getSubmittedAt() {
         return submittedAt;
+    }
+
+    public void recordDeductibleApplied(BigDecimal deductibleApplied) {
+        this.deductibleApplied = deductibleApplied;
+    }
+
+    public BigDecimal getDeductibleApplied() {
+        return deductibleApplied;
     }
 
     public String getNotes() {
