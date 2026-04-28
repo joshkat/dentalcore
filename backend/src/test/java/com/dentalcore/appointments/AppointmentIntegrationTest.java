@@ -127,6 +127,35 @@ class AppointmentIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void concurrentDoubleBookingNeverReturnsServerError() throws Exception {
+        // hammer the same slot in parallel: the pre-check race is resolved by
+        // the GiST exclusion constraint, which must surface as 409, never 500
+        int attempts = 6;
+        java.util.concurrent.ExecutorService pool =
+                java.util.concurrent.Executors.newFixedThreadPool(attempts);
+        try {
+            java.util.concurrent.CyclicBarrier barrier =
+                    new java.util.concurrent.CyclicBarrier(attempts);
+            List<java.util.concurrent.Future<HttpStatus>> results = new java.util.ArrayList<>();
+            for (int i = 0; i < attempts; i++) {
+                results.add(pool.submit(() -> {
+                    barrier.await();
+                    return (HttpStatus) api.post("/api/v1/appointments", frontDesk,
+                            appointmentBody(slotStart, 60)).getStatusCode();
+                }));
+            }
+            List<HttpStatus> statuses = new java.util.ArrayList<>();
+            for (java.util.concurrent.Future<HttpStatus> result : results) {
+                statuses.add(result.get());
+            }
+            assertThat(statuses).containsOnly(HttpStatus.CREATED, HttpStatus.CONFLICT);
+            assertThat(statuses).containsOnlyOnce(HttpStatus.CREATED);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    @Test
     void backToBackAppointmentsAreAllowed() {
         book(slotStart, 60);
         ResponseEntity<Map<String, Object>> adjacent =

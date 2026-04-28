@@ -33,6 +33,8 @@ public class BillingController {
 
     private static final String CAN_BILL = "hasAnyRole('ADMIN','BILLING')";
     private static final String CAN_TAKE_PAYMENT = "hasAnyRole('ADMIN','BILLING','FRONT_DESK')";
+    private static final String CAN_VIEW_LEDGER =
+            "hasAnyRole('ADMIN','BILLING','FRONT_DESK','DENTIST')";
 
     private final BillingService service;
     private final com.dentalcore.billing.internal.service.StatementService statementService;
@@ -64,6 +66,7 @@ public class BillingController {
     }
 
     @GetMapping("/ledger")
+    @PreAuthorize(CAN_VIEW_LEDGER)
     @Operation(summary = "A patient's ledger with running balance")
     public LedgerResponse ledger(@RequestParam UUID patientId,
                                  @RequestParam(defaultValue = "0") int page,
@@ -73,6 +76,7 @@ public class BillingController {
     }
 
     @GetMapping("/balance")
+    @PreAuthorize(CAN_VIEW_LEDGER)
     @Operation(summary = "A patient's current balance (positive = patient owes)")
     public Map<String, BigDecimal> balance(@RequestParam UUID patientId) {
         return Map.of("balance", service.balanceFor(patientId));

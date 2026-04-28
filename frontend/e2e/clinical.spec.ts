@@ -64,14 +64,23 @@ test.describe('clinical flows', () => {
     await dialog.getByLabel('Provider').selectOption({ index: 1 });
     await dialog.getByLabel('Operatory').selectOption({ index: 1 });
 
-    // far-future weekday slot to avoid collisions with existing data
+    // far-future Mon-Fri slot inside seeded provider hours (09:00-17:00) so
+    // availability templates never reject it; random time reduces collisions
+    // with blocks left behind by previous runs of this test
     const future = new Date();
     future.setDate(future.getDate() + 60 + Math.floor(Math.random() * 200));
-    if (future.getDay() === 0) future.setDate(future.getDate() + 1); // not Sunday
+    while (future.getDay() === 0 || future.getDay() === 6) {
+      future.setDate(future.getDate() + 1);
+    }
     const iso = future.toISOString().slice(0, 10);
+    const hour = 9 + Math.floor(Math.random() * 7);
+    const minute = [0, 15, 30][Math.floor(Math.random() * 3)];
+    const start = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     await dialog.getByLabel('Date').fill(iso);
-    await dialog.getByLabel('Start').fill('11:00');
+    await dialog.getByLabel('Start').fill(start);
     await dialog.getByRole('button', { name: 'Book appointment' }).click();
+    // a rejected booking (409) keeps the dialog open — fail here, not downstream
+    await expect(dialog).toBeHidden();
 
     // jump the calendar to that week and open the appointment
     await page.goto(`/schedule?date=${iso}`);

@@ -42,6 +42,7 @@ public class ClaimService {
     private final ProcedureCatalogApi catalogApi;
     private final PatientApi patientApi;
     private final EstimateService estimateService;
+    private final InsuranceAdminService adminService;
     private final ApplicationEventPublisher events;
 
     public ClaimService(ClaimRepository claimRepository,
@@ -49,12 +50,14 @@ public class ClaimService {
                         ProcedureCatalogApi catalogApi,
                         PatientApi patientApi,
                         EstimateService estimateService,
+                        InsuranceAdminService adminService,
                         ApplicationEventPublisher events) {
         this.claimRepository = claimRepository;
         this.coverageService = coverageService;
         this.catalogApi = catalogApi;
         this.patientApi = patientApi;
         this.estimateService = estimateService;
+        this.adminService = adminService;
         this.events = events;
     }
 
@@ -135,6 +138,11 @@ public class ClaimService {
         Claim claim = findClaim(claimId);
         String previous = claim.getStatus().name();
         ClaimStatus target = ClaimStatus.valueOf(status);
+
+        if (target == ClaimStatus.PAID) {
+            claim.recordDeductibleApplied(deductibleConsumedBy(claim,
+                    coverageService.findCoverage(claim.getPatientInsuranceId())));
+        }
         claim.transitionTo(target);
 
         publish(claimId, AuditEvent.AuditAction.STATUS_CHANGE,
@@ -148,6 +156,38 @@ public class ClaimService {
                     claim.getId(), claim.getPatientId(), carrierName, claim.totalPaid()));
         }
         return toResponse(claim);
+    }
+
+    /**
+     * Cumulative deductible tracking: a claim consumes whatever is left of the
+     * plan deductible for the benefit year, capped by the total allowed amount
+     * of its lines (same allowed-fee logic as the estimate engine).
+     */
+    private BigDecimal deductibleConsumedBy(Claim claim, PatientInsurance coverage) {
+        var plan = adminService.requirePlan(coverage.getPlanId());
+        BigDecimal deductible = plan.getDeductible() == null
+                ? BigDecimal.ZERO : plan.getDeductible();
+        if (deductible.signum() <= 0) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal alreadyApplied = claimRepository.deductibleAppliedSince(
+                coverage.getId(), estimateService.startOfBenefitYear());
+        BigDecimal remaining = deductible.subtract(alreadyApplied).max(BigDecimal.ZERO);
+
+        Map<UUID, ProcedureSummary> catalog = catalogApi.findSummaries(
+                claim.getProcedures().stream()
+                        .map(ClaimProcedure::getProcedureCodeId)
+                        .collect(Collectors.toSet()));
+        BigDecimal totalAllowed = claim.getProcedures().stream()
+                .map(line -> {
+                    ProcedureSummary entry = catalog.get(line.getProcedureCodeId());
+                    BigDecimal gross = entry != null
+                            ? entry.standardFee() : line.getBilledAmount();
+                    return estimateService.allowedFeeFor(
+                            plan.getId(), line.getProcedureCodeId(), gross);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return remaining.min(totalAllowed);
     }
 
     // ---- helpers ----

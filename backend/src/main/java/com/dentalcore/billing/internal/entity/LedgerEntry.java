@@ -57,7 +57,7 @@ public class LedgerEntry extends BaseEntity {
     private UUID claimId;
 
     @Column(name = "entry_date", nullable = false)
-    private LocalDate entryDate = LocalDate.now();
+    private LocalDate entryDate;
 
     @Column(name = "reversal_of", unique = true)
     private UUID reversalOf;
@@ -122,10 +122,23 @@ public class LedgerEntry extends BaseEntity {
         return entry;
     }
 
-    /** Assigns the clinic-local business date (otherwise defaults to server date). */
+    /** Assigns the clinic-local business date; required before persisting. */
     public LedgerEntry at(LocalDate entryDate) {
         this.entryDate = entryDate;
         return this;
+    }
+
+    /**
+     * The server's timezone must never decide which business day an entry
+     * belongs to, so there is no default: callers must set the clinic-local
+     * date via {@link #at(LocalDate)}.
+     */
+    @jakarta.persistence.PrePersist
+    void requireEntryDate() {
+        if (entryDate == null) {
+            throw new IllegalStateException(
+                    "LedgerEntry.entryDate must be set to the clinic-local date before saving");
+        }
     }
 
     public UUID getClinicId() {

@@ -27,6 +27,8 @@ function isoDaysAgo(days: number): string {
 export function ReportsPage() {
   const { hasRole } = useAuth();
   const canSeeFinancials = hasRole('ADMIN', 'BILLING');
+  // READ_ONLY cannot fetch any report endpoint, so don't render the page at all
+  const canSeeReports = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING');
   const reports = REPORTS.filter((r) => r !== 'Daily production' || canSeeFinancials);
 
   const [report, setReport] = useState<Report>(reports[0]);
@@ -34,6 +36,14 @@ export function ReportsPage() {
   const [to, setTo] = useState(isoDaysAgo(0));
 
   const showRange = report !== 'Patient growth';
+
+  if (!canSeeReports) {
+    return (
+      <div className="p-8 text-sm text-gray-600">
+        You do not have permission to view reports.
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">

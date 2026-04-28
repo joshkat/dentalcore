@@ -29,6 +29,9 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       CORS_ALLOWED_ORIGINS: ${FRONTEND_URL}
       COOKIE_SECURE: "true"
+      # the frontend nginx proxies /api and sets X-Forwarded-For; the backend
+      # is not directly exposed, so the proxy header can be trusted here
+      TRUST_PROXY_HEADERS: "true"
       DOCUMENT_STORAGE_PATH: /data/documents
     volumes:
       - documents:/data/documents

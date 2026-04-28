@@ -31,6 +31,7 @@ class ReportingIntegrationTest extends IntegrationTest {
 
     private static final String ADMIN_EMAIL = "admin-reports@clinic.test";
     private static final String FRONT_EMAIL = "front-reports@clinic.test";
+    private static final String READONLY_EMAIL = "readonly-reports@clinic.test";
     private static final String PASSWORD = "integration-pass-1";
     private static final AtomicLong SEQ = new AtomicLong(5_500_000_000L);
 
@@ -46,14 +47,17 @@ class ReportingIntegrationTest extends IntegrationTest {
     private ApiTestClient api;
     private HttpHeaders admin;
     private HttpHeaders frontDesk;
+    private HttpHeaders readOnly;
 
     @BeforeEach
     void setUp() {
         api = new ApiTestClient(rest);
         seedUser(ADMIN_EMAIL, "ADMIN");
         seedUser(FRONT_EMAIL, "FRONT_DESK");
+        seedUser(READONLY_EMAIL, "READ_ONLY");
         admin = api.login(ADMIN_EMAIL, PASSWORD);
         frontDesk = api.login(FRONT_EMAIL, PASSWORD);
+        readOnly = api.login(READONLY_EMAIL, PASSWORD);
     }
 
     private void seedUser(String email, String role) {
@@ -177,6 +181,23 @@ class ReportingIntegrationTest extends IntegrationTest {
         LocalDate today = LocalDate.now();
         assertThat(api.get("/api/v1/reports/daily-production?from=" + today + "&to=" + today,
                 frontDesk).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        // operational reports are open to staff roles, but not READ_ONLY...
+        assertThat(getList("/api/v1/reports/appointments-by-provider?from=" + today
+                + "&to=" + today.plusDays(1), frontDesk).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(api.get("/api/v1/reports/appointments-by-provider?from=" + today
+                + "&to=" + today.plusDays(1), readOnly).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(api.get("/api/v1/reports/patient-growth?months=3", readOnly)
+                .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(api.get("/api/v1/reports/provider-utilization?from=" + today
+                + "&to=" + today.plusDays(1), readOnly).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+
+        // ...while the dashboard stays open to every authenticated role
+        assertThat(api.get("/api/v1/reports/dashboard", readOnly).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
 
         // invalid range rejected
         assertThat(api.get("/api/v1/reports/provider-utilization?from=" + today

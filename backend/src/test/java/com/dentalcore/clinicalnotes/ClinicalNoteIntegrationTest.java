@@ -23,6 +23,7 @@ class ClinicalNoteIntegrationTest extends IntegrationTest {
 
     private static final String DENTIST_EMAIL = "dentist-notes@clinic.test";
     private static final String FRONT_EMAIL = "front-notes@clinic.test";
+    private static final String READONLY_EMAIL = "readonly-notes@clinic.test";
     private static final String PASSWORD = "integration-pass-1";
 
     @Autowired
@@ -37,6 +38,7 @@ class ClinicalNoteIntegrationTest extends IntegrationTest {
     private ApiTestClient api;
     private HttpHeaders dentist;
     private HttpHeaders frontDesk;
+    private HttpHeaders readOnly;
     private String patientId;
 
     @BeforeEach
@@ -44,8 +46,10 @@ class ClinicalNoteIntegrationTest extends IntegrationTest {
         api = new ApiTestClient(rest);
         seedUser(DENTIST_EMAIL, "DENTIST");
         seedUser(FRONT_EMAIL, "FRONT_DESK");
+        seedUser(READONLY_EMAIL, "READ_ONLY");
         dentist = api.login(DENTIST_EMAIL, PASSWORD);
         frontDesk = api.login(FRONT_EMAIL, PASSWORD);
+        readOnly = api.login(READONLY_EMAIL, PASSWORD);
 
         patientId = (String) api.post("/api/v1/patients", dentist, Map.of(
                 "firstName", "Note", "lastName", "Patient",
@@ -104,13 +108,20 @@ class ClinicalNoteIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    void frontDeskCanReadButNotWriteNotes() {
-        createNote("Visible to front desk");
+    void onlyClinicalAndReadOnlyRolesCanReadNotes() {
+        createNote("Clinical content");
 
+        // read-only can read but not write
         ResponseEntity<Map<String, Object>> list = api.get(
-                "/api/v1/clinical-notes?patientId=" + patientId, frontDesk);
+                "/api/v1/clinical-notes?patientId=" + patientId, readOnly);
         assertThat(list.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(api.post("/api/v1/clinical-notes?patientId=" + patientId, readOnly,
+                Map.of("noteType", "PROGRESS", "body", "Nope")).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
 
+        // front desk has no access to clinical documentation
+        assertThat(api.get("/api/v1/clinical-notes?patientId=" + patientId, frontDesk)
+                .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(api.post("/api/v1/clinical-notes?patientId=" + patientId, frontDesk,
                 Map.of("noteType", "PROGRESS", "body", "Nope")).getStatusCode())
                 .isEqualTo(HttpStatus.FORBIDDEN);

@@ -29,6 +29,8 @@ import java.util.UUID;
 public class ClinicalNoteController {
 
     private static final String CAN_WRITE = "hasAnyRole('ADMIN','DENTIST','HYGIENIST')";
+    private static final String CAN_READ =
+            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','READ_ONLY')";
 
     private final ClinicalNoteService service;
 
@@ -37,6 +39,7 @@ public class ClinicalNoteController {
     }
 
     @GetMapping
+    @PreAuthorize(CAN_READ)
     @Operation(summary = "List a patient's clinical notes, newest first")
     public PageResponse<NoteResponse> list(
             @RequestParam UUID patientId,

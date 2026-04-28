@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +30,17 @@ import java.util.stream.Collectors;
  * - allowed fee = plan's fee-schedule fee, falling back to the gross fee
  * - patient pays the remaining deductible first; insurer pays the coverage
  *   percentage of the remainder, capped by remaining annual max
- * - deductible is treated as met once any benefits were paid this calendar year
- * - benefit year = calendar year; benefits used = paid amounts on PAID/CLOSED claims
+ * - deductible remaining = plan deductible minus the deductible amounts applied
+ *   on this coverage's PAID claims this benefit year
+ * - benefit year = clinic-local calendar year; benefits used = paid amounts on
+ *   PAID/CLOSED claims
  */
 @Service
 @Transactional(readOnly = true)
 public class EstimateService implements InsuranceEstimateApi {
+
+    private static final UUID DEFAULT_CLINIC_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     private final PatientInsuranceRepository coverageRepository;
     private final FeeScheduleRepository feeScheduleRepository;
@@ -44,19 +48,22 @@ public class EstimateService implements InsuranceEstimateApi {
     private final ClaimRepository claimRepository;
     private final InsuranceAdminService adminService;
     private final ProcedureCatalogApi catalogApi;
+    private final com.dentalcore.infrastructure.time.ClinicTimeService clinicTime;
 
     public EstimateService(PatientInsuranceRepository coverageRepository,
                            FeeScheduleRepository feeScheduleRepository,
                            CoverageRuleRepository coverageRuleRepository,
                            ClaimRepository claimRepository,
                            InsuranceAdminService adminService,
-                           ProcedureCatalogApi catalogApi) {
+                           ProcedureCatalogApi catalogApi,
+                           com.dentalcore.infrastructure.time.ClinicTimeService clinicTime) {
         this.coverageRepository = coverageRepository;
         this.feeScheduleRepository = feeScheduleRepository;
         this.coverageRuleRepository = coverageRuleRepository;
         this.claimRepository = claimRepository;
         this.adminService = adminService;
         this.catalogApi = catalogApi;
+        this.clinicTime = clinicTime;
     }
 
     @Override
@@ -83,15 +90,18 @@ public class EstimateService implements InsuranceEstimateApi {
                         .collect(Collectors.toMap(CoverageRule::getCategory,
                                 CoverageRule::getCoveragePercent));
 
+        java.time.Instant benefitYearStart = startOfBenefitYear();
         BigDecimal benefitsUsed = claimRepository.benefitsPaidSince(
-                coverage.getId(), startOfYear());
+                coverage.getId(), benefitYearStart);
         BigDecimal annualMax = orZero(plan.getAnnualMax());
         BigDecimal benefitsRemaining = annualMax.signum() > 0
                 ? annualMax.subtract(benefitsUsed).max(BigDecimal.ZERO)
                 : null; // no annual max configured = unlimited
         BigDecimal deductible = orZero(plan.getDeductible());
-        BigDecimal deductibleRemaining =
-                benefitsUsed.signum() > 0 ? BigDecimal.ZERO : deductible;
+        BigDecimal deductibleRemaining = deductible
+                .subtract(claimRepository.deductibleAppliedSince(
+                        coverage.getId(), benefitYearStart))
+                .max(BigDecimal.ZERO);
 
         List<EstimateLine> lines = new ArrayList<>();
         BigDecimal totalInsurance = BigDecimal.ZERO;
@@ -156,7 +166,7 @@ public class EstimateService implements InsuranceEstimateApi {
     // ---- helpers ----
 
     private Optional<PatientInsurance> activePrimaryCoverage(UUID patientId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = clinicTime.today(DEFAULT_CLINIC_ID);
         return coverageRepository.findByPatientIdOrderByPriorityAsc(patientId).stream()
                 .filter(c -> c.getEffectiveDate() == null || !c.getEffectiveDate().isAfter(today))
                 .filter(c -> c.getTerminationDate() == null
@@ -182,8 +192,10 @@ public class EstimateService implements InsuranceEstimateApi {
                 BigDecimal.ZERO);
     }
 
-    private java.time.Instant startOfYear() {
-        return LocalDate.now().withDayOfYear(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+    /** Jan 1 of the clinic-local current year, as an instant at the clinic zone. */
+    java.time.Instant startOfBenefitYear() {
+        java.time.ZoneId zone = clinicTime.clinicZone(DEFAULT_CLINIC_ID);
+        return LocalDate.now(zone).withDayOfYear(1).atStartOfDay(zone).toInstant();
     }
 
     private BigDecimal orZero(BigDecimal value) {

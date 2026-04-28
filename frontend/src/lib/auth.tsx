@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import {
   createContext,
   useCallback,
@@ -21,6 +22,8 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // AuthProvider sits inside QueryClientProvider (see main.tsx), so this works.
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [initializing, setInitializing] = useState(true);
 
@@ -52,8 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAccessToken(null);
       setUser(null);
+      // Hygiene: drop all cached server data (may hold PHI) and the persisted
+      // pane layout (pane paths can embed patient ids). 'dentalcore.sidebar'
+      // is a pure UI preference and is intentionally kept.
+      queryClient.clear();
+      window.localStorage.removeItem('dentalcore.panes');
     }
-  }, []);
+  }, [queryClient]);
 
   const hasRole = useCallback(
     (...roles: Role[]) => user != null && roles.some((r) => user.roles.includes(r)),

@@ -26,4 +26,15 @@ public interface ClaimRepository extends JpaRepository<Claim, UUID> {
     java.math.BigDecimal benefitsPaidSince(
             @org.springframework.data.repository.query.Param("coverageId") UUID coverageId,
             @org.springframework.data.repository.query.Param("since") java.time.Instant since);
+
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT COALESCE(SUM(c.deductibleApplied), 0) FROM Claim c
+            WHERE c.patientInsuranceId = :coverageId
+              AND c.status IN (com.dentalcore.insurance.internal.entity.ClaimStatus.PAID,
+                               com.dentalcore.insurance.internal.entity.ClaimStatus.CLOSED)
+              AND c.createdAt >= :since
+            """)
+    java.math.BigDecimal deductibleAppliedSince(
+            @org.springframework.data.repository.query.Param("coverageId") UUID coverageId,
+            @org.springframework.data.repository.query.Param("since") java.time.Instant since);
 }

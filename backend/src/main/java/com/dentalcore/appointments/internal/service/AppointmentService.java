@@ -114,7 +114,7 @@ public class AppointmentService {
                 DEFAULT_CLINIC_ID, request.patientId(), request.providerId(),
                 request.operatoryId(), request.startsAt(), request.endsAt());
         appointment.updateDetails(request.notes(), request.colorOverride());
-        appointment = appointmentRepository.save(appointment);
+        appointment = saveGuardedAgainstOverlap(appointment);
 
         publishAudit(appointment.getId(), AuditEvent.AuditAction.CREATE, null, Map.of(
                 "patientId", request.patientId().toString(),
@@ -139,6 +139,7 @@ public class AppointmentService {
         appointment.reschedule(request.providerId(), request.operatoryId(),
                 request.startsAt(), request.endsAt());
         appointment.updateDetails(request.notes(), request.colorOverride());
+        saveGuardedAgainstOverlap(appointment);
 
         publishAudit(id, AuditEvent.AuditAction.UPDATE, before, Map.of(
                 "startsAt", request.startsAt().toString(),
@@ -229,6 +230,29 @@ public class AppointmentService {
         throw new ConflictException(providerBusy
                 ? "The provider already has an appointment in this time slot"
                 : "The operatory is already booked in this time slot");
+    }
+
+    /**
+     * Even after {@link #requireNoConflicts} passes, a concurrent booking can
+     * land first and trip the GiST exclusion constraints at flush time.
+     * Flushing here turns that race into the same 409 the pre-check produces
+     * instead of surfacing a commit-time 500.
+     */
+    private Appointment saveGuardedAgainstOverlap(Appointment appointment) {
+        try {
+            return appointmentRepository.saveAndFlush(appointment);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            String cause = String.valueOf(e.getMostSpecificCause().getMessage());
+            if (cause.contains("no_provider_overlap")) {
+                throw new ConflictException(
+                        "The provider already has an appointment in this time slot");
+            }
+            if (cause.contains("no_operatory_overlap")) {
+                throw new ConflictException(
+                        "The operatory is already booked in this time slot");
+            }
+            throw e;
+        }
     }
 
     private Appointment findAppointment(UUID id) {

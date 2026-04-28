@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +38,8 @@ class EstimateIntegrationTest extends IntegrationTest {
     private RoleRepository roleRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private com.dentalcore.insurance.internal.repository.ClaimRepository claimRepository;
 
     private ApiTestClient api;
     private HttpHeaders billing;
@@ -203,6 +206,70 @@ class EstimateIntegrationTest extends IntegrationTest {
                 "/api/v1/claims/" + claimId + "/procedures", billing,
                 Map.of("procedureCodeId", crownId));
         assertThat(num(withLine.getBody().get("totalBilled"))).isEqualTo(800.0);
+    }
+
+    @Test
+    void deductibleAccumulatesAcrossPaidClaims() {
+        // dedicated patient + plan: deductible 100, D1110 allowed 60, PREVENTIVE 100%
+        String patient = (String) api.post("/api/v1/patients", admin, Map.of(
+                "firstName", "Deduct", "lastName", "Patient" + SEQ.incrementAndGet(),
+                "dateOfBirth", "1985-05-05", "sex", "MALE")).getBody().get("id");
+        String carrierId = (String) api.post("/api/v1/insurance/carriers", billing,
+                Map.of("name", "Deduct Carrier " + SEQ.get())).getBody().get("id");
+        String plan = (String) api.post("/api/v1/insurance/plans", billing, Map.of(
+                "carrierId", carrierId, "planName", "Deduct PPO", "planType", "PPO",
+                "annualMax", 1000, "deductible", 100)).getBody().get("id");
+        String coverageId = (String) api.post("/api/v1/patient-insurance", billing, Map.of(
+                "patientId", patient, "planId", plan,
+                "subscriberPatientId", patient, "relationshipToSubscriber", "SELF",
+                "memberId", "DED-" + SEQ.get(), "priority", "PRIMARY")).getBody().get("id");
+        String scheduleId = (String) api.post("/api/v1/insurance/fee-schedules", billing,
+                Map.of("name", "Deduct Schedule " + SEQ.get() + "-" + System.nanoTime()))
+                .getBody().get("id");
+        rest.exchange("/api/v1/insurance/fee-schedules/" + scheduleId + "/fees",
+                HttpMethod.PUT, new org.springframework.http.HttpEntity<>(List.of(
+                        Map.of("procedureCodeId", prophyId, "fee", 60)), billing),
+                String.class);
+        rest.exchange("/api/v1/insurance/plans/" + plan + "/fee-schedule",
+                HttpMethod.PUT, new org.springframework.http.HttpEntity<>(
+                        Map.of("feeScheduleId", scheduleId), billing), Void.class);
+        rest.exchange("/api/v1/insurance/plans/" + plan + "/coverage-rules",
+                HttpMethod.PUT, new org.springframework.http.HttpEntity<>(List.of(
+                        Map.of("category", "PREVENTIVE", "coveragePercent", 100)), billing),
+                String.class);
+
+        // first claim: one D1110, allowed 60, paid → consumes 60 of the deductible
+        String claimId = (String) api.post("/api/v1/claims", billing,
+                Map.of("patientInsuranceId", coverageId)).getBody().get("id");
+        ResponseEntity<Map<String, Object>> withLine = api.post(
+                "/api/v1/claims/" + claimId + "/procedures", billing,
+                Map.of("procedureCodeId", prophyId));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> claimLines =
+                (List<Map<String, Object>>) withLine.getBody().get("procedures");
+        String lineId = (String) claimLines.get(0).get("id");
+        api.patch("/api/v1/claims/" + claimId + "/status", billing,
+                Map.of("status", "SUBMITTED"));
+        api.patch("/api/v1/claims/" + claimId + "/status", billing,
+                Map.of("status", "ACCEPTED"));
+        api.post("/api/v1/claims/" + claimId + "/procedures/" + lineId + "/payment", billing,
+                Map.of("paidAmount", 20));
+        api.patch("/api/v1/claims/" + claimId + "/status", billing, Map.of("status", "PAID"));
+
+        assertThat(claimRepository.findById(UUID.fromString(claimId)).orElseThrow()
+                .getDeductibleApplied()).isEqualByComparingTo("60");
+
+        // next estimate: only the remaining 40 of the deductible applies
+        ResponseEntity<Map<String, Object>> response = api.post("/api/v1/insurance/estimate",
+                billing, Map.of("patientId", patient, "items", List.of(
+                        Map.of("procedureCodeId", prophyId))));
+        Map<String, Object> result = response.getBody();
+        assertThat(num(result.get("deductibleRemaining"))).isEqualTo(40.0);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> lines = (List<Map<String, Object>>) result.get("lines");
+        assertThat(num(lines.get(0).get("deductibleApplied"))).isEqualTo(40.0);
+        assertThat(num(lines.get(0).get("insuranceEstimate"))).isEqualTo(20.0);
+        assertThat(num(lines.get(0).get("patientPortion"))).isEqualTo(40.0);
     }
 
     @Test
