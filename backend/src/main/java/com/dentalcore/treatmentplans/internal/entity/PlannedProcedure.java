@@ -93,6 +93,20 @@ public class PlannedProcedure extends BaseEntity {
         this.completedAt = target == Status.COMPLETED ? Instant.now() : null;
     }
 
+    /**
+     * Undo path for a reversed completed procedure: COMPLETED is terminal for
+     * the normal lifecycle, so reverting deliberately bypasses
+     * {@link #changeStatus}.
+     */
+    public void revertToPlanned() {
+        if (status != Status.COMPLETED) {
+            throw new InvalidRequestException(
+                    "Only a COMPLETED procedure can be reverted to PLANNED");
+        }
+        this.status = Status.PLANNED;
+        this.completedAt = null;
+    }
+
     public TreatmentPlan getTreatmentPlan() {
         return treatmentPlan;
     }

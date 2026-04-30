@@ -69,4 +69,75 @@ public final class ReportDtos {
             long openClaims
     ) {
     }
+
+    // ---- day sheet ----
+
+    public record DaySheetProviderRow(
+            String providerId,
+            String providerName,
+            BigDecimal production,
+            BigDecimal collections
+    ) {
+    }
+
+    public record DaySheetEntry(
+            String entryId,
+            java.time.Instant occurredAt,
+            String patientId,
+            String patientName,
+            String providerName,
+            String type,
+            String description,
+            BigDecimal amount
+    ) {
+    }
+
+    public record DaySheetTotals(
+            BigDecimal production,
+            BigDecimal collections,
+            BigDecimal adjustments
+    ) {
+    }
+
+    public record DepositSlipRow(
+            String method,
+            long count,
+            BigDecimal total
+    ) {
+    }
+
+    public record DaySheetReport(
+            LocalDate date,
+            List<DaySheetProviderRow> providers,
+            List<DaySheetEntry> entries,
+            DaySheetTotals totals,
+            List<DepositSlipRow> depositSlip
+    ) {
+    }
+
+    // ---- follow-up worklists ----
+
+    public record UnscheduledTreatmentRow(
+            String patientId,
+            String patientName,
+            String phone,
+            String planId,
+            String planTitle,
+            String planStatus,
+            long plannedCount,
+            BigDecimal remainingValue,
+            LocalDate nextRecallDate
+    ) {
+    }
+
+    public record AsapRow(
+            String appointmentId,
+            String patientId,
+            String patientName,
+            String phone,
+            String providerName,
+            java.time.Instant startsAt,
+            String status
+    ) {
+    }
 }

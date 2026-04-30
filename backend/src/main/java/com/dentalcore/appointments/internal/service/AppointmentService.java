@@ -1,6 +1,8 @@
 package com.dentalcore.appointments.internal.service;
 
+import com.dentalcore.appointments.api.AppointmentApi;
 import com.dentalcore.appointments.api.AppointmentCompletedEvent;
+import com.dentalcore.appointments.api.AppointmentView;
 import com.dentalcore.appointments.internal.dto.AppointmentRequest;
 import com.dentalcore.appointments.internal.dto.AppointmentResponse;
 import com.dentalcore.appointments.internal.entity.Appointment;
@@ -12,6 +14,7 @@ import com.dentalcore.appointments.internal.repository.AppointmentRepository;
 import com.dentalcore.appointments.internal.repository.OperatoryRepository;
 import com.dentalcore.patients.api.PatientApi;
 import com.dentalcore.patients.api.PatientSummary;
+import com.dentalcore.procedures.api.CompletedProcedureApi;
 import com.dentalcore.procedures.api.ProcedureCatalogApi;
 import com.dentalcore.procedures.api.ProcedureSummary;
 import com.dentalcore.providers.api.ProviderApi;
@@ -38,7 +41,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class AppointmentService {
+public class AppointmentService implements AppointmentApi {
 
     private static final String ENTITY_TYPE = "Appointment";
     private static final UUID DEFAULT_CLINIC_ID =
@@ -50,6 +53,7 @@ public class AppointmentService {
     private final PatientApi patientApi;
     private final ProviderApi providerApi;
     private final ProcedureCatalogApi catalogApi;
+    private final CompletedProcedureApi completedProcedureApi;
     private final AvailabilityService availabilityService;
     private final ApplicationEventPublisher events;
 
@@ -59,6 +63,7 @@ public class AppointmentService {
                               PatientApi patientApi,
                               ProviderApi providerApi,
                               ProcedureCatalogApi catalogApi,
+                              CompletedProcedureApi completedProcedureApi,
                               AvailabilityService availabilityService,
                               ApplicationEventPublisher events) {
         this.appointmentRepository = appointmentRepository;
@@ -67,8 +72,17 @@ public class AppointmentService {
         this.patientApi = patientApi;
         this.providerApi = providerApi;
         this.catalogApi = catalogApi;
+        this.completedProcedureApi = completedProcedureApi;
         this.availabilityService = availabilityService;
         this.events = events;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<AppointmentView> findView(UUID appointmentId) {
+        return appointmentRepository.findById(appointmentId).map(a -> new AppointmentView(
+                a.getId(), a.getClinicId(), a.getPatientId(), a.getProviderId(),
+                a.getStartsAt(), a.getEndsAt(), a.getStatus().name()));
     }
 
     @Transactional(readOnly = true)
@@ -113,7 +127,8 @@ public class AppointmentService {
         Appointment appointment = new Appointment(
                 DEFAULT_CLINIC_ID, request.patientId(), request.providerId(),
                 request.operatoryId(), request.startsAt(), request.endsAt());
-        appointment.updateDetails(request.notes(), request.colorOverride());
+        appointment.updateDetails(request.notes(), request.colorOverride(),
+                request.asapOrDefault());
         appointment = saveGuardedAgainstOverlap(appointment);
 
         publishAudit(appointment.getId(), AuditEvent.AuditAction.CREATE, null, Map.of(
@@ -138,7 +153,8 @@ public class AppointmentService {
 
         appointment.reschedule(request.providerId(), request.operatoryId(),
                 request.startsAt(), request.endsAt());
-        appointment.updateDetails(request.notes(), request.colorOverride());
+        appointment.updateDetails(request.notes(), request.colorOverride(),
+                request.asapOrDefault());
         saveGuardedAgainstOverlap(appointment);
 
         publishAudit(id, AuditEvent.AuditAction.UPDATE, before, Map.of(
@@ -163,6 +179,13 @@ public class AppointmentService {
                     .findByAppointmentId(appointment.getId()).stream()
                     .map(AppointmentProcedure::getProcedureCodeId)
                     .toList();
+            // Record (and charge) whatever wasn't already completed during
+            // checkout — this replaces the old billing auto-charge listener
+            // and is what guarantees exactly one charge per procedure.
+            completedProcedureApi.completeAllForAppointment(
+                    appointment.getId(), appointment.getClinicId(),
+                    appointment.getPatientId(), appointment.getProviderId(),
+                    procedureCodeIds);
             events.publishEvent(new AppointmentCompletedEvent(
                     appointment.getId(), appointment.getClinicId(), appointment.getPatientId(),
                     appointment.getProviderId(), procedureCodeIds, Instant.now()));
@@ -315,6 +338,7 @@ public class AppointmentService {
                     a.getNotes(),
                     color,
                     a.getCancelledReason(),
+                    a.isAsap(),
                     proceduresByAppointment.getOrDefault(a.getId(), List.of()),
                     a.getCreatedAt(),
                     a.getUpdatedAt());

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class BillingService {
+public class BillingService implements com.dentalcore.billing.api.BillingPostingApi {
 
     private static final String ENTITY_TYPE = "LedgerEntry";
     private static final UUID DEFAULT_CLINIC_ID =
@@ -158,15 +158,38 @@ public class BillingService {
         return toResponse(reversal, null, false);
     }
 
-    // ---- internal posting used by event listeners ----
+    // ---- BillingPostingApi (cross-module posting) ----
 
-    void postAutoCharge(UUID patientId, UUID appointmentId, ProcedureSummary procedure) {
-        LedgerEntry entry = post(LedgerEntry.charge(
-                DEFAULT_CLINIC_ID, patientId, procedure.standardFee(),
-                procedure.code() + " — " + procedure.description(),
-                procedure.id(), appointmentId, CurrentUser.id().orElse(null)));
-        audit(entry, "autoChargePosted");
+    @Override
+    public UUID postProcedureCharge(UUID clinicId, UUID patientId, UUID procedureCodeId,
+                                    String description, BigDecimal amount,
+                                    java.time.LocalDate entryDate) {
+        return postProcedureCharge(clinicId, patientId, procedureCodeId, null,
+                description, amount, entryDate);
     }
+
+    @Override
+    public UUID postProcedureCharge(UUID clinicId, UUID patientId, UUID procedureCodeId,
+                                    UUID appointmentId, String description, BigDecimal amount,
+                                    java.time.LocalDate entryDate) {
+        requirePatient(patientId);
+        if (amount == null || amount.signum() <= 0) {
+            throw new InvalidRequestException("A procedure charge needs a positive amount");
+        }
+        LedgerEntry entry = ledger.save(LedgerEntry.charge(
+                clinicId, patientId, amount, description, procedureCodeId, appointmentId,
+                CurrentUser.id().orElse(null))
+                .at(entryDate != null ? entryDate : clinicTime.today(clinicId)));
+        audit(entry, "procedureChargePosted");
+        return entry.getId();
+    }
+
+    @Override
+    public UUID reverseEntry(UUID ledgerEntryId, String reason) {
+        return reverse(ledgerEntryId, reason).id();
+    }
+
+    // ---- internal posting used by event listeners ----
 
     void postInsurancePayment(UUID patientId, UUID claimId, String carrierName,
                               BigDecimal amount) {
@@ -175,10 +198,6 @@ public class BillingService {
                 "Insurance payment — " + carrierName, claimId,
                 CurrentUser.id().orElse(null)));
         audit(entry, "insurancePaymentPosted");
-    }
-
-    boolean hasChargesForAppointment(UUID appointmentId) {
-        return ledger.existsByAppointmentIdAndType(appointmentId, LedgerEntry.Type.CHARGE);
     }
 
     // ---- helpers ----

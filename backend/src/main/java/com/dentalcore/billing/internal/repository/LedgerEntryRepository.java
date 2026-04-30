@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> {
@@ -20,5 +22,6 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> 
 
     boolean existsByReversalOf(UUID originalId);
 
-    boolean existsByAppointmentIdAndType(UUID appointmentId, LedgerEntry.Type type);
+    List<LedgerEntry> findByPatientIdAndEntryDateAndTypeOrderByCreatedAtAsc(
+            UUID patientId, LocalDate entryDate, LedgerEntry.Type type);
 }

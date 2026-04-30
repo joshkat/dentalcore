@@ -206,6 +206,28 @@ public class TreatmentPlanService implements TreatmentPlanApi {
         return toResponse(plan);
     }
 
+    /** A completed procedure was recorded against this planned procedure. */
+    public void completePlannedProcedure(UUID plannedProcedureId) {
+        PlannedProcedure procedure = plannedProcedureRepository.findById(plannedProcedureId)
+                .orElseThrow(() -> new InvalidRequestException("Unknown planned procedure"));
+        updateProcedureStatus(procedure.getTreatmentPlan().getId(), procedure.getId(),
+                PlannedProcedure.Status.COMPLETED.name());
+    }
+
+    /** A same-day completion was undone — the procedure goes back to PLANNED. */
+    public void revertProcedureToPlanned(UUID plannedProcedureId) {
+        plannedProcedureRepository.findById(plannedProcedureId)
+                .filter(p -> p.getStatus() == PlannedProcedure.Status.COMPLETED)
+                .ifPresent(procedure -> {
+                    procedure.revertToPlanned();
+                    publishAudit(procedure.getTreatmentPlan().getId(),
+                            AuditEvent.AuditAction.UPDATE,
+                            Map.of("procedureStatus", PlannedProcedure.Status.COMPLETED.name()),
+                            Map.of("procedureStatus", PlannedProcedure.Status.PLANNED.name(),
+                                    "procedureId", procedure.getId().toString()));
+                });
+    }
+
     public PlanResponse removeProcedure(UUID planId, UUID procedureId) {
         TreatmentPlan plan = findPlan(planId);
         PlannedProcedure procedure = findProcedure(plan, procedureId);

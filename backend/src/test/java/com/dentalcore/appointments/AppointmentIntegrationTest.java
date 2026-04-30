@@ -98,7 +98,9 @@ class AppointmentIntegrationTest extends IntegrationTest {
     private String book(Instant start, int minutes) {
         ResponseEntity<Map<String, Object>> response =
                 api.post("/api/v1/appointments", frontDesk, appointmentBody(start, minutes));
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getStatusCode())
+                .as("booking response body: %s", response.getBody())
+                .isEqualTo(HttpStatus.CREATED);
         return (String) response.getBody().get("id");
     }
 
@@ -192,6 +194,15 @@ class AppointmentIntegrationTest extends IntegrationTest {
         assertThat(api.patch("/api/v1/appointments/" + id + "/status", frontDesk,
                 Map.of("status", "CANCELLED")).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void checkoutCompletesDirectlyFromCheckedIn() {
+        String id = book(slotStart, 60);
+        assertThat(api.patch("/api/v1/appointments/" + id + "/status", frontDesk,
+                Map.of("status", "CHECKED_IN")).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(api.patch("/api/v1/appointments/" + id + "/status", frontDesk,
+                Map.of("status", "COMPLETED")).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
