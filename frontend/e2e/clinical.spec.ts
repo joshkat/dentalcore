@@ -78,13 +78,17 @@ test.describe('clinical flows', () => {
     const start = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     await dialog.getByLabel('Date').fill(iso);
     await dialog.getByLabel('Start').fill(start);
+    const createdResponse = page.waitForResponse(
+      (r) => r.url().includes('/api/v1/appointments') && r.request().method() === 'POST',
+    );
     await dialog.getByRole('button', { name: 'Book appointment' }).click();
+    const appointmentId = ((await (await createdResponse).json()) as { id: string }).id;
     // a rejected booking (409) keeps the dialog open — fail here, not downstream
     await expect(dialog).toBeHidden();
 
-    // jump the calendar to that week and open the appointment
-    await page.goto(`/schedule?date=${iso}`);
-    await page.getByTitle('Demoson, Emma').first().click();
+    // deep-link to the exact appointment: clicking by patient title is ambiguous
+    // because earlier runs leave their own Demoson blocks in random weeks
+    await page.goto(`/schedule?date=${iso}&appointment=${appointmentId}`);
     await expect(page.getByText('Scheduled', { exact: true })).toBeVisible();
 
     // walk-in check-in
