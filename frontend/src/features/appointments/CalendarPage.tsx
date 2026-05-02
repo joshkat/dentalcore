@@ -4,6 +4,7 @@ import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
 import { useAuth } from '../../lib/auth';
 import type { Appointment } from '../../types/api';
+import { CheckoutModal } from '../checkout/CheckoutModal';
 import { useAppointments } from './api';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import { AppointmentFormModal } from './AppointmentFormModal';
@@ -43,6 +44,7 @@ export function CalendarPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [selected, setSelected] = useState<Appointment | null>(null);
+  const [checkingOut, setCheckingOut] = useState<Appointment | null>(null);
   const [managingOps, setManagingOps] = useState(false);
   const { hasRole } = useAuth();
   const canWrite = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK');
@@ -69,6 +71,10 @@ export function CalendarPage() {
   const selectedFresh = useMemo(
     () => appointments?.find((a) => a.id === selected?.id) ?? selected,
     [appointments, selected],
+  );
+  const checkingOutFresh = useMemo(
+    () => appointments?.find((a) => a.id === checkingOut?.id) ?? checkingOut,
+    [appointments, checkingOut],
   );
 
   const days = Array.from({ length: DAYS_SHOWN }, (_, i) => addDays(weekStart, i));
@@ -223,7 +229,12 @@ export function CalendarPage() {
           setSelected(null);
           setEditing(appointment);
         }}
+        onCheckout={(appointment) => {
+          setSelected(null);
+          setCheckingOut(appointment);
+        }}
       />
+      <CheckoutModal appointment={checkingOutFresh} onClose={() => setCheckingOut(null)} />
       <OperatoriesModal open={managingOps} onClose={() => setManagingOps(false)} />
     </div>
   );

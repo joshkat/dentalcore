@@ -5,6 +5,7 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  ListTodo,
   Shield,
   Stethoscope,
   UserCog,
@@ -34,6 +35,12 @@ const navItems: NavItem[] = [
   { to: '/procedures', label: 'Procedures', icon: ClipboardList },
   { to: '/insurance', label: 'Insurance', icon: Shield },
   { to: '/claims', label: 'Claims', icon: FileText },
+  {
+    to: '/worklists',
+    label: 'Worklists',
+    icon: ListTodo,
+    roles: ['ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING'],
+  },
   {
     to: '/reports',
     label: 'Reports',

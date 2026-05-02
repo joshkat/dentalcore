@@ -90,6 +90,30 @@ export function useReverseEntry() {
   );
 }
 
+/** Walk-out statement for an appointment — opens the PDF in a new tab. */
+export async function openWalkout(appointmentId: string): Promise<void> {
+  const { getAccessToken, refreshSession } = await import('../../lib/api');
+  const attempt = () =>
+    fetch(`/api/v1/billing/walkout?appointmentId=${appointmentId}`, {
+      headers: getAccessToken()
+        ? { Authorization: `Bearer ${getAccessToken()}` }
+        : undefined,
+      credentials: 'include',
+    });
+  let response = await attempt();
+  if (response.status === 401 && (await refreshSession())) {
+    response = await attempt();
+  }
+  if (!response.ok) {
+    throw new Error(`Walk-out statement failed (${response.status})`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener');
+  // Give the new tab time to load the blob before revoking it.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 export async function downloadStatement(patientId: string): Promise<void> {
   const to = new Date();
   const from = new Date();

@@ -21,6 +21,7 @@ interface AppointmentDetailModalProps {
   appointment: Appointment | null;
   onClose: () => void;
   onEdit: (appointment: Appointment) => void;
+  onCheckout: (appointment: Appointment) => void;
   canWrite: boolean;
 }
 
@@ -28,6 +29,7 @@ export function AppointmentDetailModal({
   appointment,
   onClose,
   onEdit,
+  onCheckout,
   canWrite,
 }: AppointmentDetailModalProps) {
   return (
@@ -38,6 +40,7 @@ export function AppointmentDetailModal({
           appointment={appointment}
           onClose={onClose}
           onEdit={onEdit}
+          onCheckout={onCheckout}
           canWrite={canWrite}
         />
       )}
@@ -49,11 +52,13 @@ function DetailBody({
   appointment,
   onClose,
   onEdit,
+  onCheckout,
   canWrite,
 }: {
   appointment: Appointment;
   onClose: () => void;
   onEdit: (appointment: Appointment) => void;
+  onCheckout: (appointment: Appointment) => void;
   canWrite: boolean;
 }) {
   const updateStatus = useUpdateAppointmentStatus(appointment.id);
@@ -112,7 +117,10 @@ function DetailBody({
             {appointment.operatoryName}
           </p>
         </div>
-        <Badge tone={statusTone[appointment.status]}>{STATUS_LABELS[appointment.status]}</Badge>
+        <span className="flex shrink-0 items-center gap-2">
+          {appointment.asap && <Badge tone="yellow">ASAP</Badge>}
+          <Badge tone={statusTone[appointment.status]}>{STATUS_LABELS[appointment.status]}</Badge>
+        </span>
       </div>
 
       {appointment.procedures.length > 0 && (
@@ -165,6 +173,9 @@ function DetailBody({
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
+              {(appointment.status === 'CHECKED_IN' || appointment.status === 'IN_PROGRESS') && (
+                <Button onClick={() => onCheckout(appointment)}>Check out</Button>
+              )}
               {nextStatuses
                 .filter((s) => s !== 'CANCELLED')
                 .map((status) => (

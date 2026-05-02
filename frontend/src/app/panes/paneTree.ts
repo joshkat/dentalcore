@@ -124,6 +124,7 @@ const ALLOWED_PANE_PATHS: readonly RegExp[] = [
   /^\/claims$/,
   /^\/reports$/,
   /^\/recall$/,
+  /^\/worklists$/,
   /^\/users$/,
 ];
 

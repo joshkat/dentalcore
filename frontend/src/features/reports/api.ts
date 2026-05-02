@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
+import type { AppointmentStatus, TreatmentPlanStatus } from '../../types/api';
 
 export interface ProviderAppointmentsRow {
   providerId: string;
@@ -97,5 +98,85 @@ export function useProviderUtilization(from: string, to: string) {
       api<ProviderUtilizationRow[]>(
         `/api/v1/reports/provider-utilization?from=${from}&to=${to}`,
       ),
+  });
+}
+
+// ---- day sheet ----
+
+export type DaySheetEntryType = 'CHARGE' | 'PAYMENT' | 'ADJUSTMENT' | 'REVERSAL';
+
+export interface DaySheetProviderRow {
+  providerId: string;
+  providerName: string;
+  production: number;
+  collections: number;
+}
+
+export interface DaySheetEntry {
+  entryId: string;
+  occurredAt: string;
+  patientId: string;
+  patientName: string;
+  providerName: string | null;
+  type: DaySheetEntryType;
+  description: string;
+  amount: number;
+}
+
+export interface DaySheetReport {
+  date: string;
+  providers: DaySheetProviderRow[];
+  entries: DaySheetEntry[];
+  totals: {
+    production: number;
+    collections: number;
+    adjustments: number;
+  };
+  depositSlip: Array<{ method: string; count: number; total: number }>;
+}
+
+export function useDaySheet(date: string, enabled = true) {
+  return useQuery({
+    queryKey: ['reports', 'day-sheet', { date }],
+    queryFn: () => api<DaySheetReport>(`/api/v1/reports/day-sheet?date=${date}`),
+    enabled,
+  });
+}
+
+// ---- worklists ----
+
+export interface UnscheduledTreatmentRow {
+  patientId: string;
+  patientName: string;
+  phone: string | null;
+  planId: string;
+  planTitle: string;
+  planStatus: TreatmentPlanStatus;
+  plannedCount: number;
+  remainingValue: number;
+  nextRecallDate: string | null;
+}
+
+export function useUnscheduledTreatment() {
+  return useQuery({
+    queryKey: ['reports', 'unscheduled-treatment'],
+    queryFn: () => api<UnscheduledTreatmentRow[]>('/api/v1/reports/unscheduled-treatment'),
+  });
+}
+
+export interface AsapListRow {
+  appointmentId: string;
+  patientId: string;
+  patientName: string;
+  phone: string | null;
+  providerName: string;
+  startsAt: string;
+  status: AppointmentStatus;
+}
+
+export function useAsapList() {
+  return useQuery({
+    queryKey: ['reports', 'asap-list'],
+    queryFn: () => api<AsapListRow[]>('/api/v1/reports/asap-list'),
   });
 }

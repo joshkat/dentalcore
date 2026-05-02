@@ -8,6 +8,7 @@ export interface AppointmentInput {
   operatoryId: string;
   startsAt: string;
   endsAt: string;
+  asap?: boolean;
   notes?: string | null;
   colorOverride?: string | null;
 }
