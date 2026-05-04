@@ -15,7 +15,9 @@ public enum AppointmentStatus {
     private static final Map<AppointmentStatus, Set<AppointmentStatus>> TRANSITIONS = Map.of(
             SCHEDULED, Set.of(CONFIRMED, CHECKED_IN, CANCELLED, NO_SHOW),
             CONFIRMED, Set.of(CHECKED_IN, CANCELLED, NO_SHOW),
-            CHECKED_IN, Set.of(IN_PROGRESS, CANCELLED),
+            // COMPLETED directly from CHECKED_IN: front-desk checkout often
+            // closes the visit without anyone flipping it to IN_PROGRESS
+            CHECKED_IN, Set.of(IN_PROGRESS, COMPLETED, CANCELLED),
             IN_PROGRESS, Set.of(COMPLETED),
             COMPLETED, Set.of(),
             NO_SHOW, Set.of(),

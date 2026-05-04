@@ -318,3 +318,24 @@ export function usePlanEstimate(treatmentPlanId: string) {
       api<EstimateResult>(`/api/v1/treatment-plans/${treatmentPlanId}/estimate`),
   });
 }
+
+export interface EstimateItemInput {
+  procedureCodeId: string;
+  grossFee: number;
+}
+
+/**
+ * Ad-hoc estimate for arbitrary line items (checkout uses the completed work's fees).
+ * POST because it carries a body, but it computes only — safe to model as a query.
+ */
+export function useAdHocEstimate(patientId: string, items: EstimateItemInput[]) {
+  return useQuery({
+    queryKey: ['estimate', patientId, items],
+    queryFn: () =>
+      api<EstimateResult>('/api/v1/insurance/estimate', {
+        method: 'POST',
+        body: { patientId, items },
+      }),
+    enabled: items.length > 0,
+  });
+}

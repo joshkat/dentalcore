@@ -4,10 +4,12 @@ interface ModalProps {
   title: string;
   open: boolean;
   onClose: () => void;
+  /** md = default dialog width; lg = wider panels like checkout. */
+  size?: 'md' | 'lg';
   children: ReactNode;
 }
 
-export function Modal({ title, open, onClose, children }: ModalProps) {
+export function Modal({ title, open, onClose, size = 'md', children }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -26,7 +28,9 @@ export function Modal({ title, open, onClose, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
+        className={`relative z-10 w-full ${
+          size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
+        } rounded-lg bg-white p-6 shadow-xl`}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>

@@ -18,6 +18,11 @@ public record AppointmentRequest(
         String notes,
 
         @Pattern(regexp = "#[0-9a-fA-F]{6}", message = "Color must be a hex value like #3b82f6")
-        String colorOverride
+        String colorOverride,
+
+        Boolean asap
 ) {
+    public boolean asapOrDefault() {
+        return Boolean.TRUE.equals(asap);
+    }
 }

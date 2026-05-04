@@ -8,9 +8,12 @@ import type {
   ToothCondition,
   ToothConditionType,
 } from '../../types/api';
+import { AddCompletedWork } from '../checkout/AddCompletedWork';
+import { CompleteProcedureButton } from '../checkout/CompleteProcedureButton';
 import {
   useAddToothCondition,
   useDeleteToothCondition,
+  usePatient,
   useResolveToothCondition,
   useToothChart,
 } from './api';
@@ -63,7 +66,9 @@ interface ToothState {
 
 export function ChartTab({ patientId, canChart }: { patientId: string; canChart: boolean }) {
   const { data: chart, isPending } = useToothChart(patientId);
+  const { data: patient } = usePatient(patientId);
   const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
+  const defaultProviderId = patient?.primaryProviderId ?? null;
 
   const byTooth = useMemo(() => {
     const map = new Map<string, ToothState>();
@@ -131,6 +136,10 @@ export function ChartTab({ patientId, canChart }: { patientId: string; canChart:
             Completed work
           </span>
         </div>
+
+        {canChart && (
+          <AddCompletedWork patientId={patientId} defaultProviderId={defaultProviderId} />
+        )}
       </div>
 
       <div className="w-full lg:w-96">
@@ -140,6 +149,7 @@ export function ChartTab({ patientId, canChart }: { patientId: string; canChart:
             tooth={selectedTooth}
             state={byTooth.get(selectedTooth) ?? { active: [], resolved: [], procedures: [] }}
             canChart={canChart}
+            defaultProviderId={defaultProviderId}
           />
         ) : (
           <p className="rounded-md bg-gray-50 p-4 text-sm text-gray-500">
@@ -220,11 +230,13 @@ function ToothPanel({
   tooth,
   state,
   canChart,
+  defaultProviderId,
 }: {
   patientId: string;
   tooth: string;
   state: ToothState;
   canChart: boolean;
+  defaultProviderId: string | null;
 }) {
   const addCondition = useAddToothCondition(patientId);
   const resolveCondition = useResolveToothCondition(patientId);
@@ -329,6 +341,16 @@ function ToothPanel({
                 <span className="truncate text-xs text-gray-600">
                   {procedure.description} — {procedure.planTitle}
                 </span>
+                {canChart && procedure.procedureStatus === 'PLANNED' && (
+                  <CompleteProcedureButton
+                    patientId={patientId}
+                    planId={procedure.planId}
+                    plannedProcedureId={procedure.plannedProcedureId}
+                    tooth={procedure.tooth}
+                    surfaces={procedure.surface}
+                    defaultProviderId={defaultProviderId}
+                  />
+                )}
               </li>
             ))}
           </ul>

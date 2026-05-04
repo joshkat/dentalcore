@@ -237,6 +237,7 @@ export interface Appointment {
   startsAt: string;
   endsAt: string;
   status: AppointmentStatus;
+  asap: boolean;
   notes: string | null;
   color: string;
   cancelledReason: string | null;

@@ -83,6 +83,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
     );
   });
   const [notes, setNotes] = useState(appointment?.notes ?? '');
+  const [asap, setAsap] = useState(appointment?.asap ?? false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -111,6 +112,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
       operatoryId,
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
+      asap,
       notes: notes || null,
     };
 
@@ -347,6 +349,16 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
           </ul>
         )}
       </div>
+
+      <label className="flex items-center gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={asap}
+          onChange={(e) => setAsap(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-600"
+        />
+        ASAP — wants earlier slot
+      </label>
 
       <div>
         <label htmlFor="appt-notes" className="block text-sm font-medium text-gray-700">

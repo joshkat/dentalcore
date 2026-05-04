@@ -118,6 +118,7 @@ describe('paneTree', () => {
       '/claims',
       '/reports',
       '/recall',
+      '/worklists',
       '/users',
     ])('allows known route shape %s', (path) => {
       expect(isAllowedPanePath(path)).toBe(true);
@@ -131,6 +132,7 @@ describe('paneTree', () => {
       '/patients/new/extra',
       '/admin/secret/deep/path',
       '/schedule/whatever',
+      '/worklists/extra',
       '',
       '//',
     ])('rejects unknown or malicious path %s', (path) => {

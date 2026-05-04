@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Print: show only the active report (.print-area); hide nav/sidebar and other chrome. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  nav,
+  .no-print {
+    display: none !important;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 1rem;
+  }
+}

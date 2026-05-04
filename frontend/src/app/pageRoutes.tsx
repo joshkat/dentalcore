@@ -11,6 +11,7 @@ import { ProvidersPage } from '../features/providers/ProvidersPage';
 import { RecallPage } from '../features/reminders/RecallPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
 import { UsersPage } from '../features/users/UsersPage';
+import { WorklistsPage } from '../features/worklists/WorklistsPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 /** Single source of truth for in-app pages — used by the main router and by each pane's MemoryRouter. */
@@ -26,6 +27,7 @@ export const pageRoutes: RouteObject[] = [
   { path: '/claims', element: <ClaimsPage /> },
   { path: '/reports', element: <ReportsPage /> },
   { path: '/recall', element: <RecallPage /> },
+  { path: '/worklists', element: <WorklistsPage /> },
   {
     element: <ProtectedRoute roles={['ADMIN']} />,
     children: [{ path: '/users', element: <UsersPage /> }],
@@ -44,6 +46,7 @@ const titles: Array<[RegExp, string]> = [
   [/^\/claims/, 'Claims'],
   [/^\/reports/, 'Reports'],
   [/^\/recall/, 'Recall'],
+  [/^\/worklists/, 'Worklists'],
   [/^\/users/, 'Users'],
 ];
 

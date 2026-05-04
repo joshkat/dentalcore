@@ -4,6 +4,7 @@ import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
 import { ApiError } from '../../lib/api';
 import type { TreatmentPlanStatus } from '../../types/api';
+import { CompleteProcedureButton } from '../checkout/CompleteProcedureButton';
 import { usePlanEstimate } from '../insurance/api';
 import { useProcedureCodes } from '../procedures/api';
 import { useProviders } from '../providers/api';
@@ -15,7 +16,6 @@ import {
   useRemovePlanProcedure,
   useTreatmentPlan,
   useTreatmentPlans,
-  useUpdatePlanProcedureStatus,
   useUpdatePlanStatus,
 } from './api';
 
@@ -164,7 +164,6 @@ function PlanDetail({
   const updateStatus = useUpdatePlanStatus(patientId);
   const addProcedure = useAddPlanProcedure(patientId);
   const removeProcedure = useRemovePlanProcedure(patientId);
-  const updateProcedureStatus = useUpdatePlanProcedureStatus(patientId);
 
   const [codeSearch, setCodeSearch] = useState('');
   const [tooth, setTooth] = useState('');
@@ -258,20 +257,15 @@ function PlanDetail({
                   )}
                   {trackable &&
                     (procedure.status === 'PLANNED' || procedure.status === 'SCHEDULED') && (
-                      <button
-                        onClick={() =>
-                          act(() =>
-                            updateProcedureStatus.mutateAsync({
-                              planId,
-                              procedureId: procedure.id,
-                              status: 'COMPLETED',
-                            }),
-                          )
-                        }
-                        className="text-xs text-brand-600 hover:underline"
-                      >
-                        Mark completed
-                      </button>
+                      <CompleteProcedureButton
+                        patientId={patientId}
+                        procedureCodeId={procedure.procedureCodeId}
+                        plannedProcedureId={procedure.id}
+                        tooth={procedure.tooth}
+                        surfaces={procedure.surface}
+                        defaultProviderId={plan.providerId}
+                        defaultFee={procedure.estimatedCost}
+                      />
                     )}
                 </td>
               </tr>

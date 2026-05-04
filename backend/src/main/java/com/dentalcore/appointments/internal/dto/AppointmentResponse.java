@@ -21,6 +21,7 @@ public record AppointmentResponse(
         String notes,
         String color,
         String cancelledReason,
+        boolean asap,
         List<ProcedureDto> procedures,
         Instant createdAt,
         Instant updatedAt

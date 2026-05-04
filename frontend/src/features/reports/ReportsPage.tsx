@@ -1,16 +1,21 @@
 import { useState } from 'react';
+import { Badge } from '../../components/Badge';
+import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
 import { useAuth } from '../../lib/auth';
 import {
   useAppointmentsByProvider,
   useDailyProduction,
+  useDaySheet,
   usePatientGrowth,
   useProviderUtilization,
+  type DaySheetEntryType,
 } from './api';
 
 const REPORTS = [
   'Appointments by provider',
   'Daily production',
+  'Day sheet',
   'Patient growth',
   'Provider utilization',
 ] as const;
@@ -27,15 +32,21 @@ function isoDaysAgo(days: number): string {
 export function ReportsPage() {
   const { hasRole } = useAuth();
   const canSeeFinancials = hasRole('ADMIN', 'BILLING');
+  const canSeeDaySheet = hasRole('ADMIN', 'BILLING', 'FRONT_DESK');
   // READ_ONLY cannot fetch any report endpoint, so don't render the page at all
   const canSeeReports = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING');
-  const reports = REPORTS.filter((r) => r !== 'Daily production' || canSeeFinancials);
+  const reports = REPORTS.filter((r) => {
+    if (r === 'Daily production') return canSeeFinancials;
+    if (r === 'Day sheet') return canSeeDaySheet;
+    return true;
+  });
 
   const [report, setReport] = useState<Report>(reports[0]);
   const [from, setFrom] = useState(isoDaysAgo(30));
   const [to, setTo] = useState(isoDaysAgo(0));
+  const [date, setDate] = useState(isoDaysAgo(0));
 
-  const showRange = report !== 'Patient growth';
+  const showRange = report !== 'Patient growth' && report !== 'Day sheet';
 
   if (!canSeeReports) {
     return (
@@ -65,6 +76,20 @@ export function ReportsPage() {
             ))}
           </select>
         </div>
+        {report === 'Day sheet' && (
+          <div>
+            <label htmlFor="report-date" className="block text-sm font-medium text-gray-700">
+              Date
+            </label>
+            <input
+              id="report-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1 rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
+            />
+          </div>
+        )}
         {showRange && (
           <>
             <div>
@@ -100,6 +125,7 @@ export function ReportsPage() {
         {report === 'Daily production' && canSeeFinancials && (
           <ProductionReport from={from} to={to} />
         )}
+        {report === 'Day sheet' && canSeeDaySheet && <DaySheetReportView date={date} />}
         {report === 'Patient growth' && <GrowthReport />}
         {report === 'Provider utilization' && <UtilizationReport from={from} to={to} />}
       </div>
@@ -207,6 +233,159 @@ function ProductionReport({ from, to }: { from: string; to: string }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+const entryTone: Record<DaySheetEntryType, 'red' | 'green' | 'yellow' | 'gray'> = {
+  CHARGE: 'red',
+  PAYMENT: 'green',
+  ADJUSTMENT: 'yellow',
+  REVERSAL: 'gray',
+};
+
+const entryLabel: Record<DaySheetEntryType, string> = {
+  CHARGE: 'Charge',
+  PAYMENT: 'Payment',
+  ADJUSTMENT: 'Adjustment',
+  REVERSAL: 'Reversal',
+};
+
+const signedMoney = (n: number) => `${n < 0 ? '−' : ''}$${Math.abs(n).toFixed(2)}`;
+
+function DaySheetReportView({ date }: { date: string }) {
+  const { data, isPending } = useDaySheet(date);
+  if (isPending) return <Spinner label="Running report…" />;
+  if (!data) return <p className="text-sm text-gray-500">No day sheet for this date.</p>;
+
+  return (
+    <div className="print-area space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-semibold text-gray-900">Day sheet — {data.date}</h2>
+        <Button variant="secondary" className="no-print" onClick={() => window.print()}>
+          Print
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {(
+          [
+            ['Production', data.totals.production, 'day-sheet-production'],
+            ['Collections', data.totals.collections, 'day-sheet-collections'],
+            ['Adjustments', data.totals.adjustments, 'day-sheet-adjustments'],
+          ] as const
+        ).map(([label, value, testId]) => (
+          <div key={label} className="rounded-md bg-gray-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+            <p data-testid={testId} className="text-lg font-bold text-gray-900">
+              {signedMoney(value)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          By provider
+        </h3>
+        {data.providers.length === 0 ? (
+          <p className="mt-2 text-sm text-gray-500">No provider activity.</p>
+        ) : (
+          <table className="mt-2 min-w-full divide-y divide-gray-200 text-sm">
+            <thead>
+              <tr className="text-left text-xs font-semibold uppercase text-gray-500">
+                <th className="py-2 pr-3">Provider</th>
+                <th className="py-2 pr-3 text-right">Production</th>
+                <th className="py-2 text-right">Collections</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {data.providers.map((row) => (
+                <tr key={row.providerId}>
+                  <td className="py-2 pr-3 font-medium text-gray-900">{row.providerName}</td>
+                  <td className="py-2 pr-3 text-right">{signedMoney(row.production)}</td>
+                  <td className="py-2 text-right text-green-700">
+                    {signedMoney(row.collections)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Entries</h3>
+        {data.entries.length === 0 ? (
+          <p className="mt-2 text-sm text-gray-500">No activity on this date.</p>
+        ) : (
+          <table className="mt-2 min-w-full divide-y divide-gray-200 text-sm">
+            <thead>
+              <tr className="text-left text-xs font-semibold uppercase text-gray-500">
+                <th className="py-2 pr-3">Time</th>
+                <th className="py-2 pr-3">Patient</th>
+                <th className="py-2 pr-3">Provider</th>
+                <th className="py-2 pr-3">Type</th>
+                <th className="py-2 pr-3">Description</th>
+                <th className="py-2 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {data.entries.map((entry) => (
+                <tr key={entry.entryId}>
+                  <td className="py-2 pr-3 whitespace-nowrap text-gray-600">
+                    {new Date(entry.occurredAt).toLocaleTimeString([], {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </td>
+                  <td className="py-2 pr-3 font-medium text-gray-900">{entry.patientName}</td>
+                  <td className="py-2 pr-3 text-gray-600">{entry.providerName ?? '—'}</td>
+                  <td className="py-2 pr-3">
+                    <Badge tone={entryTone[entry.type]}>{entryLabel[entry.type]}</Badge>
+                  </td>
+                  <td className="py-2 pr-3 text-gray-600">{entry.description}</td>
+                  <td
+                    className={`py-2 text-right font-medium ${
+                      entry.amount < 0 ? 'text-red-600' : 'text-gray-900'
+                    }`}
+                  >
+                    {signedMoney(entry.amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Deposit slip
+        </h3>
+        {data.depositSlip.length === 0 ? (
+          <p className="mt-2 text-sm text-gray-500">No payments collected.</p>
+        ) : (
+          <table className="mt-2 min-w-full divide-y divide-gray-200 text-sm">
+            <thead>
+              <tr className="text-left text-xs font-semibold uppercase text-gray-500">
+                <th className="py-2 pr-3">Method</th>
+                <th className="py-2 pr-3 text-right">Count</th>
+                <th className="py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {data.depositSlip.map((row) => (
+                <tr key={row.method}>
+                  <td className="py-2 pr-3 font-medium text-gray-900">{row.method}</td>
+                  <td className="py-2 pr-3 text-right">{row.count}</td>
+                  <td className="py-2 text-right font-medium">{signedMoney(row.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

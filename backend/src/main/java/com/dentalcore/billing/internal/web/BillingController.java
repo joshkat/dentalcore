@@ -38,11 +38,28 @@ public class BillingController {
 
     private final BillingService service;
     private final com.dentalcore.billing.internal.service.StatementService statementService;
+    private final com.dentalcore.billing.internal.service.WalkoutService walkoutService;
 
     public BillingController(BillingService service,
-                             com.dentalcore.billing.internal.service.StatementService statementService) {
+                             com.dentalcore.billing.internal.service.StatementService statementService,
+                             com.dentalcore.billing.internal.service.WalkoutService walkoutService) {
         this.service = service;
         this.statementService = statementService;
+        this.walkoutService = walkoutService;
+    }
+
+    @GetMapping("/walkout")
+    @PreAuthorize(CAN_TAKE_PAYMENT)
+    @Operation(summary = "Walk-out statement (PDF) for an appointment's visit")
+    public org.springframework.http.ResponseEntity<byte[]> walkout(
+            @RequestParam UUID appointmentId) {
+        byte[] pdf = walkoutService.walkoutPdf(appointmentId);
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(org.springframework.http.ContentDisposition
+                .attachment().filename("walkout-" + appointmentId + ".pdf").build());
+        return new org.springframework.http.ResponseEntity<>(pdf, headers,
+                org.springframework.http.HttpStatus.OK);
     }
 
     @GetMapping("/statement")

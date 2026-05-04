@@ -1,22 +1,21 @@
 package com.dentalcore.billing.internal.service;
 
-import com.dentalcore.appointments.api.AppointmentCompletedEvent;
 import com.dentalcore.insurance.api.ClaimPaidEvent;
-import com.dentalcore.procedures.api.ProcedureCatalogApi;
-import com.dentalcore.procedures.api.ProcedureSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 /**
  * Posts ledger entries from domain events. Runs in the publishing transaction
- * so charges commit atomically with the appointment completion / claim payment.
+ * so payments commit atomically with the claim payment.
+ *
+ * <p>Appointment-completion charges no longer post from here: the procedures
+ * module records a completed procedure per code (skipping codes already
+ * completed during checkout) and posts each charge through
+ * {@link com.dentalcore.billing.api.BillingPostingApi}, so a visit is never
+ * double-charged.
  */
 @Component
 public class BillingEventListener {
@@ -24,34 +23,9 @@ public class BillingEventListener {
     private static final Logger log = LoggerFactory.getLogger(BillingEventListener.class);
 
     private final BillingService billingService;
-    private final ProcedureCatalogApi catalogApi;
 
-    public BillingEventListener(BillingService billingService, ProcedureCatalogApi catalogApi) {
+    public BillingEventListener(BillingService billingService) {
         this.billingService = billingService;
-        this.catalogApi = catalogApi;
-    }
-
-    @EventListener
-    @Transactional
-    public void onAppointmentCompleted(AppointmentCompletedEvent event) {
-        if (event.procedureCodeIds().isEmpty()) {
-            return;
-        }
-        // Idempotency guard: completion is a one-way transition, but never double-post.
-        if (billingService.hasChargesForAppointment(event.appointmentId())) {
-            log.warn("Charges already posted for appointment {}", event.appointmentId());
-            return;
-        }
-        Map<UUID, ProcedureSummary> catalog =
-                catalogApi.findSummaries(Set.copyOf(event.procedureCodeIds()));
-        for (UUID codeId : event.procedureCodeIds()) {
-            ProcedureSummary procedure = catalog.get(codeId);
-            if (procedure != null) {
-                billingService.postAutoCharge(event.patientId(), event.appointmentId(), procedure);
-            }
-        }
-        log.info("Posted {} charge(s) for completed appointment {}",
-                event.procedureCodeIds().size(), event.appointmentId());
     }
 
     @EventListener

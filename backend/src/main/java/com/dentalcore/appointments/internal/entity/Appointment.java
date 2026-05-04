@@ -49,6 +49,10 @@ public class Appointment extends BaseEntity {
     @Column(name = "cancelled_reason", length = 500)
     private String cancelledReason;
 
+    /** Patient wants an earlier slot if one frees up (short-notice list). */
+    @Column(name = "asap", nullable = false)
+    private boolean asap;
+
     @Version
     @Column(name = "version", nullable = false)
     private long version;
@@ -97,9 +101,10 @@ public class Appointment extends BaseEntity {
         this.endsAt = endsAt;
     }
 
-    public void updateDetails(String notes, String colorOverride) {
+    public void updateDetails(String notes, String colorOverride, boolean asap) {
         this.notes = notes;
         this.colorOverride = colorOverride;
+        this.asap = asap;
     }
 
     public UUID getClinicId() {
@@ -140,5 +145,9 @@ public class Appointment extends BaseEntity {
 
     public String getCancelledReason() {
         return cancelledReason;
+    }
+
+    public boolean isAsap() {
+        return asap;
     }
 }
