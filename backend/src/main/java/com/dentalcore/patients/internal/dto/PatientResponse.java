@@ -41,6 +41,9 @@ public record PatientResponse(
         String smokingStatus,
         int recallIntervalMonths,
         LocalDate nextRecallDate,
+        UUID guarantorId,
+        String guarantorFirstName,
+        String guarantorLastName,
         Instant createdAt,
         Instant updatedAt
 ) {

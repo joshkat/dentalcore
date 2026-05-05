@@ -74,4 +74,89 @@ public final class BillingDtos {
             int totalPages
     ) {
     }
+
+    // ---- family billing (V15) ----
+
+    public record FamilyMemberBalance(
+            UUID patientId,
+            String patientName,
+            BigDecimal balance
+    ) {
+    }
+
+    /** {@link LedgerEntryResponse} plus the family member it belongs to. */
+    public record FamilyLedgerEntryResponse(
+            UUID id,
+            String type,
+            BigDecimal amount,
+            String description,
+            String method,
+            UUID procedureCodeId,
+            String procedureCode,
+            UUID appointmentId,
+            UUID claimId,
+            LocalDate entryDate,
+            UUID reversalOf,
+            boolean reversed,
+            Instant createdAt,
+            UUID patientId,
+            String patientName
+    ) {
+    }
+
+    public record FamilyLedgerResponse(
+            UUID guarantorId,
+            String guarantorName,
+            List<FamilyMemberBalance> members,
+            List<FamilyLedgerEntryResponse> entries,
+            BigDecimal totalBalance
+    ) {
+    }
+
+    // ---- payment plans ----
+
+    public record PaymentPlanRequest(
+            @NotNull UUID patientId,
+            @NotNull @DecimalMin(value = "0.01") @Digits(integer = 8, fraction = 2)
+            BigDecimal totalAmount,
+            @DecimalMin(value = "0.00") @Digits(integer = 8, fraction = 2)
+            BigDecimal downPayment,
+            @NotNull @DecimalMin(value = "0.01") @Digits(integer = 8, fraction = 2)
+            BigDecimal installmentAmount,
+            @NotNull @Pattern(regexp = "MONTHLY|BIWEEKLY", message = "Unknown frequency")
+            String frequency,
+            @NotNull LocalDate firstDueDate,
+            @Size(max = 2000) String notes
+    ) {
+    }
+
+    public record PaymentPlanStatusRequest(
+            @NotNull @Pattern(regexp = "COMPLETED|DEFAULTED|CANCELLED",
+                    message = "Status must be COMPLETED, DEFAULTED, or CANCELLED")
+            String status
+    ) {
+    }
+
+    public record InstallmentResponse(
+            LocalDate dueDate,
+            BigDecimal amount
+    ) {
+    }
+
+    public record PaymentPlanResponse(
+            UUID id,
+            UUID patientId,
+            BigDecimal totalAmount,
+            BigDecimal downPayment,
+            BigDecimal installmentAmount,
+            String frequency,
+            LocalDate firstDueDate,
+            String status,
+            String notes,
+            List<InstallmentResponse> installments,
+            BigDecimal expectedToDate,
+            BigDecimal receivedToDate,
+            Instant createdAt
+    ) {
+    }
 }

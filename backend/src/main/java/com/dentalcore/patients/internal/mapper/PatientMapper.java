@@ -8,6 +8,7 @@ import com.dentalcore.patients.internal.dto.PhoneDto;
 import com.dentalcore.patients.internal.entity.MedicalAlert;
 import com.dentalcore.patients.internal.entity.Patient;
 import com.dentalcore.patients.internal.entity.PatientPhone;
+import com.dentalcore.patients.internal.repository.PatientRepository;
 import com.dentalcore.providers.api.ProviderApi;
 import com.dentalcore.providers.api.ProviderSummary;
 import org.springframework.stereotype.Component;
@@ -19,15 +20,20 @@ import java.util.List;
 public class PatientMapper {
 
     private final ProviderApi providerApi;
+    private final PatientRepository patientRepository;
 
-    public PatientMapper(ProviderApi providerApi) {
+    public PatientMapper(ProviderApi providerApi, PatientRepository patientRepository) {
         this.providerApi = providerApi;
+        this.patientRepository = patientRepository;
     }
 
     public PatientResponse toResponse(Patient patient) {
         ProviderSummary primaryProvider = patient.getPrimaryProviderId() == null
                 ? null
                 : providerApi.findSummary(patient.getPrimaryProviderId()).orElse(null);
+        Patient guarantor = patient.getGuarantorId() == null
+                ? null
+                : patientRepository.findById(patient.getGuarantorId()).orElse(null);
         return new PatientResponse(
                 patient.getId(),
                 patient.getFirstName(),
@@ -65,6 +71,9 @@ public class PatientMapper {
                 patient.getSmokingStatus().name(),
                 patient.getRecallIntervalMonths(),
                 patient.getNextRecallDate(),
+                patient.getGuarantorId(),
+                guarantor != null ? guarantor.getFirstName() : null,
+                guarantor != null ? guarantor.getLastName() : null,
                 patient.getCreatedAt(),
                 patient.getUpdatedAt()
         );
