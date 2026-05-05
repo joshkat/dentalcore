@@ -12,6 +12,9 @@ public interface InsuranceEstimateApi {
     record EstimateItem(UUID procedureCodeId, BigDecimal grossFee) {
     }
 
+    // New COB components are appended at the END of each record so the JSON
+    // field order (and all existing names/positions) is unchanged for
+    // primary-only consumers.
     record EstimateLine(
             UUID procedureCodeId,
             String code,
@@ -22,7 +25,8 @@ public interface InsuranceEstimateApi {
             BigDecimal deductibleApplied,
             BigDecimal insuranceEstimate,
             BigDecimal patientPortion,
-            BigDecimal writeOff
+            BigDecimal writeOff,
+            BigDecimal secondaryEstimate
     ) {
     }
 
@@ -38,7 +42,13 @@ public interface InsuranceEstimateApi {
             List<EstimateLine> lines,
             BigDecimal totalInsurance,
             BigDecimal totalPatient,
-            BigDecimal totalWriteOff
+            BigDecimal totalWriteOff,
+            boolean hasSecondary,
+            String secondaryCarrierName,
+            String secondaryPlanName,
+            BigDecimal secondaryDeductibleRemaining,
+            BigDecimal secondaryBenefitsRemaining,
+            BigDecimal totalSecondary
     ) {
     }
 }

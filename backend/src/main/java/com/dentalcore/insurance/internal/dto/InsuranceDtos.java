@@ -162,7 +162,50 @@ public final class InsuranceDtos {
             BigDecimal totalPaid,
             List<ClaimLineResponse> procedures,
             Instant createdAt,
-            Instant updatedAt
+            Instant updatedAt,
+            UUID parentClaimId,
+            UUID secondaryClaimId
+    ) {
+    }
+
+    // ---- benefits (COB-aware) ----
+
+    /** Secondary-coverage benefit summary nested in the benefits endpoint response. */
+    public record SecondaryBenefits(
+            String carrierName,
+            String planName,
+            BigDecimal deductible,
+            BigDecimal deductibleRemaining,
+            BigDecimal annualMax,
+            BigDecimal benefitsRemaining
+    ) {
+    }
+
+    /**
+     * Benefits endpoint response: every {@code EstimateResult} field in the same
+     * order (so existing consumers are unaffected) plus a nested {@code secondary}
+     * block when the patient carries active secondary coverage, else null.
+     */
+    public record BenefitsResponse(
+            boolean hasCoverage,
+            String carrierName,
+            String planName,
+            BigDecimal deductible,
+            BigDecimal deductibleRemaining,
+            BigDecimal annualMax,
+            BigDecimal benefitsUsed,
+            BigDecimal benefitsRemaining,
+            List<com.dentalcore.insurance.api.InsuranceEstimateApi.EstimateLine> lines,
+            BigDecimal totalInsurance,
+            BigDecimal totalPatient,
+            BigDecimal totalWriteOff,
+            boolean hasSecondary,
+            String secondaryCarrierName,
+            String secondaryPlanName,
+            BigDecimal secondaryDeductibleRemaining,
+            BigDecimal secondaryBenefitsRemaining,
+            BigDecimal totalSecondary,
+            SecondaryBenefits secondary
     ) {
     }
 }

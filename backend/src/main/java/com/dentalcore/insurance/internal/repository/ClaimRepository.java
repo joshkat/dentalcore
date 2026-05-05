@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface ClaimRepository extends JpaRepository<Claim, UUID> {
 
+    java.util.Optional<Claim> findByParentClaimId(UUID parentClaimId);
+
     Page<Claim> findByStatusOrderByCreatedAtDesc(ClaimStatus status, Pageable pageable);
 
     Page<Claim> findByPatientIdOrderByCreatedAtDesc(UUID patientId, Pageable pageable);
