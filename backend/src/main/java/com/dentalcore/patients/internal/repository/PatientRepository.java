@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface PatientRepository extends JpaRepository<Patient, UUID> {
@@ -23,4 +24,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
     Page<Patient> search(@Param("q") String q, Pageable pageable);
 
     Page<Patient> findByStatus(PatientStatus status, Pageable pageable);
+
+    List<Patient> findByGuarantorIdOrderByLastNameAscFirstNameAsc(UUID guarantorId);
+
+    boolean existsByGuarantorId(UUID guarantorId);
 }

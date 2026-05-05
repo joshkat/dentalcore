@@ -140,4 +140,44 @@ public final class ReportDtos {
             String status
     ) {
     }
+
+    // ---- receivables (A/R aging & collections) ----
+
+    public record ArAgingBuckets(
+            BigDecimal current,
+            BigDecimal days30,
+            BigDecimal days60,
+            BigDecimal days90plus,
+            BigDecimal total
+    ) {
+    }
+
+    public record ArAgingRow(
+            String guarantorId,
+            String guarantorName,
+            String phone,
+            BigDecimal current,
+            BigDecimal days30,
+            BigDecimal days60,
+            BigDecimal days90plus,
+            BigDecimal total,
+            LocalDate lastPaymentDate
+    ) {
+    }
+
+    public record ArAgingReport(
+            ArAgingBuckets buckets,
+            List<ArAgingRow> rows
+    ) {
+    }
+
+    public record CollectionsRow(
+            String guarantorId,
+            String guarantorName,
+            String phone,
+            BigDecimal totalOverdue,
+            LocalDate lastPaymentDate,
+            LocalDate oldestChargeDate
+    ) {
+    }
 }

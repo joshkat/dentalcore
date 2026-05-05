@@ -163,6 +163,44 @@ public class PatientService {
         patient.replacePhones(mapper.toPhoneEntities(request.phonesOrEmpty()));
     }
 
+    /**
+     * Assigns (or clears, with null) the account guarantor. One level only: a
+     * guarantor may not have a guarantor of their own, and a patient who
+     * already guarantees other accounts cannot be placed under someone else.
+     */
+    public PatientResponse updateGuarantor(UUID id, UUID guarantorPatientId) {
+        Patient patient = findPatient(id);
+        UUID previous = patient.getGuarantorId();
+        if (guarantorPatientId == null) {
+            patient.setGuarantorId(null);
+        } else {
+            if (guarantorPatientId.equals(id)) {
+                throw new InvalidRequestException("A patient cannot be their own guarantor");
+            }
+            Patient guarantor = patientRepository.findById(guarantorPatientId)
+                    .orElseThrow(() -> new InvalidRequestException("Unknown guarantor patient"));
+            if (guarantor.getStatus() != PatientStatus.ACTIVE) {
+                throw new InvalidRequestException("The guarantor must be an active patient");
+            }
+            if (guarantor.getGuarantorId() != null) {
+                throw new InvalidRequestException(
+                        "The guarantor already has a guarantor of their own (one level only)");
+            }
+            if (patientRepository.existsByGuarantorId(id)) {
+                throw new InvalidRequestException(
+                        "This patient guarantees other accounts and cannot be assigned a guarantor");
+            }
+            patient.setGuarantorId(guarantorPatientId);
+        }
+
+        events.publishEvent(new AuditEvent(
+                CurrentUser.id().orElse(null), ENTITY_TYPE, id,
+                AuditEvent.AuditAction.UPDATE,
+                Map.of("guarantorId", String.valueOf(previous)),
+                Map.of("guarantorId", String.valueOf(guarantorPatientId))));
+        return mapper.toResponse(patient);
+    }
+
     public PatientResponse updateRecall(UUID id, int intervalMonths,
                                         java.time.LocalDate nextRecallDate) {
         Patient patient = findPatient(id);

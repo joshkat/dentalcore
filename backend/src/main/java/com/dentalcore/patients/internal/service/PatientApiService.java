@@ -38,4 +38,12 @@ public class PatientApiService implements PatientApi {
     public boolean exists(UUID patientId) {
         return patientRepository.existsById(patientId);
     }
+
+    @Override
+    public java.util.List<PatientSummary> findDependents(UUID guarantorId) {
+        return patientRepository.findByGuarantorIdOrderByLastNameAscFirstNameAsc(guarantorId)
+                .stream()
+                .map(mapper::toApiSummary)
+                .toList();
+    }
 }
