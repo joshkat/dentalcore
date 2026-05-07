@@ -220,6 +220,20 @@ function CheckoutBody({
                 </span>
               )}
             </p>
+            {estimate.hasSecondary && (
+              <p className="text-gray-700">
+                Est. secondary pays{' '}
+                <span className="font-semibold text-indigo-700">
+                  {money(estimate.totalSecondary ?? 0)}
+                </span>
+                {estimate.secondaryCarrierName && (
+                  <span className="text-xs text-gray-500">
+                    {' '}
+                    ({estimate.secondaryCarrierName} · {estimate.secondaryPlanName})
+                  </span>
+                )}
+              </p>
+            )}
             <p className="text-gray-700">
               Est. patient portion{' '}
               <span className="font-semibold text-gray-900">{money(estimate.totalPatient)}</span>

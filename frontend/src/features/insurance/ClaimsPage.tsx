@@ -11,6 +11,7 @@ import {
   CLAIM_NEXT_STATUSES,
   useAddClaimLine,
   useClaims,
+  useCreateSecondaryClaim,
   useRecordClaimPayment,
   useRemoveClaimLine,
   useUpdateClaimStatus,
@@ -90,9 +91,22 @@ export function ClaimsPage() {
                         ` · Submitted ${new Date(claim.submittedAt).toLocaleDateString()}`}
                     </p>
                   </div>
-                  <Badge tone={statusTone[claim.status]}>{claim.status}</Badge>
+                  <span className="flex items-center gap-2">
+                    {claim.parentClaimId && <Badge tone="blue">Secondary</Badge>}
+                    <Badge tone={statusTone[claim.status]}>{claim.status}</Badge>
+                  </span>
                 </button>
-                {openClaimId === claim.id && <ClaimDetail claim={claim} canWrite={canWrite} />}
+                {openClaimId === claim.id && (
+                  <ClaimDetail
+                    claim={claim}
+                    canWrite={canWrite}
+                    onOpenClaim={(id) => {
+                      setStatus('');
+                      setPage(0);
+                      setOpenClaimId(id);
+                    }}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -122,11 +136,20 @@ export function ClaimsPage() {
   );
 }
 
-function ClaimDetail({ claim, canWrite }: { claim: Claim; canWrite: boolean }) {
+function ClaimDetail({
+  claim,
+  canWrite,
+  onOpenClaim,
+}: {
+  claim: Claim;
+  canWrite: boolean;
+  onOpenClaim: (claimId: string) => void;
+}) {
   const addLine = useAddClaimLine();
   const removeLine = useRemoveClaimLine();
   const recordPayment = useRecordClaimPayment();
   const updateStatus = useUpdateClaimStatus();
+  const createSecondary = useCreateSecondaryClaim();
   const [codeSearch, setCodeSearch] = useState('');
   const [payments, setPayments] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -159,6 +182,19 @@ function ClaimDetail({ claim, canWrite }: { claim: Claim; canWrite: boolean }) {
         </Link>
         {claim.notes && ` · ${claim.notes}`}
       </p>
+
+      {claim.parentClaimId && (
+        <p className="text-xs text-gray-500">
+          Secondary of{' '}
+          <button
+            type="button"
+            onClick={() => onOpenClaim(claim.parentClaimId!)}
+            className="text-brand-600 hover:underline"
+          >
+            claim {claim.parentClaimId.slice(0, 8)}…
+          </button>
+        </p>
+      )}
 
       {claim.procedures.length > 0 && (
         <table className="min-w-full text-sm">
@@ -268,19 +304,36 @@ function ClaimDetail({ claim, canWrite }: { claim: Claim; canWrite: boolean }) {
         </div>
       )}
 
-      {canWrite && CLAIM_NEXT_STATUSES[claim.status].length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
-          {CLAIM_NEXT_STATUSES[claim.status].map((next) => (
-            <Button
-              key={next}
-              variant={next === 'DENIED' || next === 'CLOSED' ? 'danger' : 'secondary'}
-              onClick={() => act(() => updateStatus.mutateAsync({ claimId: claim.id, status: next }))}
-            >
-              {next === 'SUBMITTED' && claim.status === 'DENIED' ? 'Resubmit' : next}
-            </Button>
-          ))}
-        </div>
-      )}
+      {canWrite &&
+        (CLAIM_NEXT_STATUSES[claim.status].length > 0 ||
+          (claim.status === 'PAID' && !claim.secondaryClaimId && !claim.parentClaimId)) && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {claim.status === 'PAID' && !claim.secondaryClaimId && !claim.parentClaimId && (
+              <Button
+                loading={createSecondary.isPending}
+                onClick={() =>
+                  act(async () => {
+                    const created = await createSecondary.mutateAsync(claim.id);
+                    onOpenClaim(created.id);
+                  })
+                }
+              >
+                Create secondary claim
+              </Button>
+            )}
+            {CLAIM_NEXT_STATUSES[claim.status].map((next) => (
+              <Button
+                key={next}
+                variant={next === 'DENIED' || next === 'CLOSED' ? 'danger' : 'secondary'}
+                onClick={() =>
+                  act(() => updateStatus.mutateAsync({ claimId: claim.id, status: next }))
+                }
+              >
+                {next === 'SUBMITTED' && claim.status === 'DENIED' ? 'Resubmit' : next}
+              </Button>
+            ))}
+          </div>
+        )}
     </div>
   );
 }

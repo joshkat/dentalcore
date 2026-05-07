@@ -288,6 +288,23 @@ export function useCreatePerioExam(patientId: string) {
   });
 }
 
+// ---- guarantor (family billing) ----
+
+export function useSetGuarantor(patientId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (guarantorPatientId: string | null) =>
+      api<Patient>(`/api/v1/patients/${patientId}/guarantor`, {
+        method: 'PUT',
+        body: { guarantorPatientId },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['family-ledger'] });
+    },
+  });
+}
+
 export interface SavePerioInput {
   examId: string;
   measurements: Array<{
