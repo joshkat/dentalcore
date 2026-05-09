@@ -66,6 +66,37 @@ export function InsuranceTab({
         </div>
       )}
 
+      {benefits?.secondary && (
+        <div className="rounded-md bg-blue-50/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Secondary — {benefits.secondary.carrierName} · {benefits.secondary.planName}
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ['Deductible', `$${benefits.secondary.deductible.toFixed(2)}`],
+              [
+                'Deductible remaining',
+                `$${benefits.secondary.deductibleRemaining.toFixed(2)}`,
+              ],
+              ['Benefits used (year)', `$${benefits.secondary.benefitsUsed.toFixed(2)}`],
+              [
+                'Benefits remaining',
+                benefits.secondary.benefitsRemaining == null
+                  ? 'No max'
+                  : `$${benefits.secondary.benefitsRemaining.toFixed(2)}`,
+              ],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  {label}
+                </p>
+                <p className="text-sm font-bold text-gray-900">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {coverages && coverages.length === 0 ? (
         <p className="text-sm text-gray-500">No insurance on file.</p>
       ) : (

@@ -278,6 +278,9 @@ function PlanDetail({
         <div className="rounded-md bg-blue-50/60 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Insurance estimate — {estimate.carrierName} · {estimate.planName}
+            {estimate.hasSecondary &&
+              estimate.secondaryCarrierName &&
+              ` · 2nd: ${estimate.secondaryCarrierName}`}
           </p>
           <table className="mt-2 min-w-full text-sm">
             <thead>
@@ -286,6 +289,9 @@ function PlanDetail({
                 <th className="py-1 pr-3 text-right">Fee</th>
                 <th className="py-1 pr-3 text-right">Allowed</th>
                 <th className="py-1 pr-3 text-right">Ins. pays</th>
+                {estimate.hasSecondary && (
+                  <th className="py-1 pr-3 text-right">2nd ins.</th>
+                )}
                 <th className="py-1 text-right">Patient</th>
               </tr>
             </thead>
@@ -305,6 +311,11 @@ function PlanDetail({
                       </span>
                     )}
                   </td>
+                  {estimate.hasSecondary && (
+                    <td className="py-1.5 pr-3 text-right text-indigo-700">
+                      {money(line.secondaryEstimate ?? 0)}
+                    </td>
+                  )}
                   <td className="py-1.5 text-right font-medium">
                     {money(line.patientPortion)}
                   </td>
@@ -317,6 +328,11 @@ function PlanDetail({
                 <td className="py-1.5 pr-3 text-right text-blue-700">
                   {money(estimate.totalInsurance)}
                 </td>
+                {estimate.hasSecondary && (
+                  <td className="py-1.5 pr-3 text-right text-indigo-700">
+                    {money(estimate.totalSecondary ?? 0)}
+                  </td>
+                )}
                 <td className="py-1.5 text-right">{money(estimate.totalPatient)}</td>
               </tr>
             </tbody>

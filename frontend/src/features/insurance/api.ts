@@ -168,6 +168,16 @@ export function useUpdateClaimStatus() {
   );
 }
 
+/** COB: spin a PAID primary claim into a secondary claim. */
+export function useCreateSecondaryClaim() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (claimId: string) =>
+      api<Claim>(`/api/v1/insurance/claims/${claimId}/secondary`, { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['claims'] }),
+  });
+}
+
 export const CLAIM_NEXT_STATUSES: Record<ClaimStatus, ClaimStatus[]> = {
   DRAFT: ['SUBMITTED', 'CLOSED'],
   SUBMITTED: ['ACCEPTED', 'DENIED'],
@@ -217,6 +227,19 @@ export interface EstimateLine {
   insuranceEstimate: number;
   patientPortion: number;
   writeOff: number;
+  // COB: estimated secondary-plan payment for this line (additive, may be absent)
+  secondaryEstimate?: number | null;
+}
+
+/** Secondary coverage snapshot returned by the benefits endpoint. */
+export interface SecondaryBenefits {
+  carrierName: string | null;
+  planName: string | null;
+  deductible: number;
+  deductibleRemaining: number;
+  annualMax: number | null;
+  benefitsUsed: number;
+  benefitsRemaining: number | null;
 }
 
 export interface EstimateResult {
@@ -232,6 +255,15 @@ export interface EstimateResult {
   totalInsurance: number;
   totalPatient: number;
   totalWriteOff: number;
+  // COB (additive): present when the patient carries secondary coverage
+  hasSecondary?: boolean;
+  secondaryCarrierName?: string | null;
+  secondaryPlanName?: string | null;
+  secondaryDeductibleRemaining?: number | null;
+  secondaryBenefitsRemaining?: number | null;
+  totalSecondary?: number | null;
+  /** Benefits endpoint only. */
+  secondary?: SecondaryBenefits | null;
 }
 
 export function useFeeSchedules() {

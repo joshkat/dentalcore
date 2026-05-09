@@ -5,9 +5,11 @@ import { Input } from '../../components/Input';
 import { Spinner } from '../../components/Spinner';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { usePatient } from '../patients/api';
 import { useProcedureCodes } from '../procedures/api';
 import {
   downloadStatement,
+  useFamilyLedger,
   useLedger,
   usePostAdjustment,
   usePostCharge,
@@ -15,6 +17,8 @@ import {
   useReverseEntry,
   type LedgerEntryType,
 } from './api';
+import { FamilyLedgerView } from './FamilyLedgerView';
+import { PaymentPlansSection } from './PaymentPlansSection';
 
 const typeTone: Record<LedgerEntryType, 'red' | 'green' | 'blue' | 'yellow'> = {
   CHARGE: 'red',
@@ -46,12 +50,39 @@ export function LedgerTab({ patientId }: { patientId: string }) {
   const reverseEntry = useReverseEntry();
   const [error, setError] = useState<string | null>(null);
 
+  // Family view: available when the patient has a guarantor or guarantees others.
+  const { data: patient } = usePatient(patientId);
+  const effectiveGuarantorId = patient?.guarantorId ?? patientId;
+  const { data: familyLedger } = useFamilyLedger(
+    effectiveGuarantorId,
+    patient !== undefined,
+  );
+  const [familyView, setFamilyView] = useState(false);
+  const hasFamily =
+    patient?.guarantorId != null || (familyLedger?.members.length ?? 0) > 1;
+
   if (isPending || !ledger) return <Spinner label="Loading ledger…" />;
 
   const owes = ledger.balance > 0;
 
   return (
     <div className="space-y-4">
+      {hasFamily && (
+        <div className="flex justify-end">
+          <Button
+            variant="secondary"
+            aria-pressed={familyView}
+            onClick={() => setFamilyView((v) => !v)}
+          >
+            {familyView ? 'Patient view' : 'Family view'}
+          </Button>
+        </div>
+      )}
+
+      {familyView && familyLedger ? (
+        <FamilyLedgerView ledger={familyLedger} currentPatientId={patientId} />
+      ) : (
+        <>
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-gray-50 p-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -212,6 +243,10 @@ export function LedgerTab({ patientId }: { patientId: string }) {
           </div>
         </div>
       )}
+        </>
+      )}
+
+      <PaymentPlansSection patientId={patientId} />
     </div>
   );
 }
