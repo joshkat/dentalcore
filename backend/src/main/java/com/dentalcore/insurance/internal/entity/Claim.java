@@ -41,6 +41,10 @@ public class Claim extends BaseEntity {
     @Column(name = "deductible_applied", nullable = false, precision = 10, scale = 2)
     private BigDecimal deductibleApplied = BigDecimal.ZERO;
 
+    /** Set on secondary (COB) claims: the PAID primary claim this coordinates with. */
+    @Column(name = "parent_claim_id")
+    private UUID parentClaimId;
+
     @OneToMany(mappedBy = "claim", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt ASC")
     private List<ClaimProcedure> procedures = new ArrayList<>();
@@ -120,6 +124,14 @@ public class Claim extends BaseEntity {
 
     public BigDecimal getDeductibleApplied() {
         return deductibleApplied;
+    }
+
+    public void markSecondaryOf(UUID parentClaimId) {
+        this.parentClaimId = parentClaimId;
+    }
+
+    public UUID getParentClaimId() {
+        return parentClaimId;
     }
 
     public String getNotes() {

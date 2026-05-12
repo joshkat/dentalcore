@@ -180,3 +180,55 @@ export function useAsapList() {
     queryFn: () => api<AsapListRow[]>('/api/v1/reports/asap-list'),
   });
 }
+
+// ---- A/R aging & collections (family billing / RCM) ----
+
+export interface ArAgingBuckets {
+  current: number;
+  days30: number;
+  days60: number;
+  days90plus: number;
+  total: number;
+}
+
+export interface ArAgingRow {
+  guarantorId: string;
+  guarantorName: string;
+  phone: string | null;
+  current: number;
+  days30: number;
+  days60: number;
+  days90plus: number;
+  total: number;
+  lastPaymentDate: string | null;
+}
+
+export interface ArAgingReport {
+  buckets: ArAgingBuckets;
+  rows: ArAgingRow[];
+}
+
+export function useArAging(enabled = true) {
+  return useQuery({
+    queryKey: ['reports', 'ar-aging'],
+    queryFn: () => api<ArAgingReport>('/api/v1/reports/ar-aging'),
+    enabled,
+  });
+}
+
+export interface CollectionsRow {
+  guarantorId: string;
+  guarantorName: string;
+  phone: string | null;
+  totalOverdue: number;
+  lastPaymentDate: string | null;
+  oldestChargeDate: string;
+}
+
+export function useCollections(enabled = true) {
+  return useQuery({
+    queryKey: ['reports', 'collections'],
+    queryFn: () => api<CollectionsRow[]>('/api/v1/reports/collections'),
+    enabled,
+  });
+}

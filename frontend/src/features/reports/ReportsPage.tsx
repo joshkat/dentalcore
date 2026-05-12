@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
 import { useAuth } from '../../lib/auth';
 import {
   useAppointmentsByProvider,
+  useArAging,
+  useCollections,
   useDailyProduction,
   useDaySheet,
   usePatientGrowth,
   useProviderUtilization,
+  type ArAgingRow,
   type DaySheetEntryType,
 } from './api';
 
@@ -18,6 +22,8 @@ const REPORTS = [
   'Day sheet',
   'Patient growth',
   'Provider utilization',
+  'A/R aging',
+  'Collections',
 ] as const;
 type Report = (typeof REPORTS)[number];
 
@@ -36,8 +42,8 @@ export function ReportsPage() {
   // READ_ONLY cannot fetch any report endpoint, so don't render the page at all
   const canSeeReports = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING');
   const reports = REPORTS.filter((r) => {
-    if (r === 'Daily production') return canSeeFinancials;
-    if (r === 'Day sheet') return canSeeDaySheet;
+    if (r === 'Daily production' || r === 'A/R aging') return canSeeFinancials;
+    if (r === 'Day sheet' || r === 'Collections') return canSeeDaySheet;
     return true;
   });
 
@@ -46,7 +52,11 @@ export function ReportsPage() {
   const [to, setTo] = useState(isoDaysAgo(0));
   const [date, setDate] = useState(isoDaysAgo(0));
 
-  const showRange = report !== 'Patient growth' && report !== 'Day sheet';
+  const showRange =
+    report !== 'Patient growth' &&
+    report !== 'Day sheet' &&
+    report !== 'A/R aging' &&
+    report !== 'Collections';
 
   if (!canSeeReports) {
     return (
@@ -128,6 +138,8 @@ export function ReportsPage() {
         {report === 'Day sheet' && canSeeDaySheet && <DaySheetReportView date={date} />}
         {report === 'Patient growth' && <GrowthReport />}
         {report === 'Provider utilization' && <UtilizationReport from={from} to={to} />}
+        {report === 'A/R aging' && canSeeFinancials && <ArAgingReportView />}
+        {report === 'Collections' && canSeeDaySheet && <CollectionsReportView />}
       </div>
     </div>
   );
@@ -453,6 +465,202 @@ function UtilizationReport({ from, to }: { from: string; to: string }) {
             </td>
             <td className="py-2 pr-3">{(row.completedMinutes / 60).toFixed(1)}h</td>
             <td className="py-2">{row.distinctPatients}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// ---- A/R aging ----
+
+type ArSortKey =
+  | 'guarantorName'
+  | 'current'
+  | 'days30'
+  | 'days60'
+  | 'days90plus'
+  | 'total'
+  | 'lastPaymentDate';
+
+const AR_COLUMNS: Array<{ key: ArSortKey; label: string; numeric: boolean }> = [
+  { key: 'guarantorName', label: 'Guarantor', numeric: false },
+  { key: 'current', label: 'Current', numeric: true },
+  { key: 'days30', label: '30 days', numeric: true },
+  { key: 'days60', label: '60 days', numeric: true },
+  { key: 'days90plus', label: '90+ days', numeric: true },
+  { key: 'total', label: 'Total', numeric: true },
+  { key: 'lastPaymentDate', label: 'Last payment', numeric: false },
+];
+
+const AR_BUCKETS = [
+  ['current', 'Current'],
+  ['days30', '30 days'],
+  ['days60', '60 days'],
+  ['days90plus', '90+ days'],
+  ['total', 'Total'],
+] as const;
+
+function compareAr(a: ArAgingRow, b: ArAgingRow, key: ArSortKey): number {
+  const av = a[key];
+  const bv = b[key];
+  if (av == null && bv == null) return 0;
+  if (av == null) return -1;
+  if (bv == null) return 1;
+  if (typeof av === 'number' && typeof bv === 'number') return av - bv;
+  return String(av).localeCompare(String(bv));
+}
+
+function ArAgingReportView() {
+  const { data, isPending } = useArAging();
+  const [sortKey, setSortKey] = useState<ArSortKey>('total');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const rows = useMemo(() => {
+    const sorted = [...(data?.rows ?? [])].sort((a, b) => compareAr(a, b, sortKey));
+    return sortDir === 'desc' ? sorted.reverse() : sorted;
+  }, [data, sortKey, sortDir]);
+
+  if (isPending) return <Spinner label="Running report…" />;
+  if (!data) return <p className="text-sm text-gray-500">No A/R data.</p>;
+
+  const toggleSort = (key: ArSortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'guarantorName' ? 'asc' : 'desc');
+    }
+  };
+
+  return (
+    <div className="print-area space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-semibold text-gray-900">Accounts receivable aging</h2>
+        <Button variant="secondary" className="no-print" onClick={() => window.print()}>
+          Print
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+        {AR_BUCKETS.map(([key, label]) => (
+          <div key={key} className="rounded-md bg-gray-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              {label}
+            </p>
+            <p data-testid={`ar-bucket-${key}`} className="text-lg font-bold text-gray-900">
+              {money(data.buckets[key])}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="text-sm text-gray-500">No outstanding balances.</p>
+      ) : (
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead>
+            <tr className="text-xs font-semibold uppercase text-gray-500">
+              <th className="py-2 pr-3 text-left">
+                <SortHeader column={AR_COLUMNS[0]} sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+              </th>
+              <th className="py-2 pr-3 text-left">Phone</th>
+              {AR_COLUMNS.slice(1, 6).map((column) => (
+                <th key={column.key} className="py-2 pr-3 text-right">
+                  <SortHeader column={column} sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                </th>
+              ))}
+              <th className="py-2 text-left">
+                <SortHeader column={AR_COLUMNS[6]} sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {rows.map((row) => (
+              <tr key={row.guarantorId}>
+                <td className="py-2 pr-3">
+                  <Link
+                    to={`/patients/${row.guarantorId}`}
+                    className="font-medium text-brand-700 hover:underline"
+                  >
+                    {row.guarantorName}
+                  </Link>
+                </td>
+                <td className="py-2 pr-3 whitespace-nowrap text-gray-600">{row.phone ?? '—'}</td>
+                <td className="py-2 pr-3 text-right">{money(row.current)}</td>
+                <td className="py-2 pr-3 text-right">{money(row.days30)}</td>
+                <td className="py-2 pr-3 text-right">{money(row.days60)}</td>
+                <td className="py-2 pr-3 text-right text-red-600">{money(row.days90plus)}</td>
+                <td className="py-2 pr-3 text-right font-semibold">{money(row.total)}</td>
+                <td className="py-2 text-gray-600">{row.lastPaymentDate ?? 'Never'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function SortHeader({
+  column,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  column: { key: ArSortKey; label: string };
+  sortKey: ArSortKey;
+  sortDir: 'asc' | 'desc';
+  onSort: (key: ArSortKey) => void;
+}) {
+  const active = sortKey === column.key;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(column.key)}
+      className={`uppercase hover:text-gray-700 ${active ? 'text-gray-900' : ''}`}
+    >
+      {column.label}
+      {active && <span aria-hidden> {sortDir === 'asc' ? '▲' : '▼'}</span>}
+    </button>
+  );
+}
+
+// ---- Collections ----
+
+function CollectionsReportView() {
+  const { data, isPending } = useCollections();
+  if (isPending) return <Spinner label="Running report…" />;
+  if (!data || data.length === 0)
+    return <p className="text-sm text-gray-500">No overdue accounts. Nice work.</p>;
+  return (
+    <table className="min-w-full divide-y divide-gray-200 text-sm" data-testid="collections-table">
+      <thead>
+        <tr className="text-left text-xs font-semibold uppercase text-gray-500">
+          <th className="py-2 pr-3">Guarantor</th>
+          <th className="py-2 pr-3">Phone</th>
+          <th className="py-2 pr-3 text-right">Overdue</th>
+          <th className="py-2 pr-3">Last payment</th>
+          <th className="py-2">Oldest charge</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-100">
+        {data.map((row) => (
+          <tr key={row.guarantorId}>
+            <td className="py-2 pr-3">
+              <Link
+                to={`/patients/${row.guarantorId}`}
+                className="font-medium text-brand-700 hover:underline"
+              >
+                {row.guarantorName}
+              </Link>
+            </td>
+            <td className="py-2 pr-3 whitespace-nowrap text-gray-600">{row.phone ?? '—'}</td>
+            <td className="py-2 pr-3 text-right font-semibold text-red-600">
+              {money(row.totalOverdue)}
+            </td>
+            <td className="py-2 pr-3 text-gray-600">{row.lastPaymentDate ?? 'Never'}</td>
+            <td className="py-2 text-gray-600">{row.oldestChargeDate}</td>
           </tr>
         ))}
       </tbody>

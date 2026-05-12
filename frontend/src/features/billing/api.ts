@@ -147,3 +147,131 @@ export async function downloadStatement(patientId: string): Promise<void> {
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+// ---- family ledger (guarantor view) ----
+
+export interface FamilyMemberBalance {
+  patientId: string;
+  patientName: string;
+  balance: number;
+}
+
+export interface FamilyLedgerEntry extends LedgerEntry {
+  patientId: string;
+  patientName: string;
+}
+
+export interface FamilyLedgerResponse {
+  guarantorId: string;
+  guarantorName: string;
+  members: FamilyMemberBalance[];
+  entries: FamilyLedgerEntry[];
+  totalBalance: number;
+}
+
+export function useFamilyLedger(guarantorId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['family-ledger', guarantorId],
+    queryFn: () =>
+      api<FamilyLedgerResponse>(`/api/v1/billing/family-ledger?guarantorId=${guarantorId}`),
+    enabled,
+  });
+}
+
+export async function downloadFamilyStatement(guarantorId: string): Promise<void> {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - 90);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const { getAccessToken, refreshSession } = await import('../../lib/api');
+  const attempt = () =>
+    fetch(
+      `/api/v1/billing/family-statement?guarantorId=${guarantorId}&from=${iso(from)}&to=${iso(to)}`,
+      {
+        headers: getAccessToken()
+          ? { Authorization: `Bearer ${getAccessToken()}` }
+          : undefined,
+        credentials: 'include',
+      },
+    );
+  let response = await attempt();
+  if (response.status === 401 && (await refreshSession())) {
+    response = await attempt();
+  }
+  if (!response.ok) {
+    throw new Error(`Family statement failed (${response.status})`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `family-statement-${iso(from)}-${iso(to)}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ---- payment plans ----
+
+export type PaymentPlanFrequency = 'MONTHLY' | 'BIWEEKLY';
+export type PaymentPlanStatus = 'ACTIVE' | 'COMPLETED' | 'DEFAULTED' | 'CANCELLED';
+
+export interface PaymentPlanInstallment {
+  dueDate: string;
+  amount: number;
+}
+
+export interface PaymentPlan {
+  id: string;
+  patientId: string;
+  totalAmount: number;
+  downPayment: number;
+  installmentAmount: number;
+  frequency: PaymentPlanFrequency;
+  firstDueDate: string;
+  status: PaymentPlanStatus;
+  notes: string | null;
+  installments: PaymentPlanInstallment[];
+  expectedToDate: number;
+  receivedToDate: number;
+  createdAt: string;
+}
+
+export interface PaymentPlanInput {
+  patientId: string;
+  totalAmount: number;
+  downPayment?: number;
+  installmentAmount: number;
+  frequency: PaymentPlanFrequency;
+  firstDueDate: string;
+  notes?: string;
+}
+
+export function usePaymentPlans(patientId: string) {
+  return useQuery({
+    queryKey: ['payment-plans', patientId],
+    queryFn: () => api<PaymentPlan[]>(`/api/v1/billing/payment-plans?patientId=${patientId}`),
+  });
+}
+
+export function useCreatePaymentPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PaymentPlanInput) =>
+      api<PaymentPlan>('/api/v1/billing/payment-plans', { method: 'POST', body: input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payment-plans'] }),
+  });
+}
+
+export function useUpdatePaymentPlanStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { planId: string; status: PaymentPlanStatus }) =>
+      api<PaymentPlan>(`/api/v1/billing/payment-plans/${input.planId}/status`, {
+        method: 'PATCH',
+        body: { status: input.status },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payment-plans'] }),
+  });
+}

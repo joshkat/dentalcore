@@ -3,6 +3,8 @@ package com.dentalcore.insurance.internal.web;
 import com.dentalcore.insurance.api.InsuranceEstimateApi;
 import com.dentalcore.insurance.api.InsuranceEstimateApi.EstimateItem;
 import com.dentalcore.insurance.api.InsuranceEstimateApi.EstimateResult;
+import com.dentalcore.insurance.internal.dto.InsuranceDtos.BenefitsResponse;
+import com.dentalcore.insurance.internal.service.EstimateService;
 import com.dentalcore.insurance.internal.service.FeeScheduleService;
 import com.dentalcore.insurance.internal.service.FeeScheduleService.CoverageRuleEntry;
 import com.dentalcore.insurance.internal.service.FeeScheduleService.FeeEntry;
@@ -38,11 +40,14 @@ public class EstimateController {
 
     private final FeeScheduleService feeScheduleService;
     private final InsuranceEstimateApi estimateApi;
+    private final EstimateService estimateService;
 
     public EstimateController(FeeScheduleService feeScheduleService,
-                              InsuranceEstimateApi estimateApi) {
+                              InsuranceEstimateApi estimateApi,
+                              EstimateService estimateService) {
         this.feeScheduleService = feeScheduleService;
         this.estimateApi = estimateApi;
+        this.estimateService = estimateService;
     }
 
     // ---- fee schedules ----
@@ -124,8 +129,9 @@ public class EstimateController {
     }
 
     @GetMapping("/benefits")
-    @Operation(summary = "Benefit usage summary for a patient's primary coverage")
-    public EstimateResult benefits(@RequestParam UUID patientId) {
-        return estimateApi.estimateFor(patientId, List.of());
+    @Operation(summary = "Benefit usage summary for a patient's coverage "
+            + "(includes a secondary block when present)")
+    public BenefitsResponse benefits(@RequestParam UUID patientId) {
+        return estimateService.benefitsFor(patientId);
     }
 }

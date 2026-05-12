@@ -2,11 +2,17 @@ package com.dentalcore.billing.internal.web;
 
 import com.dentalcore.billing.internal.dto.BillingDtos.AdjustmentRequest;
 import com.dentalcore.billing.internal.dto.BillingDtos.ChargeRequest;
+import com.dentalcore.billing.internal.dto.BillingDtos.FamilyLedgerResponse;
 import com.dentalcore.billing.internal.dto.BillingDtos.LedgerEntryResponse;
 import com.dentalcore.billing.internal.dto.BillingDtos.LedgerResponse;
+import com.dentalcore.billing.internal.dto.BillingDtos.PaymentPlanRequest;
+import com.dentalcore.billing.internal.dto.BillingDtos.PaymentPlanResponse;
+import com.dentalcore.billing.internal.dto.BillingDtos.PaymentPlanStatusRequest;
 import com.dentalcore.billing.internal.dto.BillingDtos.PaymentRequest;
 import com.dentalcore.billing.internal.dto.BillingDtos.ReversalRequest;
 import com.dentalcore.billing.internal.service.BillingService;
+import com.dentalcore.billing.internal.service.FamilyBillingService;
+import com.dentalcore.billing.internal.service.PaymentPlanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,13 +46,19 @@ public class BillingController {
     private final BillingService service;
     private final com.dentalcore.billing.internal.service.StatementService statementService;
     private final com.dentalcore.billing.internal.service.WalkoutService walkoutService;
+    private final FamilyBillingService familyBillingService;
+    private final PaymentPlanService paymentPlanService;
 
     public BillingController(BillingService service,
                              com.dentalcore.billing.internal.service.StatementService statementService,
-                             com.dentalcore.billing.internal.service.WalkoutService walkoutService) {
+                             com.dentalcore.billing.internal.service.WalkoutService walkoutService,
+                             FamilyBillingService familyBillingService,
+                             PaymentPlanService paymentPlanService) {
         this.service = service;
         this.statementService = statementService;
         this.walkoutService = walkoutService;
+        this.familyBillingService = familyBillingService;
+        this.paymentPlanService = paymentPlanService;
     }
 
     @GetMapping("/walkout")
@@ -130,5 +143,59 @@ public class BillingController {
     public LedgerEntryResponse reverse(@PathVariable UUID id,
                                        @Valid @RequestBody ReversalRequest request) {
         return service.reverse(id, request.reason());
+    }
+
+    // ---- family billing (guarantor accounts) ----
+
+    @GetMapping("/family-ledger")
+    @PreAuthorize(CAN_VIEW_LEDGER)
+    @Operation(summary = "Combined ledger for a guarantor and the patients who roll up to them")
+    public FamilyLedgerResponse familyLedger(@RequestParam UUID guarantorId) {
+        return familyBillingService.familyLedger(guarantorId);
+    }
+
+    @GetMapping("/family-statement")
+    @PreAuthorize(CAN_TAKE_PAYMENT)
+    @Operation(summary = "Printable family statement (PDF) grouped by patient")
+    public org.springframework.http.ResponseEntity<byte[]> familyStatement(
+            @RequestParam UUID guarantorId,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate from,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate to) {
+        byte[] pdf = familyBillingService.familyStatementPdf(guarantorId, from, to);
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(org.springframework.http.ContentDisposition
+                .attachment().filename("family-statement-" + from + "-" + to + ".pdf").build());
+        return new org.springframework.http.ResponseEntity<>(pdf, headers,
+                org.springframework.http.HttpStatus.OK);
+    }
+
+    // ---- payment plans ----
+
+    @PostMapping("/payment-plans")
+    @PreAuthorize(CAN_BILL)
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create a payment plan with a generated installment schedule")
+    public PaymentPlanResponse createPaymentPlan(@Valid @RequestBody PaymentPlanRequest request) {
+        return paymentPlanService.create(request);
+    }
+
+    @GetMapping("/payment-plans")
+    @PreAuthorize(CAN_VIEW_LEDGER)
+    @Operation(summary = "A patient's payment plans, newest first")
+    public java.util.List<PaymentPlanResponse> listPaymentPlans(@RequestParam UUID patientId) {
+        return paymentPlanService.listFor(patientId);
+    }
+
+    @PatchMapping("/payment-plans/{id}/status")
+    @PreAuthorize(CAN_BILL)
+    @Operation(summary = "Close out an ACTIVE plan (COMPLETED, DEFAULTED, or CANCELLED)")
+    public PaymentPlanResponse updatePaymentPlanStatus(
+            @PathVariable UUID id, @Valid @RequestBody PaymentPlanStatusRequest request) {
+        return paymentPlanService.updateStatus(id, request.status());
     }
 }

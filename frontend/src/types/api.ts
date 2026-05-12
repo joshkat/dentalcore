@@ -112,6 +112,10 @@ export interface Patient {
   nextRecallDate: string | null;
   createdAt: string;
   updatedAt: string;
+  // Family billing: null = self-guaranteed
+  guarantorId: string | null;
+  guarantorFirstName: string | null;
+  guarantorLastName: string | null;
 }
 
 export type ToothConditionType =
@@ -439,6 +443,9 @@ export interface Claim {
   procedures: ClaimLine[];
   createdAt: string;
   updatedAt: string;
+  // Coordination of benefits: set when this claim is/has a secondary claim
+  parentClaimId: string | null;
+  secondaryClaimId: string | null;
 }
 
 export interface ProblemDetail {

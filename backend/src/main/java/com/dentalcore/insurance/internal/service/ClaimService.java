@@ -90,6 +90,60 @@ public class ClaimService {
         return toResponse(claim);
     }
 
+    /**
+     * Drafts a secondary (COB) claim from a PAID primary claim. Each line bills
+     * the primary plan's allowed fee minus what the primary actually paid on
+     * that line, floored at zero; fully-paid lines are dropped. The partial
+     * unique index on parent_claim_id backstops the duplicate check under
+     * concurrency (DataIntegrityViolation also maps to 409).
+     */
+    public ClaimResponse createSecondary(UUID sourceClaimId) {
+        Claim source = findClaim(sourceClaimId);
+        if (source.getStatus() != ClaimStatus.PAID) {
+            throw new InvalidRequestException(
+                    "Secondary claims can only be drafted from PAID claims (current: %s)"
+                            .formatted(source.getStatus()));
+        }
+        PatientInsurance secondaryCoverage = estimateService.activeSecondaryCoverage(
+                        source.getPatientId(), source.getPatientInsuranceId())
+                .orElseThrow(() -> new InvalidRequestException(
+                        "Patient has no active secondary coverage"));
+        if (claimRepository.findByParentClaimId(sourceClaimId).isPresent()) {
+            throw new com.dentalcore.shared.error.ConflictException(
+                    "A secondary claim already exists for this claim");
+        }
+
+        UUID primaryPlanId = coverageService
+                .findCoverage(source.getPatientInsuranceId()).getPlanId();
+        Map<UUID, ProcedureSummary> catalog = catalogApi.findSummaries(
+                source.getProcedures().stream()
+                        .map(ClaimProcedure::getProcedureCodeId)
+                        .collect(Collectors.toSet()));
+
+        Claim claim = new Claim(secondaryCoverage.getId(), source.getPatientId(), null);
+        claim.markSecondaryOf(sourceClaimId);
+        for (ClaimProcedure line : source.getProcedures()) {
+            ProcedureSummary entry = catalog.get(line.getProcedureCodeId());
+            BigDecimal gross = entry != null ? entry.standardFee() : line.getBilledAmount();
+            BigDecimal allowed = estimateService.allowedFeeFor(
+                    primaryPlanId, line.getProcedureCodeId(), gross);
+            BigDecimal billed = allowed.subtract(line.getPaidAmount()).max(BigDecimal.ZERO);
+            if (billed.signum() > 0) {
+                claim.addProcedure(new ClaimProcedure(line.getProcedureCodeId(), billed));
+            }
+        }
+        if (claim.getProcedures().isEmpty()) {
+            throw new InvalidRequestException(
+                    "The primary payment covers the full allowed amount; nothing to bill");
+        }
+        claim = claimRepository.save(claim);
+
+        publish(claim.getId(), AuditEvent.AuditAction.CREATE,
+                Map.of("patientId", source.getPatientId().toString(),
+                        "parentClaimId", sourceClaimId.toString()));
+        return toResponse(claim);
+    }
+
     public ClaimResponse addLine(UUID claimId, ClaimLineRequest request) {
         Claim claim = findClaim(claimId);
         ProcedureSummary entry = catalogApi.findSummary(request.procedureCodeId())
@@ -242,6 +296,9 @@ public class ClaimService {
                             line.getBilledAmount(), line.getPaidAmount());
                 }).toList(),
                 claim.getCreatedAt(),
-                claim.getUpdatedAt());
+                claim.getUpdatedAt(),
+                claim.getParentClaimId(),
+                claimRepository.findByParentClaimId(claim.getId())
+                        .map(Claim::getId).orElse(null));
     }
 }

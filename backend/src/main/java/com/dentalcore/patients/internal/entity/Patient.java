@@ -133,6 +133,14 @@ public class Patient extends BaseEntity {
     @Column(name = "next_recall_date")
     private LocalDate nextRecallDate;
 
+    /**
+     * Account guarantor (V15): the patient whose statement this account rolls
+     * up to. NULL means the patient guarantees their own account. One level
+     * only — a guarantor never has a guarantor of their own.
+     */
+    @Column(name = "guarantor_id")
+    private UUID guarantorId;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
@@ -209,6 +217,14 @@ public class Patient extends BaseEntity {
         this.pharmacyPhone = pharmacyPhone;
         this.primaryProviderId = primaryProviderId;
         this.smokingStatus = smokingStatus;
+    }
+
+    public void setGuarantorId(UUID guarantorId) {
+        this.guarantorId = guarantorId;
+    }
+
+    public UUID getGuarantorId() {
+        return guarantorId;
     }
 
     public void updateRecall(int intervalMonths, LocalDate nextRecallDate) {

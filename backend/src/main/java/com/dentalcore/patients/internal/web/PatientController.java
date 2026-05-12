@@ -138,6 +138,23 @@ public class PatientController {
         return patientService.updateRecall(id, request.intervalMonths(), request.nextRecallDate());
     }
 
+    // ---- guarantor (family billing) ----
+
+    /** Billing staff manage who guarantees an account; null clears it (self-guaranteed). */
+    private static final String CAN_SET_GUARANTOR =
+            "hasAnyRole('ADMIN','FRONT_DESK','BILLING')";
+
+    public record GuarantorRequest(UUID guarantorPatientId) {
+    }
+
+    @PutMapping("/{id}/guarantor")
+    @PreAuthorize(CAN_SET_GUARANTOR)
+    @Operation(summary = "Set or clear (null) the account guarantor — one level only")
+    public PatientResponse updateGuarantor(@PathVariable UUID id,
+                                           @RequestBody GuarantorRequest request) {
+        return patientService.updateGuarantor(id, request.guarantorPatientId());
+    }
+
     // ---- Medical alerts ----
 
     @GetMapping("/{id}/alerts")

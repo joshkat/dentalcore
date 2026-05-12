@@ -1,6 +1,8 @@
 package com.dentalcore.reporting.internal.web;
 
+import com.dentalcore.reporting.internal.dto.ReportDtos.ArAgingReport;
 import com.dentalcore.reporting.internal.dto.ReportDtos.AsapRow;
+import com.dentalcore.reporting.internal.dto.ReportDtos.CollectionsRow;
 import com.dentalcore.reporting.internal.dto.ReportDtos.DailyProductionReport;
 import com.dentalcore.reporting.internal.dto.ReportDtos.DashboardSummary;
 import com.dentalcore.reporting.internal.dto.ReportDtos.DaySheetReport;
@@ -8,6 +10,7 @@ import com.dentalcore.reporting.internal.dto.ReportDtos.PatientGrowthRow;
 import com.dentalcore.reporting.internal.dto.ReportDtos.ProviderAppointmentsRow;
 import com.dentalcore.reporting.internal.dto.ReportDtos.ProviderUtilizationRow;
 import com.dentalcore.reporting.internal.dto.ReportDtos.UnscheduledTreatmentRow;
+import com.dentalcore.reporting.internal.service.ReceivablesReportService;
 import com.dentalcore.reporting.internal.service.ReportingService;
 import com.dentalcore.reporting.internal.service.WorkflowReportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,10 +42,13 @@ public class ReportController {
 
     private final ReportingService service;
     private final WorkflowReportService workflowService;
+    private final ReceivablesReportService receivablesService;
 
-    public ReportController(ReportingService service, WorkflowReportService workflowService) {
+    public ReportController(ReportingService service, WorkflowReportService workflowService,
+                            ReceivablesReportService receivablesService) {
         this.service = service;
         this.workflowService = workflowService;
+        this.receivablesService = receivablesService;
     }
 
     @GetMapping("/day-sheet")
@@ -98,6 +104,20 @@ public class ReportController {
     public List<PatientGrowthRow> patientGrowth(
             @RequestParam(defaultValue = "12") int months) {
         return service.patientGrowth(months);
+    }
+
+    @GetMapping("/ar-aging")
+    @PreAuthorize(FINANCIAL)
+    @Operation(summary = "Open balances by guarantor account, aged with FIFO payment application")
+    public ArAgingReport arAging() {
+        return receivablesService.arAging();
+    }
+
+    @GetMapping("/collections")
+    @PreAuthorize(DAY_SHEET)
+    @Operation(summary = "Accounts with balances more than 30 days past due, worst first")
+    public List<CollectionsRow> collections() {
+        return receivablesService.collections();
     }
 
     @GetMapping("/provider-utilization")
