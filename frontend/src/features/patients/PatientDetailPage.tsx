@@ -9,6 +9,7 @@ import { useBalance } from '../billing/api';
 import { LedgerTab } from '../billing/LedgerTab';
 import { ClinicalNotesTab } from '../clinical-notes/ClinicalNotesTab';
 import { DocumentsTab } from '../documents/DocumentsTab';
+import { PatientFormsTab } from '../forms/PatientFormsTab';
 import { InsuranceTab } from '../insurance/InsuranceTab';
 import { TreatmentPlansTab } from '../treatment-plans/TreatmentPlansTab';
 import { AlertsTab } from './AlertsTab';
@@ -31,6 +32,7 @@ const TABS = [
   'Insurance',
   'Ledger',
   'Documents',
+  'Forms',
   'Alerts',
   'Family',
   'Timeline',
@@ -226,6 +228,7 @@ export function PatientDetailPage() {
         )}
         {tab === 'Ledger' && canViewLedger && <LedgerTab patientId={patient.id} />}
         {tab === 'Documents' && <DocumentsTab patientId={patient.id} canWrite={canWrite} />}
+        {tab === 'Forms' && <PatientFormsTab patientId={patient.id} />}
         {tab === 'Alerts' && <AlertsTab patientId={patient.id} canWrite={canWrite} />}
         {tab === 'Family' && <FamilyTab patientId={patient.id} canWrite={canWrite} />}
         {tab === 'Timeline' && <TimelineTab patientId={patient.id} />}

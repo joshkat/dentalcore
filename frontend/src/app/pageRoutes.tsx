@@ -3,6 +3,7 @@ import { CalendarPage } from '../features/appointments/CalendarPage';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { ClaimsPage } from '../features/insurance/ClaimsPage';
 import { InsurancePage } from '../features/insurance/InsurancePage';
+import { FormsPage } from '../features/forms/FormsPage';
 import { NewPatientPage } from '../features/patients/NewPatientPage';
 import { PatientDetailPage } from '../features/patients/PatientDetailPage';
 import { PatientsPage } from '../features/patients/PatientsPage';
@@ -27,6 +28,7 @@ export const pageRoutes: RouteObject[] = [
   { path: '/claims', element: <ClaimsPage /> },
   { path: '/reports', element: <ReportsPage /> },
   { path: '/recall', element: <RecallPage /> },
+  { path: '/forms', element: <FormsPage /> },
   { path: '/worklists', element: <WorklistsPage /> },
   {
     element: <ProtectedRoute roles={['ADMIN']} />,
@@ -46,6 +48,7 @@ const titles: Array<[RegExp, string]> = [
   [/^\/claims/, 'Claims'],
   [/^\/reports/, 'Reports'],
   [/^\/recall/, 'Recall'],
+  [/^\/forms/, 'Forms'],
   [/^\/worklists/, 'Worklists'],
   [/^\/users/, 'Users'],
 ];

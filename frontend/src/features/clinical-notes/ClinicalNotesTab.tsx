@@ -8,9 +8,12 @@ import {
   useClinicalNotes,
   useCreateNote,
   useDeleteNote,
+  useNoteTemplates,
   useSignNote,
   useUpdateNote,
 } from './api';
+import { NoteTemplatesModal } from './NoteTemplatesModal';
+import { interpolateTemplate } from './noteTemplates';
 
 const NOTE_TYPES = ['EXAM', 'PROGRESS', 'PROCEDURE', 'PHONE', 'OTHER'] as const;
 
@@ -30,6 +33,7 @@ export function ClinicalNotesTab({
   const [noteType, setNoteType] = useState<string>('PROGRESS');
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [managingTemplates, setManagingTemplates] = useState(false);
 
   if (isPending) return <Spinner label="Loading notes…" />;
 
@@ -48,7 +52,12 @@ export function ClinicalNotesTab({
   return (
     <div className="space-y-4">
       {canWriteClinical && !adding && (
-        <Button onClick={() => setAdding(true)}>New clinical note</Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setAdding(true)}>New clinical note</Button>
+          <Button variant="secondary" onClick={() => setManagingTemplates(true)}>
+            Manage templates
+          </Button>
+        </div>
       )}
       {adding && (
         <div className="space-y-3 rounded-md bg-gray-50 p-4">
@@ -74,6 +83,10 @@ export function ClinicalNotesTab({
               ))}
             </select>
           </div>
+          <NoteTemplatePicker
+            noteType={noteType}
+            onInsert={(text) => setBody((prev) => (prev.trim() ? `${prev}\n${text}` : text))}
+          />
           <div>
             <label htmlFor="note-body" className="block text-sm font-medium text-gray-700">
               Note
@@ -105,6 +118,105 @@ export function ClinicalNotesTab({
             <NoteCard key={note.id} note={note} canWriteClinical={canWriteClinical} />
           ))}
         </ul>
+      )}
+
+      {managingTemplates && <NoteTemplatesModal onClose={() => setManagingTemplates(false)} />}
+    </div>
+  );
+}
+
+/**
+ * "Use template" picker for the composer: select a template, fill its
+ * {{placeholder}} prompts, then insert the interpolated text into the body.
+ */
+function NoteTemplatePicker({
+  noteType,
+  onInsert,
+}: {
+  noteType: string;
+  onInsert: (text: string) => void;
+}) {
+  const { data: templates } = useNoteTemplates();
+  const [templateId, setTemplateId] = useState('');
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  if (!templates || templates.length === 0) return null;
+
+  const matching = templates.filter((t) => t.noteType === noteType);
+  const others = templates.filter((t) => t.noteType !== noteType);
+  const selected = templates.find((t) => t.id === templateId) ?? null;
+
+  return (
+    <div className="space-y-2 rounded-md ring-1 ring-gray-200 p-3">
+      <div>
+        <label htmlFor="note-template" className="block text-sm font-medium text-gray-700">
+          Use template
+        </label>
+        <select
+          id="note-template"
+          value={templateId}
+          onChange={(e) => {
+            setTemplateId(e.target.value);
+            setValues({});
+          }}
+          className={selectClass}
+        >
+          <option value="">No template</option>
+          {matching.length > 0 && (
+            <optgroup label={`${noteType} templates`}>
+              {matching.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {others.length > 0 && (
+            <optgroup label="Other types">
+              {others.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.noteType})
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+      </div>
+
+      {selected && selected.prompts.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {selected.prompts.map((prompt) => (
+            <div key={prompt}>
+              <label
+                htmlFor={`prompt-${prompt}`}
+                className="block text-xs font-medium text-gray-600"
+              >
+                {prompt}
+              </label>
+              <input
+                id={`prompt-${prompt}`}
+                value={values[prompt] ?? ''}
+                onChange={(e) =>
+                  setValues((prev) => ({ ...prev, [prompt]: e.target.value }))
+                }
+                className="mt-0.5 w-32 rounded-md border-0 px-2 py-1 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <Button
+          variant="secondary"
+          onClick={() => {
+            onInsert(interpolateTemplate(selected.body, values));
+            setTemplateId('');
+            setValues({});
+          }}
+        >
+          Insert
+        </Button>
       )}
     </div>
   );
