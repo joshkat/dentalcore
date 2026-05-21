@@ -58,6 +58,9 @@ test.describe('authentication', () => {
     await page.getByLabel('FRONT DESK').check();
     await page.getByRole('button', { name: 'Create user' }).click();
 
+    // the list paginates by lastName and e2e users accumulate in the dev DB,
+    // so locate the new user via search instead of expecting them on page 1
+    await page.getByLabel('Search users').fill(email);
     await expect(page.getByText(email)).toBeVisible();
   });
 });

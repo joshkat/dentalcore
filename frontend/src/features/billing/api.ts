@@ -52,6 +52,7 @@ function useLedgerMutation<TInput>(mutationFn: (input: TInput) => Promise<unknow
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ledger'] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
+      queryClient.invalidateQueries({ queryKey: ['family-ledger'] });
     },
   });
 }

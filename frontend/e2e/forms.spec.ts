@@ -95,11 +95,13 @@ test.describe('forms & e-signature', () => {
 
     // fill view opens in DRAFT
     await expect(page.getByText('DRAFT', { exact: true })).toBeVisible();
-    await page.getByLabel('Full name').fill('Fern Demoson');
+    // exact name incl. the required asterisk — substring 'Full name' would
+    // also match the sign panel's "Signed by (full name)" once it mounts
+    await page.getByLabel('Full name *', { exact: true }).fill('Fern Demoson');
     await page.getByLabel('Visit date').fill('2026-06-12');
     await page.getByLabel('Consent given').check();
     // blur the focused field so the autosave PUT fires
-    await page.getByLabel('Full name').blur();
+    await page.getByLabel('Full name *', { exact: true }).blur();
 
     // server flips DRAFT -> COMPLETED once required answers exist; sign panel appears
     await expect(page.getByText('COMPLETED', { exact: true })).toBeVisible();
