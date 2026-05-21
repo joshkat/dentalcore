@@ -454,3 +454,55 @@ export interface ProblemDetail {
   detail?: string;
   errors?: Record<string, string>;
 }
+
+// ---- Phase D: patient forms, e-signature & clinical note templates ----
+
+export type FormFieldType = 'TEXT' | 'TEXTAREA' | 'CHECKBOX' | 'DATE' | 'SELECT';
+
+export interface FormField {
+  key: string;
+  label: string;
+  type: FormFieldType;
+  required: boolean;
+  options?: string[];
+}
+
+export interface FormTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  fields: FormField[];
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FormInstanceStatus = 'DRAFT' | 'COMPLETED' | 'SIGNED';
+
+/** CHECKBOX answers are booleans; every other field type stores a string. */
+export type FormAnswerValue = string | boolean;
+
+export interface FormInstance {
+  id: string;
+  templateId: string;
+  templateName: string;
+  patientId: string;
+  status: FormInstanceStatus;
+  answers: Record<string, FormAnswerValue>;
+  signedAt: string | null;
+  signedByName: string | null;
+  documentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoteTemplate {
+  id: string;
+  name: string;
+  noteType: ClinicalNoteType;
+  body: string;
+  /** Placeholder keys extracted server-side from {{...}} markers in the body. */
+  prompts: string[];
+  createdAt: string;
+  updatedAt: string;
+}

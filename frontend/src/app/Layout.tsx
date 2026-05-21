@@ -3,6 +3,7 @@ import {
   BellRing,
   Calendar,
   ClipboardList,
+  FileSignature,
   FileText,
   LayoutDashboard,
   ListTodo,
@@ -35,6 +36,12 @@ const navItems: NavItem[] = [
   { to: '/procedures', label: 'Procedures', icon: ClipboardList },
   { to: '/insurance', label: 'Insurance', icon: Shield },
   { to: '/claims', label: 'Claims', icon: FileText },
+  {
+    to: '/forms',
+    label: 'Forms',
+    icon: FileSignature,
+    roles: ['ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK'],
+  },
   {
     to: '/worklists',
     label: 'Worklists',

@@ -19,7 +19,7 @@ class ModuleBoundaryTest {
     private static final String[] MODULES = {
             "auth", "users", "patients", "providers", "appointments", "treatmentplans",
             "procedures", "clinicalnotes", "insurance", "billing", "documents", "reporting",
-            "audit", "reminders"
+            "audit", "reminders", "forms"
     };
 
     private static JavaClasses classes;

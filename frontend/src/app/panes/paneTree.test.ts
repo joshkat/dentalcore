@@ -118,6 +118,7 @@ describe('paneTree', () => {
       '/claims',
       '/reports',
       '/recall',
+      '/forms',
       '/worklists',
       '/users',
     ])('allows known route shape %s', (path) => {
@@ -133,6 +134,8 @@ describe('paneTree', () => {
       '/admin/secret/deep/path',
       '/schedule/whatever',
       '/worklists/extra',
+      '/forms/extra',
+      '/formsX',
       '',
       '//',
     ])('rejects unknown or malicious path %s', (path) => {
