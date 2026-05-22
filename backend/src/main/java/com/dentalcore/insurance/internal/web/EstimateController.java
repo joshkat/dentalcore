@@ -36,7 +36,7 @@ import java.util.UUID;
 @Tag(name = "Insurance Estimates", description = "Fee schedules, coverage rules, estimates")
 public class EstimateController {
 
-    private static final String CAN_MANAGE = "hasAnyRole('ADMIN','BILLING')";
+    private static final String CAN_MANAGE = "hasAuthority('FEES_MANAGE')";
 
     private final FeeScheduleService feeScheduleService;
     private final InsuranceEstimateApi estimateApi;

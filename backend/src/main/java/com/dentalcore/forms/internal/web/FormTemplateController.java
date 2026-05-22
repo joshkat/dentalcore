@@ -26,7 +26,7 @@ import java.util.UUID;
 @Tag(name = "Form Templates", description = "Reusable patient form definitions")
 public class FormTemplateController {
 
-    private static final String ADMIN_ONLY = "hasRole('ADMIN')";
+    private static final String CAN_MANAGE_TEMPLATES = "hasAuthority('FORMS_TEMPLATES_MANAGE')";
 
     private final FormTemplateService service;
 
@@ -41,7 +41,7 @@ public class FormTemplateController {
     }
 
     @PostMapping
-    @PreAuthorize(ADMIN_ONLY)
+    @PreAuthorize(CAN_MANAGE_TEMPLATES)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a form template")
     public TemplateResponse create(@Valid @RequestBody TemplateRequest request) {
@@ -49,7 +49,7 @@ public class FormTemplateController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize(ADMIN_ONLY)
+    @PreAuthorize(CAN_MANAGE_TEMPLATES)
     @Operation(summary = "Update a form template")
     public TemplateResponse update(@PathVariable UUID id,
                                    @Valid @RequestBody TemplateRequest request) {
@@ -57,7 +57,7 @@ public class FormTemplateController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize(ADMIN_ONLY)
+    @PreAuthorize(CAN_MANAGE_TEMPLATES)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a template (deactivates instead when instances exist)")
     public void delete(@PathVariable UUID id) {

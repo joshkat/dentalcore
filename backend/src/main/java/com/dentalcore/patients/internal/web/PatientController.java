@@ -42,7 +42,7 @@ import java.util.UUID;
 public class PatientController {
 
     private static final String CAN_WRITE =
-            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','FRONT_DESK')";
+            "hasAuthority('PATIENTS_WRITE')";
     private static final int MAX_PAGE_SIZE = 100;
     private static final Set<String> SORTABLE =
             Set.of("lastName", "firstName", "dateOfBirth", "createdAt");
@@ -108,7 +108,7 @@ public class PatientController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PATIENTS_DELETE')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Soft-delete a patient (ADMIN only)")
     public void delete(@PathVariable UUID id) {
@@ -142,7 +142,7 @@ public class PatientController {
 
     /** Billing staff manage who guarantees an account; null clears it (self-guaranteed). */
     private static final String CAN_SET_GUARANTOR =
-            "hasAnyRole('ADMIN','FRONT_DESK','BILLING')";
+            "hasAuthority('PATIENT_GUARANTOR_MANAGE')";
 
     public record GuarantorRequest(UUID guarantorPatientId) {
     }

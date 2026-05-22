@@ -29,7 +29,7 @@ import java.util.UUID;
 public class FormInstanceController {
 
     private static final String CAN_WRITE =
-            "hasAnyRole('ADMIN','FRONT_DESK','DENTIST','HYGIENIST')";
+            "hasAuthority('FORMS_FILL')";
 
     private final FormInstanceService service;
 

@@ -20,7 +20,7 @@ import java.util.UUID;
 @Tag(name = "Claims")
 public class SecondaryClaimController {
 
-    private static final String CAN_WRITE = "hasAnyRole('ADMIN','BILLING')";
+    private static final String CAN_WRITE = "hasAuthority('CLAIMS_MANAGE')";
 
     private final ClaimService service;
 
