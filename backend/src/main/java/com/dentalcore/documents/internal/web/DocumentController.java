@@ -37,7 +37,7 @@ import java.util.UUID;
 public class DocumentController {
 
     private static final String CAN_WRITE =
-            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','FRONT_DESK')";
+            "hasAuthority('DOCS_WRITE')";
 
     private final DocumentService service;
 

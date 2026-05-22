@@ -31,7 +31,7 @@ import java.util.UUID;
 @Tag(name = "Insurance", description = "Carriers and plans")
 public class InsuranceAdminController {
 
-    private static final String CAN_MANAGE = "hasAnyRole('ADMIN','BILLING')";
+    private static final String CAN_MANAGE = "hasAuthority('INSURANCE_MANAGE')";
 
     private final InsuranceAdminService service;
 

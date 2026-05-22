@@ -31,14 +31,14 @@ import java.util.List;
 public class ReportController {
 
     /** Financial reports stay with billing-capable roles. */
-    private static final String FINANCIAL = "hasAnyRole('ADMIN','BILLING')";
+    private static final String FINANCIAL = "hasAuthority('REPORTS_FINANCIAL')";
 
     /** Operational reports for staff roles; READ_ONLY only sees the dashboard. */
     private static final String OPERATIONAL =
-            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','FRONT_DESK','BILLING')";
+            "hasAuthority('REPORTS_VIEW')";
 
     /** The day sheet is end-of-day reconciliation: billing roles plus the front desk. */
-    private static final String DAY_SHEET = "hasAnyRole('ADMIN','BILLING','FRONT_DESK')";
+    private static final String DAY_SHEET = "hasAuthority('REPORTS_DAY_SHEET')";
 
     private final ReportingService service;
     private final WorkflowReportService workflowService;

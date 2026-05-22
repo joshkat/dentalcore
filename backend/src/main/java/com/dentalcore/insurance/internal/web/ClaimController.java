@@ -31,7 +31,7 @@ import java.util.UUID;
 @Tag(name = "Claims")
 public class ClaimController {
 
-    private static final String CAN_WRITE = "hasAnyRole('ADMIN','BILLING')";
+    private static final String CAN_WRITE = "hasAuthority('CLAIMS_MANAGE')";
 
     private final ClaimService service;
 

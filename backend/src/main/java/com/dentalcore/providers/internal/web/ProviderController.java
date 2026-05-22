@@ -57,7 +57,7 @@ public class ProviderController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PROVIDERS_MANAGE')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a provider (ADMIN only)")
     public ProviderResponse create(@Valid @RequestBody ProviderRequest request) {
@@ -65,7 +65,7 @@ public class ProviderController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PROVIDERS_MANAGE')")
     @Operation(summary = "Update a provider (ADMIN only)")
     public ProviderResponse update(@PathVariable UUID id,
                                    @Valid @RequestBody ProviderRequest request) {
@@ -73,7 +73,7 @@ public class ProviderController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PROVIDERS_MANAGE')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Soft-delete a provider (ADMIN only)")
     public void delete(@PathVariable UUID id) {

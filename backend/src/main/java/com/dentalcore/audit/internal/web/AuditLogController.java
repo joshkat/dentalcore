@@ -28,7 +28,7 @@ public class AuditLogController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('AUDIT_VIEW')")
     @Operation(summary = "Search the audit trail")
     public PageResponse<AuditLogResponse> search(
             @RequestParam(required = false) String entityType,

@@ -35,7 +35,7 @@ import java.util.UUID;
 @Tag(name = "Treatment Plans")
 public class TreatmentPlanController {
 
-    private static final String CAN_WRITE = "hasAnyRole('ADMIN','DENTIST','HYGIENIST')";
+    private static final String CAN_WRITE = "hasAuthority('PLANS_WRITE')";
 
     private final TreatmentPlanService service;
     private final com.dentalcore.insurance.api.InsuranceEstimateApi estimateApi;

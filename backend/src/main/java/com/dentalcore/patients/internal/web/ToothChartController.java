@@ -26,7 +26,7 @@ import java.util.UUID;
 @Tag(name = "Tooth Chart", description = "Odontogram conditions and plan overlay")
 public class ToothChartController {
 
-    private static final String CAN_CHART = "hasAnyRole('ADMIN','DENTIST','HYGIENIST')";
+    private static final String CAN_CHART = "hasAuthority('CHART_WRITE')";
 
     private final ToothChartService service;
 

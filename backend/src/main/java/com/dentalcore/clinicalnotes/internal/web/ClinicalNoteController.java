@@ -28,9 +28,9 @@ import java.util.UUID;
 @Tag(name = "Clinical Notes", description = "Sign-once clinical documentation")
 public class ClinicalNoteController {
 
-    private static final String CAN_WRITE = "hasAnyRole('ADMIN','DENTIST','HYGIENIST')";
+    private static final String CAN_WRITE = "hasAuthority('NOTES_WRITE')";
     private static final String CAN_READ =
-            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','READ_ONLY')";
+            "hasAuthority('NOTES_READ')";
 
     private final ClinicalNoteService service;
 

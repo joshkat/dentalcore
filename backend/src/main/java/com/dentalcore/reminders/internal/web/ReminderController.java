@@ -26,7 +26,7 @@ public class ReminderController {
     }
 
     @PostMapping("/run")
-    @PreAuthorize("hasAnyRole('ADMIN','FRONT_DESK')")
+    @PreAuthorize("hasAuthority('REMINDERS_RUN')")
     @Operation(summary = "Run reminders now (also runs automatically each morning)")
     public RunSummary run() {
         return service.runAll();

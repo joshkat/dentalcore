@@ -28,7 +28,7 @@ import java.util.UUID;
 @Tag(name = "Perio Charting", description = "Periodontal exams and 6-site probing")
 public class PerioController {
 
-    private static final String CAN_CHART = "hasAnyRole('ADMIN','DENTIST','HYGIENIST')";
+    private static final String CAN_CHART = "hasAuthority('PERIO_WRITE')";
 
     private final PerioService service;
 
