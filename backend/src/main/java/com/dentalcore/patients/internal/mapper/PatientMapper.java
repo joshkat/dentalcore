@@ -74,6 +74,7 @@ public class PatientMapper {
                 patient.getGuarantorId(),
                 guarantor != null ? guarantor.getFirstName() : null,
                 guarantor != null ? guarantor.getLastName() : null,
+                patient.getMergedIntoPatientId(),
                 patient.getCreatedAt(),
                 patient.getUpdatedAt()
         );

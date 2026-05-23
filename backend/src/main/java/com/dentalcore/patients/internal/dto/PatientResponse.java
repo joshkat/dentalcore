@@ -44,6 +44,7 @@ public record PatientResponse(
         UUID guarantorId,
         String guarantorFirstName,
         String guarantorLastName,
+        UUID mergedIntoPatientId,
         Instant createdAt,
         Instant updatedAt
 ) {
