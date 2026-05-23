@@ -141,6 +141,15 @@ public class Patient extends BaseEntity {
     @Column(name = "guarantor_id")
     private UUID guarantorId;
 
+    /**
+     * Merge tombstone (V19): set when this record was merged away into a
+     * surviving duplicate. The row is kept (status ARCHIVED) for history;
+     * all clinical/financial rows were re-pointed to the target patient.
+     * Written by the merge routine's SQL, never by entity code.
+     */
+    @Column(name = "merged_into_patient_id")
+    private UUID mergedIntoPatientId;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
@@ -358,6 +367,10 @@ public class Patient extends BaseEntity {
 
     public String getNotes() {
         return notes;
+    }
+
+    public UUID getMergedIntoPatientId() {
+        return mergedIntoPatientId;
     }
 
     public Instant getDeletedAt() {
