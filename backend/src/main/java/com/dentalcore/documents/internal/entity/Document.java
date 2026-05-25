@@ -19,7 +19,7 @@ import java.util.UUID;
 public class Document extends BaseEntity {
 
     public enum Category {
-        XRAY, PHOTO, CONSENT, INSURANCE, REFERRAL, OTHER
+        XRAY, PHOTO, CONSENT, INSURANCE, REFERRAL, STATEMENT, OTHER
     }
 
     @Column(name = "clinic_id", nullable = false)
