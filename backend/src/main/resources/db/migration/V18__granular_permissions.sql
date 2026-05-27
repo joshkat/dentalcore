@@ -52,6 +52,7 @@ INSERT INTO permissions (code, description, category) VALUES
     ('BILLING_REVERSE',          'Void ledger entries with a negating reversal',                   'BILLING'),
     ('PAYMENTS_TAKE',            'Record patient payments',                                        'BILLING'),
     ('STATEMENTS_GENERATE',      'Generate statements, family statements, and walkouts',           'BILLING'),
+    ('STATEMENT_RUNS_MANAGE',    'Run batch statement generation',                                 'BILLING'),
     ('PAYMENT_PLANS_MANAGE',     'Create and close out payment plans',                             'BILLING'),
     -- INSURANCE
     ('INSURANCE_READ',           'View carriers, plans, coverages, and estimates',                 'INSURANCE'),
@@ -134,7 +135,7 @@ SELECT r.id, p.id FROM roles r JOIN permissions p ON p.code IN (
     'CHART_READ', 'PLANS_READ',
     'APPOINTMENTS_READ',
     'BILLING_READ', 'BILLING_POST', 'BILLING_REVERSE',
-    'PAYMENTS_TAKE', 'STATEMENTS_GENERATE', 'PAYMENT_PLANS_MANAGE',
+    'PAYMENTS_TAKE', 'STATEMENTS_GENERATE', 'STATEMENT_RUNS_MANAGE', 'PAYMENT_PLANS_MANAGE',
     'INSURANCE_READ', 'INSURANCE_MANAGE', 'COVERAGE_MANAGE', 'CLAIMS_MANAGE', 'FEES_MANAGE',
     'DOCS_READ',
     'REPORTS_VIEW', 'REPORTS_FINANCIAL', 'REPORTS_DAY_SHEET'

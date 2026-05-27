@@ -25,7 +25,7 @@ import java.util.UUID;
 @Tag(name = "Statement runs", description = "Batch statement generation for guarantor accounts")
 public class StatementRunController {
 
-    private static final String CAN_RUN_STATEMENTS = "hasAnyRole('ADMIN','BILLING')";
+    private static final String CAN_RUN_STATEMENTS = "hasAuthority('STATEMENT_RUNS_MANAGE')";
 
     private final StatementRunService service;
 

@@ -163,7 +163,7 @@ public class PatientController {
     // ---- Duplicate detection & merge ----
 
     /** Merging is destructive bookkeeping; admins only. */
-    private static final String CAN_MERGE = "hasAnyRole('ADMIN')";
+    private static final String CAN_MERGE = "hasAuthority('PATIENTS_MERGE')";
 
     @GetMapping("/duplicates")
     @PreAuthorize(CAN_MERGE)
