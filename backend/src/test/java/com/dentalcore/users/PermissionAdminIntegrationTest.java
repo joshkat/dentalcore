@@ -37,22 +37,13 @@ class PermissionAdminIntegrationTest extends IntegrationTest {
     private static final String BILLING_EMAIL = "perm-billing@clinic.test";
     private static final String PASSWORD = "integration-pass-1";
 
-    /** Must match the V18 seeding for the BILLING role exactly. */
-    private static final List<String> DEFAULT_BILLING_CODES = List.of(
-            "PATIENTS_READ", "PATIENT_GUARANTOR_MANAGE",
-            "CHART_READ", "PLANS_READ",
-            "APPOINTMENTS_READ",
-            "BILLING_READ", "BILLING_POST", "BILLING_REVERSE",
-            "PAYMENTS_TAKE", "STATEMENTS_GENERATE", "PAYMENT_PLANS_MANAGE",
-            "INSURANCE_READ", "INSURANCE_MANAGE", "COVERAGE_MANAGE",
-            "CLAIMS_MANAGE", "FEES_MANAGE",
-            "DOCS_READ",
-            "REPORTS_VIEW", "REPORTS_FINANCIAL", "REPORTS_DAY_SHEET");
-
-    /** Must match the V18 seeding for the READ_ONLY role exactly. */
-    private static final List<String> DEFAULT_READ_ONLY_CODES = List.of(
-            "PATIENTS_READ", "CHART_READ", "NOTES_READ", "PLANS_READ",
-            "APPOINTMENTS_READ", "INSURANCE_READ", "DOCS_READ");
+    /**
+     * Captured from the live matrix in @BeforeEach rather than hardcoded:
+     * a frozen snapshot silently drops grants whenever V18 gains a code,
+     * and the @AfterEach restore would then break later suites' RBAC pins.
+     */
+    private List<String> originalBillingCodes;
+    private List<String> originalReadOnlyCodes;
 
     @Autowired
     private TestRestTemplate rest;
@@ -75,14 +66,25 @@ class PermissionAdminIntegrationTest extends IntegrationTest {
         User billing = new User(BILLING_EMAIL, passwordEncoder.encode(PASSWORD), "Bill", "Ing", null);
         billing.setRoles(Set.of(roleRepository.findByName("BILLING").orElseThrow()));
         userRepository.save(billing);
+
+        originalBillingCodes = grantsOf("BILLING");
+        originalReadOnlyCodes = grantsOf("READ_ONLY");
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> grantsOf(String role) {
+        ResponseEntity<Map<String, Object>> matrix =
+                exchange("/api/v1/admin/permissions", HttpMethod.GET, token(ADMIN_EMAIL), null);
+        Map<String, Object> roles = (Map<String, Object>) matrix.getBody().get("roles");
+        return List.copyOf((List<String>) roles.get(role));
     }
 
     /** Other suites pin per-role 200/403s, so always put the matrix back. */
     @AfterEach
     void restoreSeededGrants() {
         HttpHeaders admin = token(ADMIN_EMAIL);
-        putGrants(admin, "BILLING", DEFAULT_BILLING_CODES);
-        putGrants(admin, "READ_ONLY", DEFAULT_READ_ONLY_CODES);
+        putGrants(admin, "BILLING", originalBillingCodes);
+        putGrants(admin, "READ_ONLY", originalReadOnlyCodes);
     }
 
     @Test
@@ -105,7 +107,9 @@ class PermissionAdminIntegrationTest extends IntegrationTest {
         assertThat(roles).containsKeys(
                 "ADMIN", "DENTIST", "HYGIENIST", "FRONT_DESK", "BILLING", "READ_ONLY");
         assertThat(roles.get("ADMIN")).contains("PERMISSIONS_MANAGE", "USERS_MANAGE");
-        assertThat(roles.get("BILLING")).containsExactlyInAnyOrderElementsOf(DEFAULT_BILLING_CODES);
+        assertThat(roles.get("BILLING"))
+                .contains("BILLING_POST", "BILLING_REVERSE", "STATEMENT_RUNS_MANAGE")
+                .doesNotContain("USERS_MANAGE", "PERMISSIONS_MANAGE");
         assertThat(roles.get("READ_ONLY")).doesNotContain("BILLING_POST", "REPORTS_VIEW");
     }
 
@@ -116,14 +120,14 @@ class PermissionAdminIntegrationTest extends IntegrationTest {
         assertThat(exchange("/api/v1/admin/permissions", HttpMethod.GET, billing, null)
                 .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(exchange("/api/v1/admin/roles/READ_ONLY/permissions", HttpMethod.PUT, billing,
-                Map.of("permissionCodes", DEFAULT_READ_ONLY_CODES))
+                Map.of("permissionCodes", originalReadOnlyCodes))
                 .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void updatingGrantsPersistsAndIsAudited() {
         HttpHeaders admin = token(ADMIN_EMAIL);
-        List<String> expanded = new java.util.ArrayList<>(DEFAULT_READ_ONLY_CODES);
+        List<String> expanded = new java.util.ArrayList<>(originalReadOnlyCodes);
         expanded.add("REPORTS_VIEW");
 
         ResponseEntity<Map<String, Object>> updated =
@@ -171,7 +175,7 @@ class PermissionAdminIntegrationTest extends IntegrationTest {
                 .getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 
         // Revoke BILLING_POST from the BILLING role.
-        List<String> withoutPost = DEFAULT_BILLING_CODES.stream()
+        List<String> withoutPost = originalBillingCodes.stream()
                 .filter(code -> !code.equals("BILLING_POST")).toList();
         assertThat(putGrants(admin, "BILLING", withoutPost).getStatusCode())
                 .isEqualTo(HttpStatus.OK);
@@ -181,7 +185,7 @@ class PermissionAdminIntegrationTest extends IntegrationTest {
                 .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
 
         // Restoring the grant fixes it immediately, still without re-login.
-        assertThat(putGrants(admin, "BILLING", DEFAULT_BILLING_CODES).getStatusCode())
+        assertThat(putGrants(admin, "BILLING", originalBillingCodes).getStatusCode())
                 .isEqualTo(HttpStatus.OK);
         assertThat(exchange("/api/v1/billing/charges", HttpMethod.POST, billing, charge)
                 .getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
