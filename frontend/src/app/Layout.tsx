@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListTodo,
   Shield,
+  ShieldCheck,
   Stethoscope,
   UserCog,
   Users,
@@ -55,6 +56,7 @@ const navItems: NavItem[] = [
     roles: ['ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING'],
   },
   { to: '/users', label: 'Users', icon: UserCog, roles: ['ADMIN'] },
+  { to: '/admin', label: 'Admin', icon: ShieldCheck, roles: ['ADMIN'] },
 ];
 
 export function Layout() {

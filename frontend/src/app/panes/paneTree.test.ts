@@ -121,6 +121,7 @@ describe('paneTree', () => {
       '/forms',
       '/worklists',
       '/users',
+      '/admin',
     ])('allows known route shape %s', (path) => {
       expect(isAllowedPanePath(path)).toBe(true);
     });
@@ -131,6 +132,7 @@ describe('paneTree', () => {
       'https://evil.com',
       '/patients/123', // not a uuid
       '/patients/new/extra',
+      '/admin/x',
       '/admin/secret/deep/path',
       '/schedule/whatever',
       '/worklists/extra',
