@@ -127,6 +127,7 @@ const ALLOWED_PANE_PATHS: readonly RegExp[] = [
   /^\/forms$/,
   /^\/worklists$/,
   /^\/users$/,
+  /^\/admin$/,
 ];
 
 export function isAllowedPanePath(path: string): boolean {

@@ -1,4 +1,5 @@
 import type { RouteObject } from 'react-router-dom';
+import { AdminPage } from '../features/admin/AdminPage';
 import { CalendarPage } from '../features/appointments/CalendarPage';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { ClaimsPage } from '../features/insurance/ClaimsPage';
@@ -32,7 +33,10 @@ export const pageRoutes: RouteObject[] = [
   { path: '/worklists', element: <WorklistsPage /> },
   {
     element: <ProtectedRoute roles={['ADMIN']} />,
-    children: [{ path: '/users', element: <UsersPage /> }],
+    children: [
+      { path: '/users', element: <UsersPage /> },
+      { path: '/admin', element: <AdminPage /> },
+    ],
   },
 ];
 
@@ -51,6 +55,7 @@ const titles: Array<[RegExp, string]> = [
   [/^\/forms/, 'Forms'],
   [/^\/worklists/, 'Worklists'],
   [/^\/users/, 'Users'],
+  [/^\/admin/, 'Admin'],
 ];
 
 export function pageTitle(path: string): string {

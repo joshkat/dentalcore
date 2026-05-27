@@ -1,6 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import type { AppointmentStatus, TreatmentPlanStatus } from '../../types/api';
+import type {
+  AppointmentStatus,
+  StatementRun,
+  TreatmentPlanStatus,
+} from '../../types/api';
 
 export interface ProviderAppointmentsRow {
   providerId: string;
@@ -230,5 +234,38 @@ export function useCollections(enabled = true) {
     queryKey: ['reports', 'collections'],
     queryFn: () => api<CollectionsRow[]>('/api/v1/reports/collections'),
     enabled,
+  });
+}
+
+// ---- statement runs (Phase C: batch patient statements) ----
+
+export interface CreateStatementRunInput {
+  fromDate: string;
+  toDate: string;
+  minBalance: number;
+}
+
+export function useStatementRuns(enabled = true) {
+  return useQuery({
+    queryKey: ['statement-runs'],
+    queryFn: () => api<StatementRun[]>('/api/v1/billing/statement-runs'),
+    enabled,
+  });
+}
+
+export function useStatementRun(id: string | null) {
+  return useQuery({
+    queryKey: ['statement-runs', id],
+    queryFn: () => api<StatementRun>(`/api/v1/billing/statement-runs/${id}`),
+    enabled: id != null,
+  });
+}
+
+export function useCreateStatementRun() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateStatementRunInput) =>
+      api<StatementRun>('/api/v1/billing/statement-runs', { method: 'POST', body: input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['statement-runs'] }),
   });
 }
