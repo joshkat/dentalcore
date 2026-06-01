@@ -565,3 +565,21 @@ export interface StatementRun {
   /** Present on create (201) and detail fetch; omitted from the list endpoint. */
   items?: StatementRunItem[];
 }
+
+// ---- i18n: instance config & per-user language preferences (append-only) ----
+
+export type SupportedLanguage = 'en' | 'es';
+
+/** GET /api/v1/config — public, no auth. */
+export interface InstanceConfig {
+  defaultLanguage: SupportedLanguage;
+  supportedLanguages: SupportedLanguage[];
+}
+
+/** GET/PUT /api/v1/users/me/preferences — null means "inherit instance default". */
+export interface UserPreferences {
+  uiLanguage: SupportedLanguage | null;
+  exportLanguage: SupportedLanguage | null;
+  effectiveUiLanguage: SupportedLanguage;
+  effectiveExportLanguage: SupportedLanguage;
+}

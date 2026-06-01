@@ -1,0 +1,12 @@
+{
+  "welcomeBack": "Bienvenido de nuevo, {{name}}",
+  "todayIs": "Hoy es {{date}}",
+  "activePatients": "Pacientes activos",
+  "activePatientsHint": "pacientes con estado ACTIVO",
+  "todaysAppointments": "Citas de hoy",
+  "todaysAppointmentsHint": "completadas / programadas hoy",
+  "todaysProduction": "Producción de hoy",
+  "collectionsHint": "cobros {{amount}}",
+  "openClaims": "Reclamaciones abiertas",
+  "openClaimsHint": "borrador, enviada, aceptada o denegada"
+}
