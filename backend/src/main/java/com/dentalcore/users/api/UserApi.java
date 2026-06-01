@@ -22,4 +22,10 @@ public interface UserApi {
     void resetLoginState(UUID userId);
 
     void updatePassword(UUID userId, String newPasswordHash);
+
+    /**
+     * The user's PDF/export language preference (en|es), empty when the user
+     * is unknown or has no preference (i.e. inherits the instance default).
+     */
+    Optional<String> exportLanguageOf(UUID userId);
 }

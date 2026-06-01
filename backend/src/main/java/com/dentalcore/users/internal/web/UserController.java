@@ -6,7 +6,10 @@ import com.dentalcore.shared.web.PageResponse;
 import com.dentalcore.users.internal.dto.AdminResetPasswordRequest;
 import com.dentalcore.users.internal.dto.CreateUserRequest;
 import com.dentalcore.users.internal.dto.UpdateUserRequest;
+import com.dentalcore.users.internal.dto.UserPreferencesRequest;
+import com.dentalcore.users.internal.dto.UserPreferencesResponse;
 import com.dentalcore.users.internal.dto.UserResponse;
+import com.dentalcore.users.internal.service.UserPreferencesService;
 import com.dentalcore.users.internal.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,9 +39,11 @@ public class UserController {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final UserService userService;
+    private final UserPreferencesService preferencesService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserPreferencesService preferencesService) {
         this.userService = userService;
+        this.preferencesService = preferencesService;
     }
 
     @GetMapping
@@ -66,6 +71,19 @@ public class UserController {
             throw new ResourceNotFoundException("Current user not found");
         }
         return userService.get(principal.id());
+    }
+
+    @GetMapping("/me/preferences")
+    @Operation(summary = "The current user's language preferences (null = inherit instance default)")
+    public UserPreferencesResponse preferences() {
+        return preferencesService.getForCurrentUser();
+    }
+
+    @PutMapping("/me/preferences")
+    @Operation(summary = "Update the current user's language preferences (null resets to inherit)")
+    public UserPreferencesResponse updatePreferences(
+            @RequestBody UserPreferencesRequest request) {
+        return preferencesService.updateForCurrentUser(request);
     }
 
     @GetMapping("/{id}")

@@ -5,6 +5,7 @@ import com.dentalcore.billing.internal.dto.BillingDtos.FamilyLedgerResponse;
 import com.dentalcore.billing.internal.dto.BillingDtos.FamilyMemberBalance;
 import com.dentalcore.billing.internal.entity.LedgerEntry;
 import com.dentalcore.billing.internal.repository.LedgerEntryRepository;
+import com.dentalcore.infrastructure.i18n.PdfMessages;
 import com.dentalcore.patients.api.PatientApi;
 import com.dentalcore.patients.api.PatientSummary;
 import com.dentalcore.procedures.api.ProcedureCatalogApi;
@@ -41,13 +42,16 @@ public class FamilyBillingService {
     private final LedgerEntryRepository ledger;
     private final PatientApi patientApi;
     private final ProcedureCatalogApi catalogApi;
+    private final PdfMessages messages;
 
     public FamilyBillingService(LedgerEntryRepository ledger,
                                 PatientApi patientApi,
-                                ProcedureCatalogApi catalogApi) {
+                                ProcedureCatalogApi catalogApi,
+                                PdfMessages messages) {
         this.ledger = ledger;
         this.patientApi = patientApi;
         this.catalogApi = catalogApi;
+        this.messages = messages;
     }
 
     public FamilyLedgerResponse familyLedger(UUID guarantorId) {
@@ -84,7 +88,8 @@ public class FamilyBillingService {
                 totalBalance);
     }
 
-    public byte[] familyStatementPdf(UUID guarantorId, LocalDate from, LocalDate to) {
+    public byte[] familyStatementPdf(UUID guarantorId, LocalDate from, LocalDate to,
+                                     String lang) {
         if (to.isBefore(from)) {
             throw new InvalidRequestException("'to' must not precede 'from'");
         }
@@ -97,7 +102,7 @@ public class FamilyBillingService {
                 .stream()
                 .collect(Collectors.groupingBy(LedgerEntry::getPatientId));
 
-        String html = buildHtml(family, names, byPatient, from, to);
+        String html = buildHtml(family, names, byPatient, from, to, lang);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             new PdfRendererBuilder()
                     .useFastMode()
@@ -144,8 +149,8 @@ public class FamilyBillingService {
 
     private String buildHtml(List<PatientSummary> family, Map<UUID, String> names,
                              Map<UUID, List<LedgerEntry>> byPatient,
-                             LocalDate from, LocalDate to) {
-        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MMM d, yyyy");
+                             LocalDate from, LocalDate to, String lang) {
+        DateTimeFormatter dateFormat = messages.dateFormatter(lang);
         StringBuilder sections = new StringBuilder();
         BigDecimal familyTotal = BigDecimal.ZERO;
 
@@ -170,21 +175,27 @@ public class FamilyBillingService {
                         money(entry.getAmount())));
             }
             if (entries.isEmpty()) {
-                rows.append("<tr><td colspan=\"4\">No activity in this period.</td></tr>");
+                rows.append("<tr><td colspan=\"4\">%s</td></tr>"
+                        .formatted(msg(lang, "statement.noActivity")));
             }
 
             sections.append("""
                     <h2>%s</h2>
                     <table>
-                      <thead><tr><th>Date</th><th>Type</th><th>Description</th>
-                      <th class="num">Amount</th></tr></thead>
+                      <thead><tr><th>%s</th><th>%s</th><th>%s</th>
+                      <th class="num">%s</th></tr></thead>
                       <tbody>%s</tbody>
-                      <tfoot><tr><td colspan="3" class="subtotal">Subtotal</td>
+                      <tfoot><tr><td colspan="3" class="subtotal">%s</td>
                       <td class="num subtotal">%s</td></tr></tfoot>
                     </table>
                     """.formatted(
                     HtmlUtils.htmlEscape(names.get(member.id()), "UTF-8"),
+                    msg(lang, "common.date"),
+                    msg(lang, "common.type"),
+                    msg(lang, "common.description"),
+                    msg(lang, "common.amount"),
                     rows,
+                    msg(lang, "family.subtotal"),
                     money(subtotal)));
         }
 
@@ -205,23 +216,33 @@ public class FamilyBillingService {
                   .balance { font-size: 14px; font-weight: bold; }
                 </style></head>
                 <body>
-                  <h1>DentalCore &#8212; Family Statement</h1>
-                  <p class="muted">Main Clinic</p>
-                  <p><strong>Account of %s</strong></p>
-                  <p class="muted">Statement period: %s &#8212; %s &#183; Generated %s</p>
+                  <h1>%s</h1>
+                  <p class="muted">%s</p>
+                  <p><strong>%s</strong></p>
+                  <p class="muted">%s</p>
                   %s
                   <table class="totals">
-                    <tr class="balance"><td>Family total (period)</td><td class="num">%s</td></tr>
+                    <tr class="balance"><td>%s</td><td class="num">%s</td></tr>
                   </table>
-                  <p class="muted">A positive total is the amount due. Please contact the
-                  office with any questions.</p>
+                  <p class="muted">%s</p>
                 </body></html>
                 """.formatted(
-                HtmlUtils.htmlEscape(names.get(family.get(0).id()), "UTF-8"),
-                from.format(dateFormat), to.format(dateFormat),
-                LocalDate.now().format(dateFormat),
+                msg(lang, "family.title"),
+                msg(lang, "common.clinic"),
+                msg(lang, "family.accountOf",
+                        names.get(family.get(0).id())),
+                msg(lang, "statement.period",
+                        from.format(dateFormat), to.format(dateFormat),
+                        LocalDate.now().format(dateFormat)),
                 sections,
-                money(familyTotal));
+                msg(lang, "family.total"),
+                money(familyTotal),
+                msg(lang, "common.balanceFooter"));
+    }
+
+    private String msg(String lang, String key, Object... args) {
+        String value = messages.get(lang, key, args);
+        return HtmlUtils.htmlEscape(value, "UTF-8");
     }
 
     private String money(BigDecimal amount) {

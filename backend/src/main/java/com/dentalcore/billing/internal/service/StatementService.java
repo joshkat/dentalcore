@@ -2,6 +2,7 @@ package com.dentalcore.billing.internal.service;
 
 import com.dentalcore.billing.internal.entity.LedgerEntry;
 import com.dentalcore.billing.internal.repository.LedgerEntryRepository;
+import com.dentalcore.infrastructure.i18n.PdfMessages;
 import com.dentalcore.patients.api.PatientApi;
 import com.dentalcore.patients.api.PatientSummary;
 import com.dentalcore.shared.error.InvalidRequestException;
@@ -24,13 +25,16 @@ public class StatementService {
 
     private final LedgerEntryRepository ledger;
     private final PatientApi patientApi;
+    private final PdfMessages messages;
 
-    public StatementService(LedgerEntryRepository ledger, PatientApi patientApi) {
+    public StatementService(LedgerEntryRepository ledger, PatientApi patientApi,
+                            PdfMessages messages) {
         this.ledger = ledger;
         this.patientApi = patientApi;
+        this.messages = messages;
     }
 
-    public byte[] statementPdf(UUID patientId, LocalDate from, LocalDate to) {
+    public byte[] statementPdf(UUID patientId, LocalDate from, LocalDate to, String lang) {
         if (to.isBefore(from)) {
             throw new InvalidRequestException("'to' must not precede 'from'");
         }
@@ -48,7 +52,7 @@ public class StatementService {
                 .map(LedgerEntry::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal balance = ledger.balanceFor(patientId);
 
-        String html = buildHtml(patient, from, to, entries, periodTotal, balance);
+        String html = buildHtml(patient, from, to, entries, periodTotal, balance, lang);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             new PdfRendererBuilder()
                     .useFastMode()
@@ -63,8 +67,8 @@ public class StatementService {
 
     private String buildHtml(PatientSummary patient, LocalDate from, LocalDate to,
                              List<LedgerEntry> entries, BigDecimal periodTotal,
-                             BigDecimal balance) {
-        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MMM d, yyyy");
+                             BigDecimal balance, String lang) {
+        DateTimeFormatter dateFormat = messages.dateFormatter(lang);
         StringBuilder rows = new StringBuilder();
         for (LedgerEntry entry : entries) {
             rows.append("""
@@ -74,11 +78,12 @@ public class StatementService {
                     """.formatted(
                     entry.getEntryDate().format(dateFormat),
                     entry.getType().name().replace('_', ' '),
-                    HtmlUtils.htmlEscape(entry.getDescription(), "UTF-8"),
+                    escape(entry.getDescription()),
                     money(entry.getAmount())));
         }
         if (entries.isEmpty()) {
-            rows.append("<tr><td colspan=\"4\">No activity in this period.</td></tr>");
+            rows.append("<tr><td colspan=\"4\">%s</td></tr>"
+                    .formatted(msg(lang, "statement.noActivity")));
         }
 
         return """
@@ -96,31 +101,49 @@ public class StatementService {
                   .balance { font-size: 14px; font-weight: bold; }
                 </style></head>
                 <body>
-                  <h1>DentalCore — Patient Statement</h1>
-                  <p class="muted">Main Clinic</p>
-                  <p><strong>%s, %s</strong><br/>DOB %s</p>
-                  <p class="muted">Statement period: %s — %s &#183; Generated %s</p>
+                  <h1>%s</h1>
+                  <p class="muted">%s</p>
+                  <p><strong>%s, %s</strong><br/>%s %s</p>
+                  <p class="muted">%s</p>
                   <table>
-                    <thead><tr><th>Date</th><th>Type</th><th>Description</th>
-                    <th class="num">Amount</th></tr></thead>
+                    <thead><tr><th>%s</th><th>%s</th><th>%s</th>
+                    <th class="num">%s</th></tr></thead>
                     <tbody>%s</tbody>
                   </table>
                   <table class="totals">
-                    <tr><td>Period activity</td><td class="num">%s</td></tr>
-                    <tr class="balance"><td>Current balance</td><td class="num">%s</td></tr>
+                    <tr><td>%s</td><td class="num">%s</td></tr>
+                    <tr class="balance"><td>%s</td><td class="num">%s</td></tr>
                   </table>
-                  <p class="muted">A positive balance is the amount due. Please contact the
-                  office with any questions.</p>
+                  <p class="muted">%s</p>
                 </body></html>
                 """.formatted(
-                HtmlUtils.htmlEscape(patient.lastName(), "UTF-8"),
-                HtmlUtils.htmlEscape(patient.firstName(), "UTF-8"),
+                msg(lang, "statement.title"),
+                msg(lang, "common.clinic"),
+                escape(patient.lastName()),
+                escape(patient.firstName()),
+                msg(lang, "common.dob"),
                 patient.dateOfBirth(),
-                from.format(dateFormat), to.format(dateFormat),
-                LocalDate.now().format(dateFormat),
+                msg(lang, "statement.period",
+                        from.format(dateFormat), to.format(dateFormat),
+                        LocalDate.now().format(dateFormat)),
+                msg(lang, "common.date"),
+                msg(lang, "common.type"),
+                msg(lang, "common.description"),
+                msg(lang, "common.amount"),
                 rows,
+                msg(lang, "statement.periodActivity"),
                 money(periodTotal),
-                money(balance));
+                msg(lang, "common.currentBalance"),
+                money(balance),
+                msg(lang, "common.balanceFooter"));
+    }
+
+    private String msg(String lang, String key, Object... args) {
+        return escape(messages.get(lang, key, args));
+    }
+
+    private String escape(String value) {
+        return value == null ? "" : HtmlUtils.htmlEscape(value, "UTF-8");
     }
 
     private String money(BigDecimal amount) {

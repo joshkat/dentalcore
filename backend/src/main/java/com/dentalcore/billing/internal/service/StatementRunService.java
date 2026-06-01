@@ -8,6 +8,8 @@ import com.dentalcore.billing.internal.entity.StatementRun;
 import com.dentalcore.billing.internal.entity.StatementRunItem;
 import com.dentalcore.billing.internal.repository.StatementRunRepository;
 import com.dentalcore.documents.api.DocumentIngestApi;
+import com.dentalcore.infrastructure.i18n.LanguageResolver;
+import com.dentalcore.infrastructure.i18n.PdfMessages;
 import com.dentalcore.patients.api.PatientApi;
 import com.dentalcore.patients.api.PatientSummary;
 import com.dentalcore.shared.error.InvalidRequestException;
@@ -55,19 +57,25 @@ public class StatementRunService {
     private final PatientApi patientApi;
     private final NamedParameterJdbcTemplate jdbc;
     private final ApplicationEventPublisher events;
+    private final LanguageResolver languageResolver;
+    private final PdfMessages messages;
 
     public StatementRunService(StatementRunRepository runs,
                                FamilyBillingService familyBilling,
                                DocumentIngestApi documentIngest,
                                PatientApi patientApi,
                                NamedParameterJdbcTemplate jdbc,
-                               ApplicationEventPublisher events) {
+                               ApplicationEventPublisher events,
+                               LanguageResolver languageResolver,
+                               PdfMessages messages) {
         this.runs = runs;
         this.familyBilling = familyBilling;
         this.documentIngest = documentIngest;
         this.patientApi = patientApi;
         this.jdbc = jdbc;
         this.events = events;
+        this.languageResolver = languageResolver;
+        this.messages = messages;
     }
 
     public StatementRunDetailResponse create(StatementRunRequest request) {
@@ -80,6 +88,9 @@ public class StatementRunService {
             throw new InvalidRequestException("'minBalance' must not be negative");
         }
         UUID userId = CurrentUser.id().orElse(null);
+        // batch runs have no per-item request context: every PDF in the run is
+        // rendered in the run creator's effective export language
+        String lang = languageResolver.resolveForUser(userId);
 
         StatementRun run = new StatementRun(DEFAULT_CLINIC_ID,
                 request.fromDate(), request.toDate(), minBalance, userId);
@@ -88,9 +99,11 @@ public class StatementRunService {
         try {
             for (AccountBalance account : eligibleAccounts(minBalance)) {
                 byte[] pdf = familyBilling.familyStatementPdf(
-                        account.guarantorPatientId(), request.fromDate(), request.toDate());
+                        account.guarantorPatientId(), request.fromDate(), request.toDate(),
+                        lang);
                 UUID documentId = documentIngest.storePdf(
-                        account.guarantorPatientId(), "Statement " + request.toDate(),
+                        account.guarantorPatientId(),
+                        messages.get(lang, "statement.documentTitle") + " " + request.toDate(),
                         STATEMENT_CATEGORY, pdf, userId);
                 run.addItem(account.guarantorPatientId(), account.balance(), documentId);
                 totalAmount = totalAmount.add(account.balance());

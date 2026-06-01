@@ -28,6 +28,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       FRONTEND_URL: ${FRONTEND_URL}
       CORS_ALLOWED_ORIGINS: ${FRONTEND_URL}
+      # Instance default language (en|es) — deployers set this per region.
+      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-en}
       COOKIE_SECURE: "true"
       # the frontend nginx proxies /api and sets X-Forwarded-For; the backend
       # is not directly exposed, so the proxy header can be trusted here
