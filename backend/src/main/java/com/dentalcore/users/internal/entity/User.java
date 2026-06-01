@@ -49,6 +49,14 @@ public class User extends BaseEntity {
     @Column(name = "locked_until")
     private Instant lockedUntil;
 
+    /** UI language preference (en|es); null = inherit the instance default. */
+    @Column(name = "ui_language", length = 5)
+    private String uiLanguage;
+
+    /** PDF/export language preference (en|es); null = inherit the instance default. */
+    @Column(name = "export_language", length = 5)
+    private String exportLanguage;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -100,6 +108,11 @@ public class User extends BaseEntity {
         this.roles = new HashSet<>(roles);
     }
 
+    public void updateLanguagePreferences(String uiLanguage, String exportLanguage) {
+        this.uiLanguage = uiLanguage;
+        this.exportLanguage = exportLanguage;
+    }
+
     public UUID getClinicId() {
         return clinicId;
     }
@@ -134,5 +147,13 @@ public class User extends BaseEntity {
 
     public Set<Role> getRoles() {
         return roles;
+    }
+
+    public String getUiLanguage() {
+        return uiLanguage;
+    }
+
+    public String getExportLanguage() {
+        return exportLanguage;
     }
 }

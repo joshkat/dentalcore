@@ -13,6 +13,7 @@ import com.dentalcore.billing.internal.dto.BillingDtos.ReversalRequest;
 import com.dentalcore.billing.internal.service.BillingService;
 import com.dentalcore.billing.internal.service.FamilyBillingService;
 import com.dentalcore.billing.internal.service.PaymentPlanService;
+import com.dentalcore.infrastructure.i18n.LanguageResolver;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -50,25 +51,29 @@ public class BillingController {
     private final com.dentalcore.billing.internal.service.WalkoutService walkoutService;
     private final FamilyBillingService familyBillingService;
     private final PaymentPlanService paymentPlanService;
+    private final LanguageResolver languageResolver;
 
     public BillingController(BillingService service,
                              com.dentalcore.billing.internal.service.StatementService statementService,
                              com.dentalcore.billing.internal.service.WalkoutService walkoutService,
                              FamilyBillingService familyBillingService,
-                             PaymentPlanService paymentPlanService) {
+                             PaymentPlanService paymentPlanService,
+                             LanguageResolver languageResolver) {
         this.service = service;
         this.statementService = statementService;
         this.walkoutService = walkoutService;
         this.familyBillingService = familyBillingService;
         this.paymentPlanService = paymentPlanService;
+        this.languageResolver = languageResolver;
     }
 
     @GetMapping("/walkout")
     @PreAuthorize(CAN_PRINT_STATEMENTS)
     @Operation(summary = "Walk-out statement (PDF) for an appointment's visit")
     public org.springframework.http.ResponseEntity<byte[]> walkout(
-            @RequestParam UUID appointmentId) {
-        byte[] pdf = walkoutService.walkoutPdf(appointmentId);
+            @RequestParam UUID appointmentId,
+            @RequestParam(required = false) String lang) {
+        byte[] pdf = walkoutService.walkoutPdf(appointmentId, languageResolver.resolve(lang));
         org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
         headers.setContentDisposition(org.springframework.http.ContentDisposition
@@ -87,8 +92,10 @@ public class BillingController {
             java.time.LocalDate from,
             @RequestParam @org.springframework.format.annotation.DateTimeFormat(
                     iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
-            java.time.LocalDate to) {
-        byte[] pdf = statementService.statementPdf(patientId, from, to);
+            java.time.LocalDate to,
+            @RequestParam(required = false) String lang) {
+        byte[] pdf = statementService.statementPdf(patientId, from, to,
+                languageResolver.resolve(lang));
         org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
         headers.setContentDisposition(org.springframework.http.ContentDisposition
@@ -166,8 +173,10 @@ public class BillingController {
             java.time.LocalDate from,
             @RequestParam @org.springframework.format.annotation.DateTimeFormat(
                     iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
-            java.time.LocalDate to) {
-        byte[] pdf = familyBillingService.familyStatementPdf(guarantorId, from, to);
+            java.time.LocalDate to,
+            @RequestParam(required = false) String lang) {
+        byte[] pdf = familyBillingService.familyStatementPdf(guarantorId, from, to,
+                languageResolver.resolve(lang));
         org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
         headers.setContentDisposition(org.springframework.http.ContentDisposition

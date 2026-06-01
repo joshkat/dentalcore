@@ -67,8 +67,10 @@ public class FormInstanceController {
 
     @PostMapping("/{id}/sign")
     @PreAuthorize(CAN_WRITE)
-    @Operation(summary = "Sign a completed form: renders the PDF into the patient's documents")
-    public InstanceResponse sign(@PathVariable UUID id, @Valid @RequestBody SignRequest request) {
-        return service.sign(id, request);
+    @Operation(summary = "Sign a completed form: renders the PDF into the patient's documents"
+            + " (optional ?lang=en|es, else the signer's export language)")
+    public InstanceResponse sign(@PathVariable UUID id, @Valid @RequestBody SignRequest request,
+                                 @RequestParam(required = false) String lang) {
+        return service.sign(id, request, lang);
     }
 }

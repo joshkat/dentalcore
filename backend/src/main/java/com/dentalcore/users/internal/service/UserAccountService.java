@@ -68,6 +68,13 @@ public class UserAccountService implements UserApi {
         user.resetLoginState();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<String> exportLanguageOf(UUID userId) {
+        // Optional.map drops null preferences, i.e. "inherit instance default"
+        return userRepository.findById(userId).map(User::getExportLanguage);
+    }
+
     private User findUser(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));

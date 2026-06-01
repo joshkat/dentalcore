@@ -8,6 +8,7 @@ import com.dentalcore.forms.internal.dto.FormDtos.SignRequest;
 import com.dentalcore.forms.internal.entity.FormInstance;
 import com.dentalcore.forms.internal.entity.FormTemplate;
 import com.dentalcore.forms.internal.repository.FormInstanceRepository;
+import com.dentalcore.infrastructure.i18n.LanguageResolver;
 import com.dentalcore.patients.api.PatientApi;
 import com.dentalcore.patients.api.PatientSummary;
 import com.dentalcore.shared.error.InvalidRequestException;
@@ -41,19 +42,22 @@ public class FormInstanceService {
     private final DocumentIngestApi documentIngest;
     private final PatientApi patientApi;
     private final ApplicationEventPublisher events;
+    private final LanguageResolver languageResolver;
 
     public FormInstanceService(FormInstanceRepository instanceRepository,
                                FormTemplateService templateService,
                                FormPdfRenderer pdfRenderer,
                                DocumentIngestApi documentIngest,
                                PatientApi patientApi,
-                               ApplicationEventPublisher events) {
+                               ApplicationEventPublisher events,
+                               LanguageResolver languageResolver) {
         this.instanceRepository = instanceRepository;
         this.templateService = templateService;
         this.pdfRenderer = pdfRenderer;
         this.documentIngest = documentIngest;
         this.patientApi = patientApi;
         this.events = events;
+        this.languageResolver = languageResolver;
     }
 
     public InstanceResponse create(InstanceCreateRequest request) {
@@ -96,7 +100,7 @@ public class FormInstanceService {
         return toResponse(instance, template);
     }
 
-    public InstanceResponse sign(UUID id, SignRequest request) {
+    public InstanceResponse sign(UUID id, SignRequest request, String lang) {
         FormInstance instance = findInstance(id);
         if (instance.getStatus() != FormInstance.Status.COMPLETED) {
             throw new InvalidRequestException("Only a COMPLETED form can be signed");
@@ -106,12 +110,15 @@ public class FormInstanceService {
         PatientSummary patient = patientApi.findSummary(instance.getPatientId())
                 .orElseThrow(() -> new InvalidRequestException("Unknown patient"));
 
+        // the stored PDF is rendered once: optional ?lang param, else the
+        // signing user's effective export language
+        String language = languageResolver.resolve(lang);
         Instant signedAt = Instant.now();
         byte[] pdf = pdfRenderer.render(
                 template.getName(),
                 patient.firstName() + " " + patient.lastName(),
                 template.getFields(), instance.getAnswers(),
-                signaturePng, request.signedByName().trim(), signedAt);
+                signaturePng, request.signedByName().trim(), signedAt, language);
 
         UUID documentId = documentIngest.storePdf(
                 instance.getPatientId(),
