@@ -1,0 +1,12 @@
+{
+  "welcomeBack": "Welcome back, {{name}}",
+  "todayIs": "Today is {{date}}",
+  "activePatients": "Active patients",
+  "activePatientsHint": "patients with ACTIVE status",
+  "todaysAppointments": "Today's appointments",
+  "todaysAppointmentsHint": "completed / scheduled today",
+  "todaysProduction": "Today's production",
+  "collectionsHint": "collections {{amount}}",
+  "openClaims": "Open claims",
+  "openClaimsHint": "draft, submitted, accepted, or denied"
+}

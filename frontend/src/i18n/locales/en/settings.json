@@ -1,0 +1,13 @@
+{
+  "title": "Settings",
+  "languageCard": "Language / Idioma",
+  "languageCardHint": "Choose the language for menus and screens. Changes apply immediately.",
+  "exportCard": "Document & export language",
+  "exportCardHint": "Used for generated documents, PDFs, and exports.",
+  "english": "English",
+  "spanish": "Español",
+  "useClinicDefault": "Use clinic default ({{language}})",
+  "useClinicDefaultUnknown": "Use clinic default",
+  "saved": "Saved",
+  "saveFailed": "Could not save your preference. Try again."
+}

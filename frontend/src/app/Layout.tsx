@@ -7,6 +7,7 @@ import {
   FileText,
   LayoutDashboard,
   ListTodo,
+  Settings,
   Shield,
   ShieldCheck,
   Stethoscope,
@@ -15,7 +16,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useState, type DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { LanguageSync } from '../features/settings/LanguageSync';
 import { useAuth } from '../lib/auth';
 import type { Role } from '../types/api';
 import { PaneManager } from './panes/PaneManager';
@@ -23,51 +26,55 @@ import { PANE_DRAG_TYPE, PaneProvider, usePanes } from './panes/PaneProvider';
 
 interface NavItem {
   to: string;
-  label: string;
+  /** Key in the `nav` namespace. */
+  labelKey: string;
   icon: LucideIcon;
   roles?: Role[];
 }
 
 const navItems: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/schedule', label: 'Schedule', icon: Calendar },
-  { to: '/patients', label: 'Patients', icon: Users },
-  { to: '/recall', label: 'Recall', icon: BellRing },
-  { to: '/providers', label: 'Providers', icon: Stethoscope },
-  { to: '/procedures', label: 'Procedures', icon: ClipboardList },
-  { to: '/insurance', label: 'Insurance', icon: Shield },
-  { to: '/claims', label: 'Claims', icon: FileText },
+  { to: '/', labelKey: 'dashboard', icon: LayoutDashboard },
+  { to: '/schedule', labelKey: 'schedule', icon: Calendar },
+  { to: '/patients', labelKey: 'patients', icon: Users },
+  { to: '/recall', labelKey: 'recall', icon: BellRing },
+  { to: '/providers', labelKey: 'providers', icon: Stethoscope },
+  { to: '/procedures', labelKey: 'procedures', icon: ClipboardList },
+  { to: '/insurance', labelKey: 'insurance', icon: Shield },
+  { to: '/claims', labelKey: 'claims', icon: FileText },
   {
     to: '/forms',
-    label: 'Forms',
+    labelKey: 'forms',
     icon: FileSignature,
     roles: ['ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK'],
   },
   {
     to: '/worklists',
-    label: 'Worklists',
+    labelKey: 'worklists',
     icon: ListTodo,
     roles: ['ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING'],
   },
   {
     to: '/reports',
-    label: 'Reports',
+    labelKey: 'reports',
     icon: BarChart3,
     roles: ['ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING'],
   },
-  { to: '/users', label: 'Users', icon: UserCog, roles: ['ADMIN'] },
-  { to: '/admin', label: 'Admin', icon: ShieldCheck, roles: ['ADMIN'] },
+  { to: '/users', labelKey: 'users', icon: UserCog, roles: ['ADMIN'] },
+  { to: '/admin', labelKey: 'admin', icon: ShieldCheck, roles: ['ADMIN'] },
+  { to: '/settings', labelKey: 'settings', icon: Settings },
 ];
 
 export function Layout() {
   return (
     <PaneProvider>
+      <LanguageSync />
       <LayoutShell />
     </PaneProvider>
   );
 }
 
 function LayoutShell() {
+  const { t } = useTranslation('nav');
   const { user, logout, hasRole } = useAuth();
   const { setDragging } = usePanes();
   const navigate = useNavigate();
@@ -89,7 +96,7 @@ function LayoutShell() {
 
   const onNavDragStart = (e: DragEvent, item: NavItem) => {
     e.dataTransfer.setData(PANE_DRAG_TYPE, item.to);
-    e.dataTransfer.setData('text/plain', item.label);
+    e.dataTransfer.setData('text/plain', t(item.labelKey));
     e.dataTransfer.effectAllowed = 'copy';
     setDragging(true);
   };
@@ -109,8 +116,8 @@ function LayoutShell() {
           {!collapsed && <span className="text-lg font-bold text-brand-700">DentalCore</span>}
           <button
             onClick={toggleSidebar}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')}
+            title={collapsed ? t('expandSidebar') : t('collapseSidebar')}
             className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
           >
             {collapsed ? '»' : '«'}
@@ -118,7 +125,7 @@ function LayoutShell() {
         </div>
         <nav
           className={`flex-1 space-y-1 ${collapsed ? 'p-2' : 'p-3'}`}
-          aria-label="Main navigation"
+          aria-label={t('mainNavigation')}
         >
           {navItems
             .filter((item) => !item.roles || hasRole(...item.roles))
@@ -128,10 +135,10 @@ function LayoutShell() {
                 to={item.to}
                 end={item.to === '/'}
                 draggable
-                aria-label={item.label}
+                aria-label={t(item.labelKey)}
                 onDragStart={(e) => onNavDragStart(e, item)}
                 onDragEnd={() => setDragging(false)}
-                title={collapsed ? undefined : 'Drag into the workspace to open in a split pane'}
+                title={collapsed ? undefined : t('dragHint')}
                 className={({ isActive }) =>
                   `group relative flex cursor-grab items-center rounded-md text-sm font-medium active:cursor-grabbing ${
                     collapsed ? 'justify-center py-2' : 'gap-3 px-3 py-2'
@@ -143,10 +150,10 @@ function LayoutShell() {
                 }
               >
                 <item.icon size={18} className="shrink-0" aria-hidden />
-                {!collapsed && item.label}
+                {!collapsed && t(item.labelKey)}
                 {collapsed && (
                   <span className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs font-medium text-white shadow group-hover:block">
-                    {item.label}
+                    {t(item.labelKey)}
                   </span>
                 )}
               </NavLink>
@@ -162,7 +169,7 @@ function LayoutShell() {
             onClick={onLogout}
             className="mt-2 text-sm text-brand-600 hover:underline"
           >
-            Sign out
+            {t('signOut')}
           </button>
         </div>
         )}

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PaneErrorBoundaryProps {
   children: ReactNode;
@@ -32,23 +33,29 @@ export class PaneErrorBoundary extends Component<PaneErrorBoundaryProps, PaneErr
 
   render() {
     if (this.state.error) {
-      return (
-        <div
-          role="alert"
-          className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-6 text-center"
-        >
-          <p className="text-sm font-semibold text-gray-900">This pane crashed</p>
-          <p className="max-w-full break-words text-xs text-gray-500">{this.state.error.message}</p>
-          <button
-            type="button"
-            onClick={this.retry}
-            className="inline-flex items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            Retry
-          </button>
-        </div>
-      );
+      return <PaneCrashFallback error={this.state.error} onRetry={this.retry} />;
     }
     return this.props.children;
   }
+}
+
+/** Functional fallback so the class boundary can use the i18n hook. */
+function PaneCrashFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const { t } = useTranslation('common');
+  return (
+    <div
+      role="alert"
+      className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-6 text-center"
+    >
+      <p className="text-sm font-semibold text-gray-900">{t('paneCrashed')}</p>
+      <p className="max-w-full break-words text-xs text-gray-500">{error.message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        {t('retry')}
+      </button>
+    </div>
+  );
 }

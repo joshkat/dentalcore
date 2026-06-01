@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import type { AuthResponse, ProblemDetail } from '../types/api';
 
 // Access token lives in memory only (never localStorage) to limit XSS exposure.
@@ -18,7 +19,7 @@ export class ApiError extends Error {
   readonly problem: ProblemDetail | null;
 
   constructor(status: number, problem: ProblemDetail | null) {
-    super(problem?.detail ?? problem?.title ?? `Request failed (${status})`);
+    super(problem?.detail ?? problem?.title ?? i18n.t('common:errors.requestFailed', { status }));
     this.status = status;
     this.problem = problem;
   }

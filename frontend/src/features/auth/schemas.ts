@@ -1,18 +1,48 @@
 import { z } from 'zod';
 
-export const loginSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
+/**
+ * Zod bakes messages into the schema at creation time, so translated schemas
+ * are factories taking `t`. Build them in the component with
+ * `useMemo(() => makeLoginSchema(t), [t])` so they rebuild on language change.
+ */
+export type Translate = (key: string) => string;
 
-export type LoginForm = z.infer<typeof loginSchema>;
+export function makeLoginSchema(t: Translate) {
+  return z.object({
+    email: z
+      .string()
+      .min(1, t('auth:validation.emailRequired'))
+      .email(t('auth:validation.emailInvalid')),
+    password: z.string().min(1, t('auth:validation.passwordRequired')),
+  });
+}
 
-export const forgotPasswordSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
-});
+export type LoginForm = z.infer<ReturnType<typeof makeLoginSchema>>;
 
-export type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
+export function makeForgotPasswordSchema(t: Translate) {
+  return z.object({
+    email: z
+      .string()
+      .min(1, t('auth:validation.emailRequired'))
+      .email(t('auth:validation.emailInvalid')),
+  });
+}
 
+export type ForgotPasswordForm = z.infer<ReturnType<typeof makeForgotPasswordSchema>>;
+
+export function makePasswordRules(t: Translate) {
+  return z
+    .string()
+    .min(12, t('auth:validation.passwordMinLength'))
+    .max(128, t('auth:validation.passwordMaxLength'))
+    .regex(/[A-Za-z]/, t('auth:validation.passwordNeedsLetter'))
+    .regex(/\d/, t('auth:validation.passwordNeedsDigit'));
+}
+
+/**
+ * @deprecated English-only static rules kept for callers not yet migrated to
+ * i18n (features/users/UserFormModal). Use makePasswordRules(t) instead.
+ */
 export const passwordRules = z
   .string()
   .min(12, 'Password must be at least 12 characters')
@@ -20,14 +50,16 @@ export const passwordRules = z
   .regex(/[A-Za-z]/, 'Password must contain a letter')
   .regex(/\d/, 'Password must contain a digit');
 
-export const resetPasswordSchema = z
-  .object({
-    newPassword: passwordRules,
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
+export function makeResetPasswordSchema(t: Translate) {
+  return z
+    .object({
+      newPassword: makePasswordRules(t),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: t('auth:validation.passwordsDoNotMatch'),
+      path: ['confirmPassword'],
+    });
+}
 
-export type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
+export type ResetPasswordForm = z.infer<ReturnType<typeof makeResetPasswordSchema>>;

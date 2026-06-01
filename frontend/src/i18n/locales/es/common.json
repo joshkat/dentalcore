@@ -1,0 +1,33 @@
+{
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "close": "Cerrar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "search": "Buscar",
+  "loading": "Cargando…",
+  "add": "Agregar",
+  "create": "Crear",
+  "print": "Imprimir",
+  "download": "Descargar",
+  "status": "Estado",
+  "date": "Fecha",
+  "actions": "Acciones",
+  "yes": "Sí",
+  "no": "No",
+  "none": "Ninguno",
+  "retry": "Reintentar",
+  "saved": "Guardado",
+  "back": "Volver",
+  "next": "Siguiente",
+  "previous": "Anterior",
+  "pageOf": "Página {{page}} de {{total}}",
+  "noResults": "No se encontraron resultados",
+  "checkingSession": "Verificando sesión…",
+  "noPermission": "No tienes permiso para ver esta página.",
+  "somethingWentWrong": "Algo salió mal. Inténtalo de nuevo.",
+  "paneCrashed": "Este panel falló",
+  "errors": {
+    "requestFailed": "Error en la solicitud ({{status}})"
+  }
+}

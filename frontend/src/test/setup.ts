@@ -23,6 +23,12 @@ if (typeof window !== 'undefined' && !window.localStorage) {
   });
 }
 
-afterEach(() => {
+// Initialize the real i18n instance (English catalogs) for all component
+// tests. Dynamic import so it runs *after* the localStorage stub above.
+const { default: i18n } = await import('../i18n');
+
+afterEach(async () => {
   cleanup();
+  // Tests that switch language must not leak it into the next test.
+  if (i18n.language !== 'en') await i18n.changeLanguage('en');
 });
