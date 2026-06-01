@@ -40,7 +40,7 @@ public class OperatoryController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PROVIDERS_MANAGE')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create an operatory (ADMIN only)")
     public OperatoryResponse create(@Valid @RequestBody OperatoryRequest request) {
@@ -48,7 +48,7 @@ public class OperatoryController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PROVIDERS_MANAGE')")
     @Operation(summary = "Rename or (de)activate an operatory (ADMIN only)")
     public OperatoryResponse update(@PathVariable UUID id,
                                     @Valid @RequestBody OperatoryRequest request) {

@@ -26,7 +26,7 @@ import java.util.UUID;
 @Tag(name = "Note Templates", description = "Reusable clinical note bodies with placeholders")
 public class NoteTemplateController {
 
-    private static final String CAN_WRITE = "hasAnyRole('ADMIN','DENTIST','HYGIENIST')";
+    private static final String CAN_WRITE = "hasAuthority('NOTE_TEMPLATES_MANAGE')";
 
     private final NoteTemplateService service;
 

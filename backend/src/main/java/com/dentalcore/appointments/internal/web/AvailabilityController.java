@@ -40,7 +40,7 @@ public class AvailabilityController {
     }
 
     @PutMapping("/hours")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PROVIDERS_MANAGE')")
     @Operation(summary = "Replace the weekly working-hours template (ADMIN)")
     public List<HoursBlock> replaceHours(@PathVariable UUID providerId,
                                          @RequestBody List<@Valid HoursBlock> blocks) {
@@ -54,7 +54,7 @@ public class AvailabilityController {
     }
 
     @PostMapping("/time-off")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PROVIDERS_MANAGE')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Block time off (ADMIN)")
     public TimeOffResponse addTimeOff(@PathVariable UUID providerId,
@@ -63,7 +63,7 @@ public class AvailabilityController {
     }
 
     @DeleteMapping("/time-off/{timeOffId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PROVIDERS_MANAGE')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Remove a time-off block (ADMIN)")
     public void removeTimeOff(@PathVariable UUID providerId, @PathVariable UUID timeOffId) {

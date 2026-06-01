@@ -4,6 +4,7 @@ import com.dentalcore.patients.internal.dto.FamilyLinkRequest;
 import com.dentalcore.patients.internal.dto.FamilyLinkResponse;
 import com.dentalcore.patients.internal.dto.MedicalAlertRequest;
 import com.dentalcore.patients.internal.dto.MedicalAlertResponse;
+import com.dentalcore.patients.internal.dto.PatientMergeDtos;
 import com.dentalcore.patients.internal.dto.PatientRequest;
 import com.dentalcore.patients.internal.dto.PatientResponse;
 import com.dentalcore.patients.internal.dto.PatientSummaryResponse;
@@ -11,6 +12,7 @@ import com.dentalcore.patients.internal.dto.TimelineEventResponse;
 import com.dentalcore.patients.internal.dto.UpdatePatientStatusRequest;
 import com.dentalcore.patients.internal.service.FamilyLinkService;
 import com.dentalcore.patients.internal.service.MedicalAlertService;
+import com.dentalcore.patients.internal.service.PatientMergeService;
 import com.dentalcore.patients.internal.service.PatientService;
 import com.dentalcore.shared.web.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +44,7 @@ import java.util.UUID;
 public class PatientController {
 
     private static final String CAN_WRITE =
-            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','FRONT_DESK')";
+            "hasAuthority('PATIENTS_WRITE')";
     private static final int MAX_PAGE_SIZE = 100;
     private static final Set<String> SORTABLE =
             Set.of("lastName", "firstName", "dateOfBirth", "createdAt");
@@ -50,13 +52,16 @@ public class PatientController {
     private final PatientService patientService;
     private final MedicalAlertService alertService;
     private final FamilyLinkService familyLinkService;
+    private final PatientMergeService mergeService;
 
     public PatientController(PatientService patientService,
                              MedicalAlertService alertService,
-                             FamilyLinkService familyLinkService) {
+                             FamilyLinkService familyLinkService,
+                             PatientMergeService mergeService) {
         this.patientService = patientService;
         this.alertService = alertService;
         this.familyLinkService = familyLinkService;
+        this.mergeService = mergeService;
     }
 
     @GetMapping
@@ -108,7 +113,7 @@ public class PatientController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PATIENTS_DELETE')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Soft-delete a patient (ADMIN only)")
     public void delete(@PathVariable UUID id) {
@@ -142,7 +147,7 @@ public class PatientController {
 
     /** Billing staff manage who guarantees an account; null clears it (self-guaranteed). */
     private static final String CAN_SET_GUARANTOR =
-            "hasAnyRole('ADMIN','FRONT_DESK','BILLING')";
+            "hasAuthority('PATIENT_GUARANTOR_MANAGE')";
 
     public record GuarantorRequest(UUID guarantorPatientId) {
     }
@@ -153,6 +158,27 @@ public class PatientController {
     public PatientResponse updateGuarantor(@PathVariable UUID id,
                                            @RequestBody GuarantorRequest request) {
         return patientService.updateGuarantor(id, request.guarantorPatientId());
+    }
+
+    // ---- Duplicate detection & merge ----
+
+    /** Merging is destructive bookkeeping; admins only. */
+    private static final String CAN_MERGE = "hasAuthority('PATIENTS_MERGE')";
+
+    @GetMapping("/duplicates")
+    @PreAuthorize(CAN_MERGE)
+    @Operation(summary = "Scan for potential duplicate patients (ADMIN only)")
+    public List<PatientMergeDtos.DuplicateCandidateResponse> duplicates() {
+        return mergeService.findDuplicates();
+    }
+
+    @PostMapping("/{targetId}/merge")
+    @PreAuthorize(CAN_MERGE)
+    @Operation(summary = "Merge a duplicate (source) patient into this target (ADMIN only)")
+    public PatientMergeDtos.MergeResponse merge(
+            @PathVariable UUID targetId,
+            @Valid @RequestBody PatientMergeDtos.MergeRequest request) {
+        return mergeService.merge(targetId, request.sourceId());
     }
 
     // ---- Medical alerts ----

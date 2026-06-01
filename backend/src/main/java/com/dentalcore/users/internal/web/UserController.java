@@ -42,7 +42,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('USERS_MANAGE')")
     @Operation(summary = "List users with optional search")
     public PageResponse<UserResponse> list(
             @RequestParam(required = false) String search,
@@ -69,14 +69,14 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('USERS_MANAGE')")
     @Operation(summary = "Get a user by id")
     public UserResponse get(@PathVariable UUID id) {
         return userService.get(id);
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('USERS_MANAGE')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a user")
     public UserResponse create(@Valid @RequestBody CreateUserRequest request) {
@@ -84,14 +84,14 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('USERS_MANAGE')")
     @Operation(summary = "Update a user's profile, roles, and status")
     public UserResponse update(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
         return userService.update(id, request);
     }
 
     @PostMapping("/{id}/reset-password")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('USERS_MANAGE')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Administratively set a new password for a user")
     public void resetPassword(@PathVariable UUID id,

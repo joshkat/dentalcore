@@ -38,10 +38,12 @@ import java.util.UUID;
 @Tag(name = "Billing", description = "Append-only patient ledger")
 public class BillingController {
 
-    private static final String CAN_BILL = "hasAnyRole('ADMIN','BILLING')";
-    private static final String CAN_TAKE_PAYMENT = "hasAnyRole('ADMIN','BILLING','FRONT_DESK')";
-    private static final String CAN_VIEW_LEDGER =
-            "hasAnyRole('ADMIN','BILLING','FRONT_DESK','DENTIST')";
+    private static final String CAN_POST = "hasAuthority('BILLING_POST')";
+    private static final String CAN_REVERSE = "hasAuthority('BILLING_REVERSE')";
+    private static final String CAN_TAKE_PAYMENT = "hasAuthority('PAYMENTS_TAKE')";
+    private static final String CAN_PRINT_STATEMENTS = "hasAuthority('STATEMENTS_GENERATE')";
+    private static final String CAN_MANAGE_PLANS = "hasAuthority('PAYMENT_PLANS_MANAGE')";
+    private static final String CAN_VIEW_LEDGER = "hasAuthority('BILLING_READ')";
 
     private final BillingService service;
     private final com.dentalcore.billing.internal.service.StatementService statementService;
@@ -62,7 +64,7 @@ public class BillingController {
     }
 
     @GetMapping("/walkout")
-    @PreAuthorize(CAN_TAKE_PAYMENT)
+    @PreAuthorize(CAN_PRINT_STATEMENTS)
     @Operation(summary = "Walk-out statement (PDF) for an appointment's visit")
     public org.springframework.http.ResponseEntity<byte[]> walkout(
             @RequestParam UUID appointmentId) {
@@ -76,7 +78,7 @@ public class BillingController {
     }
 
     @GetMapping("/statement")
-    @PreAuthorize(CAN_TAKE_PAYMENT)
+    @PreAuthorize(CAN_PRINT_STATEMENTS)
     @Operation(summary = "Printable patient statement (PDF) for a period")
     public org.springframework.http.ResponseEntity<byte[]> statement(
             @RequestParam UUID patientId,
@@ -113,7 +115,7 @@ public class BillingController {
     }
 
     @PostMapping("/charges")
-    @PreAuthorize(CAN_BILL)
+    @PreAuthorize(CAN_POST)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Post a manual charge (amount defaults to the procedure's fee)")
     public LedgerEntryResponse postCharge(@Valid @RequestBody ChargeRequest request) {
@@ -129,7 +131,7 @@ public class BillingController {
     }
 
     @PostMapping("/adjustments")
-    @PreAuthorize(CAN_BILL)
+    @PreAuthorize(CAN_POST)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Post a signed adjustment (negative = credit/discount)")
     public LedgerEntryResponse postAdjustment(@Valid @RequestBody AdjustmentRequest request) {
@@ -137,7 +139,7 @@ public class BillingController {
     }
 
     @PostMapping("/entries/{id}/reverse")
-    @PreAuthorize(CAN_BILL)
+    @PreAuthorize(CAN_REVERSE)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Void an entry with a negating reversal (entries are never edited)")
     public LedgerEntryResponse reverse(@PathVariable UUID id,
@@ -155,7 +157,7 @@ public class BillingController {
     }
 
     @GetMapping("/family-statement")
-    @PreAuthorize(CAN_TAKE_PAYMENT)
+    @PreAuthorize(CAN_PRINT_STATEMENTS)
     @Operation(summary = "Printable family statement (PDF) grouped by patient")
     public org.springframework.http.ResponseEntity<byte[]> familyStatement(
             @RequestParam UUID guarantorId,
@@ -177,7 +179,7 @@ public class BillingController {
     // ---- payment plans ----
 
     @PostMapping("/payment-plans")
-    @PreAuthorize(CAN_BILL)
+    @PreAuthorize(CAN_MANAGE_PLANS)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a payment plan with a generated installment schedule")
     public PaymentPlanResponse createPaymentPlan(@Valid @RequestBody PaymentPlanRequest request) {
@@ -192,7 +194,7 @@ public class BillingController {
     }
 
     @PatchMapping("/payment-plans/{id}/status")
-    @PreAuthorize(CAN_BILL)
+    @PreAuthorize(CAN_MANAGE_PLANS)
     @Operation(summary = "Close out an ACTIVE plan (COMPLETED, DEFAULTED, or CANCELLED)")
     public PaymentPlanResponse updatePaymentPlanStatus(
             @PathVariable UUID id, @Valid @RequestBody PaymentPlanStatusRequest request) {

@@ -32,7 +32,7 @@ import java.util.UUID;
 public class AppointmentController {
 
     private static final String CAN_WRITE =
-            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','FRONT_DESK')";
+            "hasAuthority('APPOINTMENTS_WRITE')";
 
     private final AppointmentService appointmentService;
 

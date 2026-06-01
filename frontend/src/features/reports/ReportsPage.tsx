@@ -15,6 +15,7 @@ import {
   type ArAgingRow,
   type DaySheetEntryType,
 } from './api';
+import { StatementRunsReport } from './StatementRunsReport';
 
 const REPORTS = [
   'Appointments by provider',
@@ -24,6 +25,7 @@ const REPORTS = [
   'Provider utilization',
   'A/R aging',
   'Collections',
+  'Statement runs',
 ] as const;
 type Report = (typeof REPORTS)[number];
 
@@ -42,7 +44,8 @@ export function ReportsPage() {
   // READ_ONLY cannot fetch any report endpoint, so don't render the page at all
   const canSeeReports = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING');
   const reports = REPORTS.filter((r) => {
-    if (r === 'Daily production' || r === 'A/R aging') return canSeeFinancials;
+    if (r === 'Daily production' || r === 'A/R aging' || r === 'Statement runs')
+      return canSeeFinancials;
     if (r === 'Day sheet' || r === 'Collections') return canSeeDaySheet;
     return true;
   });
@@ -56,7 +59,8 @@ export function ReportsPage() {
     report !== 'Patient growth' &&
     report !== 'Day sheet' &&
     report !== 'A/R aging' &&
-    report !== 'Collections';
+    report !== 'Collections' &&
+    report !== 'Statement runs'; // has its own form row
 
   if (!canSeeReports) {
     return (
@@ -140,6 +144,7 @@ export function ReportsPage() {
         {report === 'Provider utilization' && <UtilizationReport from={from} to={to} />}
         {report === 'A/R aging' && canSeeFinancials && <ArAgingReportView />}
         {report === 'Collections' && canSeeDaySheet && <CollectionsReportView />}
+        {report === 'Statement runs' && canSeeFinancials && <StatementRunsReport />}
       </div>
     </div>
   );

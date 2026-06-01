@@ -29,7 +29,7 @@ import java.util.UUID;
 public class CompletedProcedureController {
 
     private static final String CAN_COMPLETE =
-            "hasAnyRole('ADMIN','DENTIST','HYGIENIST','FRONT_DESK')";
+            "hasAuthority('PROCEDURES_COMPLETE')";
 
     private final CompletedProcedureService service;
 

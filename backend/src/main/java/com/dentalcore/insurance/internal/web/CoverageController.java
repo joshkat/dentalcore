@@ -27,7 +27,7 @@ import java.util.UUID;
 @Tag(name = "Patient Insurance", description = "Patient coverage")
 public class CoverageController {
 
-    private static final String CAN_WRITE = "hasAnyRole('ADMIN','FRONT_DESK','BILLING')";
+    private static final String CAN_WRITE = "hasAuthority('COVERAGE_MANAGE')";
 
     private final CoverageService service;
 

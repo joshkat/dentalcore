@@ -94,8 +94,16 @@ async function uploadWithAuth(url: string, form: FormData): Promise<PatientDocum
 }
 
 export async function downloadDocument(doc: PatientDocument): Promise<void> {
+  return downloadDocumentById(doc.id, doc.filename);
+}
+
+/** Blob download for any stored document (also used by billing statement runs). */
+export async function downloadDocumentById(
+  documentId: string,
+  filename: string,
+): Promise<void> {
   const attempt = () =>
-    fetch(`/api/v1/documents/${doc.id}/download`, {
+    fetch(`/api/v1/documents/${documentId}/download`, {
       headers: authHeader(),
       credentials: 'include',
     });
@@ -110,7 +118,7 @@ export async function downloadDocument(doc: PatientDocument): Promise<void> {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = doc.filename;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();

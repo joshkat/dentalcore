@@ -57,7 +57,7 @@ public class ProcedureCodeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('CATALOG_MANAGE')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Add a procedure to the catalog (ADMIN only)")
     public ProcedureCodeResponse create(@Valid @RequestBody ProcedureCodeRequest request) {
@@ -65,7 +65,7 @@ public class ProcedureCodeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('CATALOG_MANAGE')")
     @Operation(summary = "Update a catalog entry (ADMIN only)")
     public ProcedureCodeResponse update(@PathVariable UUID id,
                                         @Valid @RequestBody ProcedureCodeRequest request) {

@@ -116,6 +116,8 @@ export interface Patient {
   guarantorId: string | null;
   guarantorFirstName: string | null;
   guarantorLastName: string | null;
+  // Set when this record was merged into another patient (Phase C admin merge)
+  mergedIntoPatientId: string | null;
 }
 
 export type ToothConditionType =
@@ -505,4 +507,61 @@ export interface NoteTemplate {
   prompts: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+// ---- Phase C: permissions & admin ----
+
+export interface PermissionInfo {
+  code: string;
+  description: string;
+  category: string;
+}
+
+export interface PermissionMatrix {
+  permissions: PermissionInfo[];
+  /** Permission codes currently granted to each role. */
+  roles: Record<Role, string[]>;
+}
+
+export interface DuplicateCandidate {
+  patientId: string;
+  name: string;
+  dateOfBirth: string;
+  status: PatientStatus;
+}
+
+export interface DuplicatePair {
+  first: DuplicateCandidate;
+  second: DuplicateCandidate;
+  score: number;
+  reasons: string[];
+}
+
+export interface MergeResult {
+  targetId: string;
+  sourceId: string;
+  /** Rows repointed from source to target, by table. */
+  repointed: Record<string, number>;
+  /** Rows left in place (e.g. would conflict), by table. Present only when non-empty. */
+  skipped?: Record<string, number>;
+}
+
+export interface StatementRunItem {
+  guarantorPatientId: string;
+  guarantorName: string;
+  balance: number;
+  documentId: string;
+}
+
+export interface StatementRun {
+  id: string;
+  fromDate: string;
+  toDate: string;
+  minBalance: number;
+  status: string;
+  totalAccounts: number;
+  totalAmount: number;
+  createdAt: string;
+  /** Present on create (201) and detail fetch; omitted from the list endpoint. */
+  items?: StatementRunItem[];
 }
