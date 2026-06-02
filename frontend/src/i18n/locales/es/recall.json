@@ -1,0 +1,19 @@
+{
+  "title": "Lista de trabajo de control periódico",
+  "sendRemindersNow": "Enviar recordatorios ahora",
+  "runFailed": "La ejecución falló",
+  "description": "Pacientes con control periódico pendiente o vencido. Los recordatorios también se ejecutan automáticamente cada mañana; se respetan el consentimiento y un período de espera de 30 días.",
+  "runSummary": "Ejecución completada — citas: {{appointmentSent}} enviados / {{appointmentSkipped}} omitidos · control periódico: {{recallSent}} enviados / {{recallSkipped}} omitidos · {{failed}} fallidos",
+  "showPatientsDueWithin": "Mostrar pacientes que vencen dentro de",
+  "overdueOnly": "solo vencidos",
+  "windowDays": "{{count}} días",
+  "loadingWorklist": "Cargando lista de trabajo…",
+  "nobodyDue": "No hay pacientes pendientes. 🎉",
+  "patient": "Paciente",
+  "recallDue": "Vence el control",
+  "phone": "Teléfono",
+  "email": "Correo electrónico",
+  "lastReminder": "Último recordatorio",
+  "overdueBadge": "VENCIDO",
+  "never": "nunca"
+}

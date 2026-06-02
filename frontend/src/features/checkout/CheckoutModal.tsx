@@ -1,8 +1,10 @@
 import { Check } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import type { Appointment, AppointmentProcedure } from '../../types/api';
 import { useUpdateAppointmentStatus } from '../appointments/api';
@@ -16,17 +18,11 @@ import {
   type CompletedProcedure,
 } from './api';
 
-const money = (n: number) => `$${n.toFixed(2)}`;
-
 const inputClass =
   'mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600';
 
-const PAYMENT_METHODS = [
-  ['CARD', 'Card'],
-  ['CASH', 'Cash'],
-  ['CHECK', 'Check'],
-  ['OTHER', 'Other'],
-] as const;
+// Values stored in the payment payload — only their display labels are translated.
+const PAYMENT_METHODS = ['CARD', 'CASH', 'CHECK', 'OTHER'] as const;
 
 interface CheckoutModalProps {
   appointment: Appointment | null;
@@ -34,8 +30,9 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ appointment, onClose }: CheckoutModalProps) {
+  const { t } = useTranslation('checkout');
   return (
-    <Modal title="Check out" open={appointment !== null} onClose={onClose} size="lg">
+    <Modal title={t('title')} open={appointment !== null} onClose={onClose} size="lg">
       {appointment && (
         <CheckoutBody key={appointment.id} appointment={appointment} onClose={onClose} />
       )}
@@ -50,6 +47,7 @@ function CheckoutBody({
   appointment: Appointment;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('checkout');
   const patientId = appointment.patientId;
   const { data: patient } = usePatient(patientId);
   const { data: completedAll } = useCompletedProcedures(patientId);
@@ -98,7 +96,11 @@ function CheckoutBody({
   const completeRow = (procedure: AppointmentProcedure, tooth: string, fee: string) => {
     const feeValue = Number(fee);
     if (fee.trim() === '' || Number.isNaN(feeValue) || feeValue < 0) {
-      setError(`Enter a valid fee for ${procedure.code ?? 'the procedure'}`);
+      setError(
+        procedure.code
+          ? t('errors.enterValidFeeFor', { code: procedure.code })
+          : t('errors.enterValidFeeProcedure'),
+      );
       return;
     }
     void act(
@@ -111,14 +113,14 @@ function CheckoutBody({
           tooth: tooth.trim() || undefined,
           feeOverride: feeValue,
         }),
-      'Failed to complete procedure',
+      t('errors.failedToCompleteProcedure'),
     );
   };
 
   const takePayment = () => {
     const value = Number(amount);
     if (!value || value <= 0) {
-      setError('Enter a positive payment amount');
+      setError(t('errors.enterPositiveAmount'));
       return;
     }
     void act(async () => {
@@ -131,14 +133,14 @@ function CheckoutBody({
           : 'Checkout payment',
       });
       setPaidAmount(value);
-    }, 'Failed to record payment');
+    }, t('errors.failedToRecordPayment'));
   };
 
   const completeAppointment = () =>
     act(async () => {
       await updateStatus.mutateAsync({ status: 'COMPLETED' });
       setFinished(true);
-    }, 'Failed to complete appointment');
+    }, t('errors.failedToCompleteAppointment'));
 
   return (
     <div className="max-h-[70vh] space-y-6 overflow-y-auto pr-1">
@@ -151,7 +153,7 @@ function CheckoutBody({
       <p className="text-sm text-gray-600">
         {appointment.patientLastName}, {appointment.patientFirstName} ·{' '}
         {appointment.providerLastName}, {appointment.providerFirstName} ·{' '}
-        {new Date(appointment.startsAt).toLocaleTimeString([], {
+        {formatDate(new Date(appointment.startsAt), {
           hour: 'numeric',
           minute: '2-digit',
         })}
@@ -160,13 +162,10 @@ function CheckoutBody({
       {/* 1 — Procedures */}
       <section>
         <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-          1 · Procedures
+          {t('proceduresHeading')}
         </h3>
         {appointment.procedures.length === 0 && completedHere.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">
-            No procedures attached to this appointment. Use the patient chart to record
-            completed work.
-          </p>
+          <p className="mt-2 text-sm text-gray-500">{t('noProcedures')}</p>
         ) : (
           <div className="mt-2 space-y-2">
             {appointment.procedures.map((procedure) => {
@@ -181,7 +180,7 @@ function CheckoutBody({
                   onUndo={() =>
                     void act(
                       () => undoProcedure.mutateAsync(completed.id),
-                      'Failed to undo procedure',
+                      t('errors.failedToUndoProcedure'),
                     )
                   }
                 />
@@ -195,7 +194,7 @@ function CheckoutBody({
               );
             })}
             <p className="text-right text-sm font-medium text-gray-700">
-              Completed total: {money(completedTotal)}
+              {t('completedTotal', { amount: formatMoney(completedTotal) })}
             </p>
           </div>
         )}
@@ -205,13 +204,13 @@ function CheckoutBody({
       {hasEstimate && completedHere.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-            2 · Insurance estimate
+            {t('insuranceEstimateHeading')}
           </h3>
           <div className="mt-2 rounded-md bg-blue-50/60 p-3 text-sm">
             <p className="text-gray-700">
-              Est. insurance pays{' '}
+              {t('estInsurancePays')}{' '}
               <span className="font-semibold text-blue-700">
-                {money(estimate.totalInsurance)}
+                {formatMoney(estimate.totalInsurance)}
               </span>
               {estimate.carrierName && (
                 <span className="text-xs text-gray-500">
@@ -222,9 +221,9 @@ function CheckoutBody({
             </p>
             {estimate.hasSecondary && (
               <p className="text-gray-700">
-                Est. secondary pays{' '}
+                {t('estSecondaryPays')}{' '}
                 <span className="font-semibold text-indigo-700">
-                  {money(estimate.totalSecondary ?? 0)}
+                  {formatMoney(estimate.totalSecondary ?? 0)}
                 </span>
                 {estimate.secondaryCarrierName && (
                   <span className="text-xs text-gray-500">
@@ -235,8 +234,10 @@ function CheckoutBody({
               </p>
             )}
             <p className="text-gray-700">
-              Est. patient portion{' '}
-              <span className="font-semibold text-gray-900">{money(estimate.totalPatient)}</span>
+              {t('estPatientPortion')}{' '}
+              <span className="font-semibold text-gray-900">
+                {formatMoney(estimate.totalPatient)}
+              </span>
             </p>
           </div>
         </section>
@@ -245,18 +246,18 @@ function CheckoutBody({
       {/* 3 — Payment */}
       <section>
         <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-          3 · Payment
+          {t('paymentHeading')}
         </h3>
         {paidAmount !== null ? (
           <p className="mt-2 rounded-md bg-green-50 p-3 text-sm text-green-800">
             <Check size={14} className="mr-1 inline-block" aria-hidden />
-            Payment of {money(paidAmount)} recorded.
+            {t('paymentRecorded', { amount: formatMoney(paidAmount) })}
           </p>
         ) : (
           <div className="mt-2 flex flex-wrap items-end gap-3">
             <div className="w-32">
               <label htmlFor="checkout-amount" className="block text-sm font-medium text-gray-700">
-                Amount ($)
+                {t('amountLabel')}
               </label>
               <input
                 id="checkout-amount"
@@ -270,7 +271,7 @@ function CheckoutBody({
             </div>
             <div>
               <label htmlFor="checkout-method" className="block text-sm font-medium text-gray-700">
-                Method
+                {t('methodLabel')}
               </label>
               <select
                 id="checkout-method"
@@ -278,9 +279,9 @@ function CheckoutBody({
                 onChange={(e) => setMethod(e.target.value)}
                 className={inputClass}
               >
-                {PAYMENT_METHODS.map(([value, label]) => (
+                {PAYMENT_METHODS.map((value) => (
                   <option key={value} value={value}>
-                    {label}
+                    {t(`method.${value}`)}
                   </option>
                 ))}
               </select>
@@ -290,18 +291,18 @@ function CheckoutBody({
                 htmlFor="checkout-reference"
                 className="block text-sm font-medium text-gray-700"
               >
-                Reference (optional)
+                {t('referenceLabel')}
               </label>
               <input
                 id="checkout-reference"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                placeholder="Check #, last 4…"
+                placeholder={t('referencePlaceholder')}
                 className={inputClass}
               />
             </div>
             <Button onClick={takePayment} loading={recordPayment.isPending}>
-              Take payment
+              {t('takePayment')}
             </Button>
           </div>
         )}
@@ -310,23 +311,23 @@ function CheckoutBody({
       {/* 4 — Finish */}
       <section className="border-t border-gray-100 pt-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-          4 · Finish
+          {t('finishHeading')}
         </h3>
         {!finished ? (
           <div className="mt-2">
             <Button onClick={completeAppointment} loading={updateStatus.isPending}>
-              Complete appointment
+              {t('completeAppointment')}
             </Button>
           </div>
         ) : (
           <div className="mt-2 space-y-3">
             <p className="rounded-md bg-green-50 p-3 text-sm font-medium text-green-800">
               <Check size={14} className="mr-1 inline-block" aria-hidden />
-              Appointment completed.
+              {t('appointmentCompleted')}
             </p>
             {walkoutError && (
               <p role="alert" className="text-sm text-red-600">
-                Walk-out statement failed.
+                {t('walkoutFailed')}
               </p>
             )}
             <div className="flex flex-wrap items-center gap-3">
@@ -337,19 +338,19 @@ function CheckoutBody({
                   openWalkout(appointment.id).catch(() => setWalkoutError(true));
                 }}
               >
-                Walk-out statement
+                {t('walkoutStatement')}
               </Button>
               <Link
                 to="/schedule"
                 onClick={onClose}
                 className="text-sm font-medium text-brand-600 hover:underline"
               >
-                Book next visit →
+                {t('bookNextVisit')}
               </Link>
             </div>
             {patient?.nextRecallDate && (
               <p className="text-sm text-gray-600">
-                Next recall due <span className="font-medium">{patient.nextRecallDate}</span>
+                {t('nextRecallDue', { date: patient.nextRecallDate })}
               </p>
             )}
           </div>
@@ -368,6 +369,7 @@ function PendingRow({
   busy: boolean;
   onComplete: (tooth: string, fee: string) => void;
 }) {
+  const { t } = useTranslation('checkout');
   const [tooth, setTooth] = useState('');
   const [fee, setFee] = useState(
     procedure.standardFee != null ? procedure.standardFee.toFixed(2) : '',
@@ -388,7 +390,7 @@ function PendingRow({
           htmlFor={`tooth-${procedure.procedureCodeId}`}
           className="block text-xs font-medium text-gray-500"
         >
-          Tooth
+          {t('tooth')}
         </label>
         <input
           id={`tooth-${procedure.procedureCodeId}`}
@@ -402,7 +404,7 @@ function PendingRow({
           htmlFor={`fee-${procedure.procedureCodeId}`}
           className="block text-xs font-medium text-gray-500"
         >
-          Fee ($)
+          {t('feeLabel')}
         </label>
         <input
           id={`fee-${procedure.procedureCodeId}`}
@@ -415,7 +417,7 @@ function PendingRow({
         />
       </div>
       <Button variant="secondary" disabled={busy} onClick={() => onComplete(tooth, fee)}>
-        Complete
+        {t('complete')}
       </Button>
     </div>
   );
@@ -430,6 +432,7 @@ function CompletedRow({
   busy: boolean;
   onUndo: () => void;
 }) {
+  const { t } = useTranslation('checkout');
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-green-50 p-3 ring-1 ring-green-200">
       <p className="flex items-center gap-2 text-sm text-green-800">
@@ -439,14 +442,14 @@ function CompletedRow({
         {completed.tooth && <span className="text-xs">#{completed.tooth}</span>}
       </p>
       <span className="flex items-center gap-3">
-        <span className="text-sm font-semibold text-green-800">{money(completed.fee)}</span>
+        <span className="text-sm font-semibold text-green-800">{formatMoney(completed.fee)}</span>
         <button
           type="button"
           disabled={busy}
           onClick={onUndo}
           className="text-xs font-medium text-brand-600 hover:underline disabled:text-gray-400"
         >
-          Undo
+          {t('undo')}
         </button>
       </span>
     </div>

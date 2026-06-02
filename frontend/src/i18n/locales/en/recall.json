@@ -1,0 +1,19 @@
+{
+  "title": "Recall worklist",
+  "sendRemindersNow": "Send reminders now",
+  "runFailed": "Run failed",
+  "description": "Patients due or overdue for their recall visit. Reminders also run automatically each morning; consent and a 30-day cooldown are respected.",
+  "runSummary": "Run complete — appointments: {{appointmentSent}} sent / {{appointmentSkipped}} skipped · recall: {{recallSent}} sent / {{recallSkipped}} skipped · {{failed}} failed",
+  "showPatientsDueWithin": "Show patients due within",
+  "overdueOnly": "overdue only",
+  "windowDays": "{{count}} days",
+  "loadingWorklist": "Loading worklist…",
+  "nobodyDue": "Nobody is due. 🎉",
+  "patient": "Patient",
+  "recallDue": "Recall due",
+  "phone": "Phone",
+  "email": "Email",
+  "lastReminder": "Last reminder",
+  "overdueBadge": "OVERDUE",
+  "never": "never"
+}

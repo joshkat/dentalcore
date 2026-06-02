@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDate } from '../../i18n/format';
 import { useAuth } from '../../lib/auth';
 import type { Appointment } from '../../types/api';
 import { CheckoutModal } from '../checkout/CheckoutModal';
@@ -36,6 +38,7 @@ function toDateInput(date: Date): string {
 }
 
 export function CalendarPage() {
+  const { t } = useTranslation('schedule');
   const [searchParams, setSearchParams] = useSearchParams();
   const [weekStart, setWeekStart] = useState(() => {
     const dateParam = searchParams.get('date');
@@ -93,7 +96,7 @@ export function CalendarPage() {
     return map;
   }, [appointments, weekStart]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const monthLabel = weekStart.toLocaleDateString(undefined, {
+  const monthLabel = formatDate(weekStart, {
     month: 'long',
     year: 'numeric',
   });
@@ -102,30 +105,30 @@ export function CalendarPage() {
     <div className="flex h-full flex-col p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
           <span className="text-sm text-gray-500">{monthLabel}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={() => setWeekStart(addDays(weekStart, -7))}>
-            ← Prev
+            {t('prev')}
           </Button>
           <Button variant="secondary" onClick={() => setWeekStart(startOfWeek(new Date()))}>
-            Today
+            {t('today')}
           </Button>
           <Button variant="secondary" onClick={() => setWeekStart(addDays(weekStart, 7))}>
-            Next →
+            {t('nextWeek')}
           </Button>
           {isAdmin && (
             <Button variant="ghost" onClick={() => setManagingOps(true)}>
-              Operatories
+              {t('operatories')}
             </Button>
           )}
-          {canWrite && <Button onClick={() => setCreating(true)}>New appointment</Button>}
+          {canWrite && <Button onClick={() => setCreating(true)}>{t('newAppointment')}</Button>}
         </div>
       </div>
 
       {isPending ? (
-        <Spinner label="Loading schedule…" />
+        <Spinner label={t('loadingSchedule')} />
       ) : (
         <div className="flex-1 overflow-auto rounded-lg bg-white shadow">
           <div
@@ -143,7 +146,7 @@ export function CalendarPage() {
                     isToday ? 'text-brand-700' : 'text-gray-700'
                   }`}
                 >
-                  {day.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' })}
+                  {formatDate(day, { weekday: 'short', day: 'numeric' })}
                 </div>
               );
             })}
@@ -200,7 +203,7 @@ export function CalendarPage() {
                         {appointment.patientLastName}, {appointment.patientFirstName}
                       </span>
                       <span className="block truncate opacity-80">
-                        {starts.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} ·{' '}
+                        {formatDate(starts, { hour: 'numeric', minute: '2-digit' })} ·{' '}
                         {appointment.operatoryName}
                       </span>
                     </button>

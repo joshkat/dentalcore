@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
+import { formatDate } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import type { Appointment, AppointmentStatus } from '../../types/api';
-import { NEXT_STATUSES, STATUS_LABELS, useUpdateAppointmentStatus } from './api';
+import { NEXT_STATUSES, useUpdateAppointmentStatus } from './api';
 
 const statusTone: Record<AppointmentStatus, 'blue' | 'green' | 'yellow' | 'gray' | 'red'> = {
   SCHEDULED: 'blue',
@@ -32,8 +34,9 @@ export function AppointmentDetailModal({
   onCheckout,
   canWrite,
 }: AppointmentDetailModalProps) {
+  const { t } = useTranslation('schedule');
   return (
-    <Modal title="Appointment" open={appointment !== null} onClose={onClose}>
+    <Modal title={t('appointment')} open={appointment !== null} onClose={onClose}>
       {appointment && (
         <DetailBody
           key={`${appointment.id}-${appointment.status}`}
@@ -61,6 +64,7 @@ function DetailBody({
   onCheckout: (appointment: Appointment) => void;
   canWrite: boolean;
 }) {
+  const { t } = useTranslation('schedule');
   const updateStatus = useUpdateAppointmentStatus(appointment.id);
   const [error, setError] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -78,7 +82,7 @@ function DetailBody({
       await updateStatus.mutateAsync({ status, cancelReason: reason });
       if (status === 'CANCELLED') onClose();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to update status');
+      setError(e instanceof ApiError ? e.message : t('failedToUpdateStatus'));
     }
   };
 
@@ -99,14 +103,14 @@ function DetailBody({
             {appointment.patientLastName}, {appointment.patientFirstName}
           </Link>
           <p className="mt-1 text-sm text-gray-600">
-            {starts.toLocaleDateString(undefined, {
+            {formatDate(starts, {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
             })}
             {' · '}
-            {starts.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}–
-            {ends.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            {formatDate(starts, { hour: 'numeric', minute: '2-digit' })}–
+            {formatDate(ends, { hour: 'numeric', minute: '2-digit' })}
           </p>
           <p className="mt-1 text-sm text-gray-600">
             <span
@@ -118,8 +122,8 @@ function DetailBody({
           </p>
         </div>
         <span className="flex shrink-0 items-center gap-2">
-          {appointment.asap && <Badge tone="yellow">ASAP</Badge>}
-          <Badge tone={statusTone[appointment.status]}>{STATUS_LABELS[appointment.status]}</Badge>
+          {appointment.asap && <Badge tone="yellow">{t('asapBadge')}</Badge>}
+          <Badge tone={statusTone[appointment.status]}>{t(`status.${appointment.status}`)}</Badge>
         </span>
       </div>
 
@@ -142,7 +146,9 @@ function DetailBody({
         <p className="rounded-md bg-gray-50 p-3 text-sm text-gray-700">{appointment.notes}</p>
       )}
       {appointment.cancelledReason && (
-        <p className="text-sm text-gray-500">Cancellation reason: {appointment.cancelledReason}</p>
+        <p className="text-sm text-gray-500">
+          {t('cancellationReasonText', { reason: appointment.cancelledReason })}
+        </p>
       )}
 
       {canWrite && (nextStatuses.length > 0 || editable) && (
@@ -150,7 +156,7 @@ function DetailBody({
           {confirmingCancel ? (
             <div className="space-y-2">
               <label htmlFor="cancel-reason" className="block text-sm font-medium text-gray-700">
-                Cancellation reason
+                {t('cancellationReason')}
               </label>
               <input
                 id="cancel-reason"
@@ -164,17 +170,17 @@ function DetailBody({
                   loading={updateStatus.isPending}
                   onClick={() => transition('CANCELLED', cancelReason || undefined)}
                 >
-                  Confirm cancellation
+                  {t('confirmCancellation')}
                 </Button>
                 <Button variant="secondary" onClick={() => setConfirmingCancel(false)}>
-                  Keep appointment
+                  {t('keepAppointment')}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               {(appointment.status === 'CHECKED_IN' || appointment.status === 'IN_PROGRESS') && (
-                <Button onClick={() => onCheckout(appointment)}>Check out</Button>
+                <Button onClick={() => onCheckout(appointment)}>{t('checkOut')}</Button>
               )}
               {nextStatuses
                 .filter((s) => s !== 'CANCELLED')
@@ -185,17 +191,17 @@ function DetailBody({
                     disabled={updateStatus.isPending}
                     onClick={() => transition(status)}
                   >
-                    {STATUS_LABELS[status]}
+                    {t(`status.${status}`)}
                   </Button>
                 ))}
               {nextStatuses.includes('CANCELLED') && (
                 <Button variant="danger" onClick={() => setConfirmingCancel(true)}>
-                  Cancel…
+                  {t('cancelEllipsis')}
                 </Button>
               )}
               {editable && (
                 <Button variant="ghost" onClick={() => onEdit(appointment)}>
-                  {appointment.status === 'CANCELLED' ? 'Rebook / edit' : 'Reschedule / edit'}
+                  {appointment.status === 'CANCELLED' ? t('rebookEdit') : t('rescheduleEdit')}
                 </Button>
               )}
             </div>

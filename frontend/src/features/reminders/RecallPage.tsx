@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDate } from '../../i18n/format';
 import { api, ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 
@@ -26,6 +28,7 @@ interface RunSummary {
 }
 
 export function RecallPage() {
+  const { t } = useTranslation('recall');
   const [daysAhead, setDaysAhead] = useState(14);
   const [summary, setSummary] = useState<RunSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +54,7 @@ export function RecallPage() {
   return (
     <div className="p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Recall worklist</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {canRun && (
           <Button
             loading={runReminders.isPending}
@@ -60,24 +63,25 @@ export function RecallPage() {
               try {
                 await runReminders.mutateAsync();
               } catch (e) {
-                setError(e instanceof ApiError ? e.message : 'Run failed');
+                setError(e instanceof ApiError ? e.message : t('runFailed'));
               }
             }}
           >
-            Send reminders now
+            {t('sendRemindersNow')}
           </Button>
         )}
       </div>
-      <p className="mt-1 text-sm text-gray-500">
-        Patients due or overdue for their recall visit. Reminders also run automatically each
-        morning; consent and a 30-day cooldown are respected.
-      </p>
+      <p className="mt-1 text-sm text-gray-500">{t('description')}</p>
 
       {summary && (
         <div className="mt-3 rounded-md bg-green-50 p-3 text-sm text-green-800" role="status">
-          Run complete — appointments: {summary.appointmentSent} sent /{' '}
-          {summary.appointmentSkipped} skipped · recall: {summary.recallSent} sent /{' '}
-          {summary.recallSkipped} skipped · {summary.failed} failed
+          {t('runSummary', {
+            appointmentSent: summary.appointmentSent,
+            appointmentSkipped: summary.appointmentSkipped,
+            recallSent: summary.recallSent,
+            recallSkipped: summary.recallSkipped,
+            failed: summary.failed,
+          })}
         </div>
       )}
       {error && (
@@ -88,7 +92,7 @@ export function RecallPage() {
 
       <div className="mt-4">
         <label htmlFor="recall-window" className="mr-2 text-sm text-gray-700">
-          Show patients due within
+          {t('showPatientsDueWithin')}
         </label>
         <select
           id="recall-window"
@@ -96,30 +100,32 @@ export function RecallPage() {
           onChange={(e) => setDaysAhead(Number(e.target.value))}
           className="rounded-md border-0 px-3 py-1.5 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
         >
-          <option value={0}>overdue only</option>
-          <option value={14}>14 days</option>
-          <option value={30}>30 days</option>
-          <option value={90}>90 days</option>
+          <option value={0}>{t('overdueOnly')}</option>
+          <option value={14}>{t('windowDays', { count: 14 })}</option>
+          <option value={30}>{t('windowDays', { count: 30 })}</option>
+          <option value={90}>{t('windowDays', { count: 90 })}</option>
         </select>
       </div>
 
       <div className="mt-4 overflow-hidden rounded-lg bg-white shadow">
         {isPending ? (
-          <Spinner label="Loading worklist…" />
+          <Spinner label={t('loadingWorklist')} />
         ) : rows && rows.length === 0 ? (
-          <p className="p-8 text-center text-sm text-gray-500">Nobody is due. 🎉</p>
+          <p className="p-8 text-center text-sm text-gray-500">{t('nobodyDue')}</p>
         ) : (
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                {['Patient', 'Recall due', 'Phone', 'Email', 'Last reminder'].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500"
-                  >
-                    {h}
-                  </th>
-                ))}
+                {(['patient', 'recallDue', 'phone', 'email', 'lastReminder'] as const).map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500"
+                    >
+                      {t(h)}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -135,14 +141,18 @@ export function RecallPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className="mr-2">{row.nextRecallDate}</span>
-                    {row.nextRecallDate <= today && <Badge tone="red">OVERDUE</Badge>}
+                    {row.nextRecallDate <= today && <Badge tone="red">{t('overdueBadge')}</Badge>}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{row.phone ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{row.email ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-600">
                     {row.lastReminderAt
-                      ? new Date(row.lastReminderAt).toLocaleDateString()
-                      : 'never'}
+                      ? formatDate(row.lastReminderAt, {
+                          year: 'numeric',
+                          month: 'numeric',
+                          day: 'numeric',
+                        })
+                      : t('never')}
                   </td>
                 </tr>
               ))}
