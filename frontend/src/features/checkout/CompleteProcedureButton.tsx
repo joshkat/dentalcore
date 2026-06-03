@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { ApiError } from '../../lib/api';
 import { useProviders } from '../providers/api';
@@ -23,6 +24,7 @@ interface CompleteProcedureButtonProps {
 
 /** Small "Complete" action with a confirm popover (provider + fee) that posts a completed procedure. */
 export function CompleteProcedureButton(props: CompleteProcedureButtonProps) {
+  const { t } = useTranslation('checkout');
   const [open, setOpen] = useState(false);
   return (
     <span className="relative inline-block">
@@ -31,7 +33,7 @@ export function CompleteProcedureButton(props: CompleteProcedureButtonProps) {
         onClick={() => setOpen((o) => !o)}
         className="text-xs font-medium text-brand-600 hover:underline"
       >
-        Complete
+        {t('complete')}
       </button>
       {open && <CompletePopover {...props} onClose={() => setOpen(false)} />}
     </span>
@@ -49,6 +51,7 @@ function CompletePopover({
   defaultFee,
   onClose,
 }: CompleteProcedureButtonProps & { onClose: () => void }) {
+  const { t } = useTranslation('checkout');
   const { data: providers } = useProviders(false);
   // Chart rows don't carry the catalog code id — pull it from the owning plan.
   const { data: plan } = useTreatmentPlan(
@@ -67,11 +70,11 @@ function CompletePopover({
   const fee = feeOverride ?? (prefillFee != null ? prefillFee.toFixed(2) : '');
 
   const submit = async () => {
-    if (!resolvedCodeId) return setError('Procedure details still loading');
-    if (!providerId) return setError('Select a provider');
+    if (!resolvedCodeId) return setError(t('errors.procedureStillLoading'));
+    if (!providerId) return setError(t('errors.selectProvider'));
     const feeValue = Number(fee);
     if (fee.trim() === '' || Number.isNaN(feeValue) || feeValue < 0) {
-      return setError('Enter a valid fee');
+      return setError(t('errors.enterValidFee'));
     }
     setError(null);
     try {
@@ -86,14 +89,16 @@ function CompletePopover({
       });
       onClose();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to complete procedure');
+      setError(e instanceof ApiError ? e.message : t('errors.failedToCompleteProcedure'));
     }
   };
 
   return (
     <div className="absolute right-0 top-full z-20 mt-1 w-64 space-y-2 rounded-md bg-white p-3 text-left shadow-lg ring-1 ring-gray-200">
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-        Complete procedure{tooth ? ` — tooth ${tooth}` : ''}
+        {tooth
+          ? t('completeProcedureToothHeading', { tooth })
+          : t('completeProcedureHeading')}
       </p>
       {error && (
         <p role="alert" className="rounded-md bg-red-50 p-2 text-xs text-red-700">
@@ -105,7 +110,7 @@ function CompletePopover({
           htmlFor={`complete-provider-${plannedProcedureId ?? resolvedCodeId}`}
           className="block text-xs font-medium text-gray-700"
         >
-          Provider
+          {t('provider')}
         </label>
         <select
           id={`complete-provider-${plannedProcedureId ?? resolvedCodeId}`}
@@ -113,7 +118,7 @@ function CompletePopover({
           onChange={(e) => setProviderOverride(e.target.value)}
           className={inputClass}
         >
-          <option value="">Select…</option>
+          <option value="">{t('select')}</option>
           {providers?.content.map((p) => (
             <option key={p.id} value={p.id}>
               {p.lastName}, {p.firstName}
@@ -126,7 +131,7 @@ function CompletePopover({
           htmlFor={`complete-fee-${plannedProcedureId ?? resolvedCodeId}`}
           className="block text-xs font-medium text-gray-700"
         >
-          Fee ($)
+          {t('feeLabel')}
         </label>
         <input
           id={`complete-fee-${plannedProcedureId ?? resolvedCodeId}`}
@@ -140,10 +145,10 @@ function CompletePopover({
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="secondary" onClick={onClose}>
-          Cancel
+          {t('common:cancel')}
         </Button>
         <Button onClick={submit} loading={completeProcedure.isPending}>
-          Complete
+          {t('complete')}
         </Button>
       </div>
     </div>

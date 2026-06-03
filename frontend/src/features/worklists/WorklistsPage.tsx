@@ -1,16 +1,15 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge } from '../../components/Badge';
 import { Spinner } from '../../components/Spinner';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { useAuth } from '../../lib/auth';
 import type { AppointmentStatus, TreatmentPlanStatus } from '../../types/api';
-import { STATUS_LABELS } from '../appointments/api';
 import { useAsapList, useUnscheduledTreatment } from '../reports/api';
 
-const TABS = ['Unscheduled treatment', 'ASAP list'] as const;
+const TABS = ['unscheduled', 'asap'] as const;
 type Tab = (typeof TABS)[number];
-
-const money = (n: number) => `$${n.toFixed(2)}`;
 
 const planTone: Record<TreatmentPlanStatus, 'blue' | 'green' | 'yellow' | 'gray' | 'red'> = {
   DRAFT: 'gray',
@@ -32,51 +31,49 @@ const appointmentTone: Record<AppointmentStatus, 'blue' | 'green' | 'yellow' | '
 };
 
 export function WorklistsPage() {
+  const { t } = useTranslation('worklists');
   const { hasRole } = useAuth();
   const canSee = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING');
-  const [tab, setTab] = useState<Tab>('Unscheduled treatment');
+  const [tab, setTab] = useState<Tab>('unscheduled');
 
   if (!canSee) {
-    return (
-      <div className="p-8 text-sm text-gray-600">
-        You do not have permission to view worklists.
-      </div>
-    );
+    return <div className="p-8 text-sm text-gray-600">{t('noPermission')}</div>;
   }
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-900">Worklists</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
 
-      <nav className="mt-6 flex gap-1 border-b border-gray-200" aria-label="Worklists">
-        {TABS.map((t) => (
+      <nav className="mt-6 flex gap-1 border-b border-gray-200" aria-label={t('title')}>
+        {TABS.map((tabId) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabId}
+            onClick={() => setTab(tabId)}
             className={`px-4 py-2 text-sm font-medium ${
-              tab === t
+              tab === tabId
                 ? 'border-b-2 border-brand-600 text-brand-700'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t}
+            {t(`tabs.${tabId}`)}
           </button>
         ))}
       </nav>
 
       <div className="mt-6 rounded-lg bg-white p-6 shadow">
-        {tab === 'Unscheduled treatment' && <UnscheduledTreatmentList />}
-        {tab === 'ASAP list' && <AsapList />}
+        {tab === 'unscheduled' && <UnscheduledTreatmentList />}
+        {tab === 'asap' && <AsapList />}
       </div>
     </div>
   );
 }
 
 function UnscheduledTreatmentList() {
+  const { t } = useTranslation('worklists');
   const { data, isPending } = useUnscheduledTreatment();
-  if (isPending) return <Spinner label="Loading worklist…" />;
+  if (isPending) return <Spinner label={t('loadingWorklist')} />;
   if (!data || data.length === 0) {
-    return <p className="text-sm text-gray-500">No unscheduled treatment.</p>;
+    return <p className="text-sm text-gray-500">{t('noUnscheduledTreatment')}</p>;
   }
 
   const rows = [...data].sort((a, b) => b.remainingValue - a.remainingValue);
@@ -85,13 +82,13 @@ function UnscheduledTreatmentList() {
     <table className="min-w-full divide-y divide-gray-200 text-sm">
       <thead>
         <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-          <th className="py-2 pr-3">Patient</th>
-          <th className="py-2 pr-3">Phone</th>
-          <th className="py-2 pr-3">Plan</th>
-          <th className="py-2 pr-3">Status</th>
-          <th className="py-2 pr-3 text-right">Planned</th>
-          <th className="py-2 pr-3 text-right">Remaining value</th>
-          <th className="py-2">Recall</th>
+          <th className="py-2 pr-3">{t('patient')}</th>
+          <th className="py-2 pr-3">{t('phone')}</th>
+          <th className="py-2 pr-3">{t('plan')}</th>
+          <th className="py-2 pr-3">{t('status')}</th>
+          <th className="py-2 pr-3 text-right">{t('planned')}</th>
+          <th className="py-2 pr-3 text-right">{t('remainingValue')}</th>
+          <th className="py-2">{t('recall')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
@@ -108,10 +105,14 @@ function UnscheduledTreatmentList() {
             <td className="py-2 pr-3 text-gray-600">{row.phone ?? '—'}</td>
             <td className="py-2 pr-3 text-gray-900">{row.planTitle}</td>
             <td className="py-2 pr-3">
-              <Badge tone={planTone[row.planStatus] ?? 'gray'}>{row.planStatus}</Badge>
+              <Badge tone={planTone[row.planStatus] ?? 'gray'}>
+                {t(`planStatus.${row.planStatus}`, { defaultValue: row.planStatus })}
+              </Badge>
             </td>
             <td className="py-2 pr-3 text-right">{row.plannedCount}</td>
-            <td className="py-2 pr-3 text-right font-medium">{money(row.remainingValue)}</td>
+            <td className="py-2 pr-3 text-right font-medium">
+              {formatMoney(row.remainingValue)}
+            </td>
             <td className="py-2 text-gray-600">{row.nextRecallDate ?? '—'}</td>
           </tr>
         ))}
@@ -121,21 +122,22 @@ function UnscheduledTreatmentList() {
 }
 
 function AsapList() {
+  const { t } = useTranslation('worklists');
   const { data, isPending } = useAsapList();
-  if (isPending) return <Spinner label="Loading worklist…" />;
+  if (isPending) return <Spinner label={t('loadingWorklist')} />;
   if (!data || data.length === 0) {
-    return <p className="text-sm text-gray-500">No ASAP requests.</p>;
+    return <p className="text-sm text-gray-500">{t('noAsapRequests')}</p>;
   }
 
   return (
     <table className="min-w-full divide-y divide-gray-200 text-sm">
       <thead>
         <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-          <th className="py-2 pr-3">Patient</th>
-          <th className="py-2 pr-3">Phone</th>
-          <th className="py-2 pr-3">Provider</th>
-          <th className="py-2 pr-3">Scheduled for</th>
-          <th className="py-2">Status</th>
+          <th className="py-2 pr-3">{t('patient')}</th>
+          <th className="py-2 pr-3">{t('phone')}</th>
+          <th className="py-2 pr-3">{t('provider')}</th>
+          <th className="py-2 pr-3">{t('scheduledFor')}</th>
+          <th className="py-2">{t('status')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
@@ -152,7 +154,7 @@ function AsapList() {
             <td className="py-2 pr-3 text-gray-600">{row.phone ?? '—'}</td>
             <td className="py-2 pr-3 text-gray-900">{row.providerName}</td>
             <td className="py-2 pr-3 text-gray-600">
-              {new Date(row.startsAt).toLocaleString(undefined, {
+              {formatDate(new Date(row.startsAt), {
                 weekday: 'short',
                 month: 'short',
                 day: 'numeric',
@@ -162,7 +164,7 @@ function AsapList() {
             </td>
             <td className="py-2">
               <Badge tone={appointmentTone[row.status] ?? 'gray'}>
-                {STATUS_LABELS[row.status] ?? row.status}
+                {t(`schedule:status.${row.status}`, { defaultValue: row.status })}
               </Badge>
             </td>
           </tr>
