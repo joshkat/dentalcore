@@ -1,12 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Spinner } from '../../components/Spinner';
+import { formatDateTime } from '../../i18n/format';
 import { useTimeline } from './api';
 
-const actionLabels: Record<string, string> = {
-  CREATE: 'Patient registered',
-  UPDATE: 'Record updated',
-  STATUS_CHANGE: 'Status changed',
-  DELETE: 'Patient deleted',
-};
+const KNOWN_ACTIONS = ['CREATE', 'UPDATE', 'STATUS_CHANGE', 'DELETE'] as const;
 
 function describe(value: Record<string, unknown> | null): string | null {
   if (!value) return null;
@@ -16,11 +13,12 @@ function describe(value: Record<string, unknown> | null): string | null {
 }
 
 export function TimelineTab({ patientId }: { patientId: string }) {
+  const { t } = useTranslation('patients');
   const { data: events, isPending } = useTimeline(patientId);
 
-  if (isPending) return <Spinner label="Loading timeline…" />;
+  if (isPending) return <Spinner label={t('timeline.loading')} />;
   if (!events || events.length === 0) {
-    return <p className="text-sm text-gray-500">No activity recorded yet.</p>;
+    return <p className="text-sm text-gray-500">{t('timeline.none')}</p>;
   }
 
   return (
@@ -33,11 +31,11 @@ export function TimelineTab({ patientId }: { patientId: string }) {
           </div>
           <div className="pb-4">
             <p className="text-sm font-medium text-gray-900">
-              {actionLabels[event.action] ?? event.action}
+              {(KNOWN_ACTIONS as readonly string[]).includes(event.action)
+                ? t(`timeline.action.${event.action}`)
+                : event.action}
             </p>
-            <p className="text-xs text-gray-500">
-              {new Date(event.occurredAt).toLocaleString()}
-            </p>
+            <p className="text-xs text-gray-500">{formatDateTime(event.occurredAt)}</p>
             {describe(event.newValue) && (
               <p className="mt-1 text-xs text-gray-600">{describe(event.newValue)}</p>
             )}

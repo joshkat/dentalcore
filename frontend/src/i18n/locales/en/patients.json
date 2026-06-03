@@ -1,0 +1,257 @@
+{
+  "title": "Patients",
+  "newPatient": "New patient",
+  "searchPlaceholder": "Search by name, email, or phone…",
+  "searchAria": "Search patients",
+  "loadingPatients": "Loading patients…",
+  "loadFailed": "Failed to load patients.",
+  "columns": {
+    "name": "Name",
+    "dateOfBirth": "Date of birth",
+    "phone": "Phone",
+    "email": "Email"
+  },
+  "recallDueBadge": "RECALL DUE",
+  "noPatients": "No patients found.",
+  "pageSummary_one": "Page {{page}} of {{total}} ({{count}} patient)",
+  "pageSummary_other": "Page {{page}} of {{total}} ({{count}} patients)",
+  "statusBadge": {
+    "ACTIVE": "ACTIVE",
+    "INACTIVE": "INACTIVE",
+    "ARCHIVED": "ARCHIVED"
+  },
+  "statusOption": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
+  },
+  "sexBadge": {
+    "MALE": "MALE",
+    "FEMALE": "FEMALE",
+    "OTHER": "OTHER",
+    "UNKNOWN": "UNKNOWN"
+  },
+  "sexOption": {
+    "MALE": "Male",
+    "FEMALE": "Female",
+    "OTHER": "Other",
+    "UNKNOWN": "Unknown"
+  },
+  "phoneTypeBadge": {
+    "HOME": "HOME",
+    "MOBILE": "MOBILE",
+    "WORK": "WORK"
+  },
+  "tabs": {
+    "demographics": "Demographics",
+    "chart": "Chart",
+    "perio": "Perio",
+    "appointments": "Appointments",
+    "treatmentPlans": "Treatment Plans",
+    "notes": "Notes",
+    "insurance": "Insurance",
+    "ledger": "Ledger",
+    "documents": "Documents",
+    "forms": "Forms",
+    "alerts": "Alerts",
+    "family": "Family",
+    "timeline": "Timeline"
+  },
+  "loadingPatient": "Loading patient…",
+  "notFound": "Patient not found.",
+  "dobLine": "DOB {{date}} (age {{age}})",
+  "doctorName": "Dr. {{name}}",
+  "allergyBadge": "⚠ ALLERGY: {{list}}",
+  "recallBadge": "Recall {{date}}",
+  "recallOverdueBadge": "RECALL OVERDUE {{date}}",
+  "balanceBadge": "BALANCE {{amount}}",
+  "creditBadge": "CREDIT {{amount}}",
+  "setRecall": "Set recall +{{months}}mo",
+  "changeStatusAria": "Change status",
+  "sectionsAria": "Patient sections",
+  "saveChanges": "Save changes",
+  "registerPatient": "Register patient",
+  "demo": {
+    "email": "Email",
+    "phones": "Phones",
+    "address": "Address",
+    "preferredLanguage": "Preferred language",
+    "emergencyContact": "Emergency contact",
+    "notes": "Notes",
+    "phoneDisplay": "{{number}} ({{type}})",
+    "phoneDisplayPrimary": "{{number}} ({{type}}, primary)",
+    "contactFallback": "contact",
+    "emergencyContactDisplay": "{{name}} ({{relationship}}) {{phone}}",
+    "edit": "Edit demographics"
+  },
+  "form": {
+    "demographics": "Demographics",
+    "contactConsent": "Contact preferences & consent",
+    "workReferral": "Work, referral & care team",
+    "phones": "Phones",
+    "address": "Address",
+    "emergencyContact": "Emergency contact",
+    "firstName": "First name",
+    "middleName": "Middle name",
+    "lastName": "Last name",
+    "dateOfBirth": "Date of birth",
+    "sex": "Sex",
+    "email": "Email",
+    "preferredLanguage": "Preferred language",
+    "preferredName": "Preferred name",
+    "pronouns": "Pronouns",
+    "smokingStatus": "Smoking status",
+    "preferredContactMethod": "Preferred contact method",
+    "smsConsent": "Consents to SMS",
+    "emailConsent": "Consents to email",
+    "employer": "Employer",
+    "occupation": "Occupation",
+    "referralSource": "Referral source",
+    "primaryProvider": "Primary provider",
+    "notAssigned": "Not assigned",
+    "pharmacyName": "Pharmacy name",
+    "pharmacyPhone": "Pharmacy phone",
+    "type": "Type",
+    "number": "Number",
+    "primary": "Primary",
+    "remove": "Remove",
+    "addPhone": "Add phone",
+    "addressLine1": "Address line 1",
+    "addressLine2": "Address line 2",
+    "city": "City",
+    "state": "State",
+    "postalCode": "Postal code",
+    "name": "Name",
+    "phone": "Phone",
+    "relationship": "Relationship",
+    "notes": "Notes",
+    "notSet": "Not set",
+    "smokingOption": {
+      "UNKNOWN": "Unknown",
+      "NEVER": "Never",
+      "FORMER": "Former",
+      "CURRENT": "Current"
+    },
+    "contactOption": {
+      "PHONE": "Phone",
+      "SMS": "Text message",
+      "EMAIL": "Email",
+      "MAIL": "Mail"
+    },
+    "phoneTypeOption": {
+      "MOBILE": "Mobile",
+      "HOME": "Home",
+      "WORK": "Work"
+    },
+    "saveFailed": "Failed to save patient"
+  },
+  "validation": {
+    "firstNameRequired": "First name is required",
+    "lastNameRequired": "Last name is required",
+    "dobRequired": "Date of birth is required",
+    "dobInvalid": "Enter a valid date",
+    "dobPast": "Date of birth must be in the past",
+    "emailInvalid": "Enter a valid email",
+    "phoneMin": "Enter a valid phone number",
+    "phoneInvalid": "Invalid phone number"
+  },
+  "quick": {
+    "mobileOptional": "Mobile phone (optional)",
+    "helper": "Full demographics can be completed later on the patient's profile.",
+    "create": "Create patient",
+    "createFailed": "Failed to create patient"
+  },
+  "alerts": {
+    "type": "Type",
+    "severity": "Severity",
+    "description": "Description",
+    "add": "Add alert",
+    "loading": "Loading alerts…",
+    "none": "No medical alerts recorded.",
+    "remove": "Remove",
+    "descriptionRequired": "Description is required",
+    "typeOption": {
+      "ALLERGY": "Allergy",
+      "CONDITION": "Condition",
+      "ALERT": "Alert",
+      "MEDICATION": "Medication"
+    },
+    "typeBadge": {
+      "ALLERGY": "ALLERGY",
+      "CONDITION": "CONDITION",
+      "ALERT": "ALERT",
+      "MEDICATION": "MEDICATION"
+    },
+    "severityOption": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High"
+    },
+    "severityBadge": {
+      "LOW": "LOW",
+      "MEDIUM": "MEDIUM",
+      "HIGH": "HIGH"
+    }
+  },
+  "family": {
+    "findPatient": "Find patient",
+    "searchByName": "Search by name…",
+    "relationship": "Relationship",
+    "link": "Link",
+    "selectRequired": "Select a patient to link",
+    "linkFailed": "Failed to link patients",
+    "loading": "Loading family…",
+    "none": "No family relationships recorded.",
+    "unlink": "Unlink",
+    "guarantor": "Guarantor",
+    "self": "Self",
+    "changeGuarantor": "Change guarantor",
+    "clearSelf": "Clear (self)",
+    "findGuarantor": "Find guarantor",
+    "updateGuarantorFailed": "Failed to update guarantor",
+    "relationshipOption": {
+      "SPOUSE": "Spouse",
+      "CHILD": "Child",
+      "PARENT": "Parent",
+      "SIBLING": "Sibling",
+      "GUARANTOR": "Guarantor",
+      "OTHER": "Other"
+    },
+    "relationshipBadge": {
+      "SPOUSE": "SPOUSE",
+      "CHILD": "CHILD",
+      "PARENT": "PARENT",
+      "SIBLING": "SIBLING",
+      "GUARANTOR": "GUARANTOR",
+      "OTHER": "OTHER"
+    }
+  },
+  "appts": {
+    "loading": "Loading appointments…",
+    "none": "No appointments on record.",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "noUpcoming": "No upcoming appointments.",
+    "noPast": "No past appointments.",
+    "viewInCalendar": "View in calendar",
+    "status": {
+      "SCHEDULED": "Scheduled",
+      "CONFIRMED": "Confirmed",
+      "CHECKED_IN": "Checked in",
+      "IN_PROGRESS": "In progress",
+      "COMPLETED": "Completed",
+      "NO_SHOW": "No-show",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "timeline": {
+    "loading": "Loading timeline…",
+    "none": "No activity recorded yet.",
+    "action": {
+      "CREATE": "Patient registered",
+      "UPDATE": "Record updated",
+      "STATUS_CHANGE": "Status changed",
+      "DELETE": "Patient deleted"
+    }
+  }
+}

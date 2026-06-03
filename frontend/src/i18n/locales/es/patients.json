@@ -1,0 +1,257 @@
+{
+  "title": "Pacientes",
+  "newPatient": "Nuevo paciente",
+  "searchPlaceholder": "Buscar por nombre, correo o teléfono…",
+  "searchAria": "Buscar pacientes",
+  "loadingPatients": "Cargando pacientes…",
+  "loadFailed": "No se pudieron cargar los pacientes.",
+  "columns": {
+    "name": "Nombre",
+    "dateOfBirth": "Fecha de nacimiento",
+    "phone": "Teléfono",
+    "email": "Correo electrónico"
+  },
+  "recallDueBadge": "CONTROL PERIÓDICO VENCIDO",
+  "noPatients": "No se encontraron pacientes.",
+  "pageSummary_one": "Página {{page}} de {{total}} ({{count}} paciente)",
+  "pageSummary_other": "Página {{page}} de {{total}} ({{count}} pacientes)",
+  "statusBadge": {
+    "ACTIVE": "Activo",
+    "INACTIVE": "Inactivo",
+    "ARCHIVED": "Archivado"
+  },
+  "statusOption": {
+    "ACTIVE": "Activo",
+    "INACTIVE": "Inactivo",
+    "ARCHIVED": "Archivado"
+  },
+  "sexBadge": {
+    "MALE": "Masculino",
+    "FEMALE": "Femenino",
+    "OTHER": "Otro",
+    "UNKNOWN": "Desconocido"
+  },
+  "sexOption": {
+    "MALE": "Masculino",
+    "FEMALE": "Femenino",
+    "OTHER": "Otro",
+    "UNKNOWN": "Desconocido"
+  },
+  "phoneTypeBadge": {
+    "HOME": "Casa",
+    "MOBILE": "Móvil",
+    "WORK": "Trabajo"
+  },
+  "tabs": {
+    "demographics": "Demografía",
+    "chart": "Odontograma",
+    "perio": "Perio",
+    "appointments": "Citas",
+    "treatmentPlans": "Planes de tratamiento",
+    "notes": "Notas",
+    "insurance": "Seguro",
+    "ledger": "Estado de cuenta",
+    "documents": "Documentos",
+    "forms": "Formularios",
+    "alerts": "Alertas",
+    "family": "Familia",
+    "timeline": "Cronología"
+  },
+  "loadingPatient": "Cargando paciente…",
+  "notFound": "Paciente no encontrado.",
+  "dobLine": "F. nac. {{date}} ({{age}} años)",
+  "doctorName": "Dr. {{name}}",
+  "allergyBadge": "⚠ ALERGIA: {{list}}",
+  "recallBadge": "Control periódico {{date}}",
+  "recallOverdueBadge": "CONTROL PERIÓDICO VENCIDO {{date}}",
+  "balanceBadge": "SALDO {{amount}}",
+  "creditBadge": "CRÉDITO {{amount}}",
+  "setRecall": "Fijar control periódico +{{months}} meses",
+  "changeStatusAria": "Cambiar estado",
+  "sectionsAria": "Secciones del paciente",
+  "saveChanges": "Guardar cambios",
+  "registerPatient": "Registrar paciente",
+  "demo": {
+    "email": "Correo electrónico",
+    "phones": "Teléfonos",
+    "address": "Dirección",
+    "preferredLanguage": "Idioma preferido",
+    "emergencyContact": "Contacto de emergencia",
+    "notes": "Notas",
+    "phoneDisplay": "{{number}} ({{type}})",
+    "phoneDisplayPrimary": "{{number}} ({{type}}, principal)",
+    "contactFallback": "contacto",
+    "emergencyContactDisplay": "{{name}} ({{relationship}}) {{phone}}",
+    "edit": "Editar demografía"
+  },
+  "form": {
+    "demographics": "Demografía",
+    "contactConsent": "Preferencias de contacto y consentimiento",
+    "workReferral": "Trabajo, referencia y equipo de atención",
+    "phones": "Teléfonos",
+    "address": "Dirección",
+    "emergencyContact": "Contacto de emergencia",
+    "firstName": "Nombre",
+    "middleName": "Segundo nombre",
+    "lastName": "Apellidos",
+    "dateOfBirth": "Fecha de nacimiento",
+    "sex": "Sexo",
+    "email": "Correo electrónico",
+    "preferredLanguage": "Idioma preferido",
+    "preferredName": "Nombre preferido",
+    "pronouns": "Pronombres",
+    "smokingStatus": "Tabaquismo",
+    "preferredContactMethod": "Método de contacto preferido",
+    "smsConsent": "Acepta SMS",
+    "emailConsent": "Acepta correos electrónicos",
+    "employer": "Empleador",
+    "occupation": "Ocupación",
+    "referralSource": "Fuente de referencia",
+    "primaryProvider": "Proveedor principal",
+    "notAssigned": "Sin asignar",
+    "pharmacyName": "Nombre de la farmacia",
+    "pharmacyPhone": "Teléfono de la farmacia",
+    "type": "Tipo",
+    "number": "Número",
+    "primary": "Principal",
+    "remove": "Quitar",
+    "addPhone": "Agregar teléfono",
+    "addressLine1": "Dirección línea 1",
+    "addressLine2": "Dirección línea 2",
+    "city": "Ciudad",
+    "state": "Estado",
+    "postalCode": "Código postal",
+    "name": "Nombre",
+    "phone": "Teléfono",
+    "relationship": "Parentesco",
+    "notes": "Notas",
+    "notSet": "Sin definir",
+    "smokingOption": {
+      "UNKNOWN": "Desconocido",
+      "NEVER": "Nunca",
+      "FORMER": "Exfumador",
+      "CURRENT": "Fumador actual"
+    },
+    "contactOption": {
+      "PHONE": "Teléfono",
+      "SMS": "Mensaje de texto",
+      "EMAIL": "Correo electrónico",
+      "MAIL": "Correo postal"
+    },
+    "phoneTypeOption": {
+      "MOBILE": "Móvil",
+      "HOME": "Casa",
+      "WORK": "Trabajo"
+    },
+    "saveFailed": "No se pudo guardar el paciente"
+  },
+  "validation": {
+    "firstNameRequired": "El nombre es obligatorio",
+    "lastNameRequired": "Los apellidos son obligatorios",
+    "dobRequired": "La fecha de nacimiento es obligatoria",
+    "dobInvalid": "Ingrese una fecha válida",
+    "dobPast": "La fecha de nacimiento debe estar en el pasado",
+    "emailInvalid": "Ingrese un correo electrónico válido",
+    "phoneMin": "Ingrese un número de teléfono válido",
+    "phoneInvalid": "Número de teléfono no válido"
+  },
+  "quick": {
+    "mobileOptional": "Teléfono móvil (opcional)",
+    "helper": "Los datos demográficos completos se pueden capturar después en el perfil del paciente.",
+    "create": "Crear paciente",
+    "createFailed": "No se pudo crear el paciente"
+  },
+  "alerts": {
+    "type": "Tipo",
+    "severity": "Gravedad",
+    "description": "Descripción",
+    "add": "Agregar alerta",
+    "loading": "Cargando alertas…",
+    "none": "No hay alertas médicas registradas.",
+    "remove": "Quitar",
+    "descriptionRequired": "La descripción es obligatoria",
+    "typeOption": {
+      "ALLERGY": "Alergia",
+      "CONDITION": "Condición",
+      "ALERT": "Alerta",
+      "MEDICATION": "Medicamento"
+    },
+    "typeBadge": {
+      "ALLERGY": "Alergia",
+      "CONDITION": "Condición",
+      "ALERT": "Alerta",
+      "MEDICATION": "Medicamento"
+    },
+    "severityOption": {
+      "LOW": "Baja",
+      "MEDIUM": "Media",
+      "HIGH": "Alta"
+    },
+    "severityBadge": {
+      "LOW": "BAJA",
+      "MEDIUM": "MEDIA",
+      "HIGH": "ALTA"
+    }
+  },
+  "family": {
+    "findPatient": "Buscar paciente",
+    "searchByName": "Buscar por nombre…",
+    "relationship": "Parentesco",
+    "link": "Vincular",
+    "selectRequired": "Seleccione un paciente para vincular",
+    "linkFailed": "No se pudieron vincular los pacientes",
+    "loading": "Cargando familia…",
+    "none": "No hay relaciones familiares registradas.",
+    "unlink": "Desvincular",
+    "guarantor": "Garante",
+    "self": "El propio paciente",
+    "changeGuarantor": "Cambiar garante",
+    "clearSelf": "Quitar (el propio paciente)",
+    "findGuarantor": "Buscar garante",
+    "updateGuarantorFailed": "No se pudo actualizar el garante",
+    "relationshipOption": {
+      "SPOUSE": "Cónyuge",
+      "CHILD": "Hijo/a",
+      "PARENT": "Padre/Madre",
+      "SIBLING": "Hermano/a",
+      "GUARANTOR": "Garante",
+      "OTHER": "Otro"
+    },
+    "relationshipBadge": {
+      "SPOUSE": "Cónyuge",
+      "CHILD": "Hijo/a",
+      "PARENT": "Padre/Madre",
+      "SIBLING": "Hermano/a",
+      "GUARANTOR": "Garante",
+      "OTHER": "Otro"
+    }
+  },
+  "appts": {
+    "loading": "Cargando citas…",
+    "none": "No hay citas registradas.",
+    "upcoming": "Próximas",
+    "past": "Anteriores",
+    "noUpcoming": "No hay citas próximas.",
+    "noPast": "No hay citas anteriores.",
+    "viewInCalendar": "Ver en la agenda",
+    "status": {
+      "SCHEDULED": "Programada",
+      "CONFIRMED": "Confirmada",
+      "CHECKED_IN": "Registrada",
+      "IN_PROGRESS": "En curso",
+      "COMPLETED": "Completada",
+      "NO_SHOW": "No se presentó",
+      "CANCELLED": "Cancelada"
+    }
+  },
+  "timeline": {
+    "loading": "Cargando cronología…",
+    "none": "Aún no hay actividad registrada.",
+    "action": {
+      "CREATE": "Paciente registrado",
+      "UPDATE": "Expediente actualizado",
+      "STATUS_CHANGE": "Cambio de estado",
+      "DELETE": "Paciente eliminado"
+    }
+  }
+}
