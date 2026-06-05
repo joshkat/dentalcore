@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Spinner } from '../../components/Spinner';
-import { STATUS_LABELS, usePatientAppointments } from '../appointments/api';
+import { formatDate } from '../../i18n/format';
+import { usePatientAppointments } from '../appointments/api';
 import type { Appointment, AppointmentStatus } from '../../types/api';
 
 const statusTone: Record<AppointmentStatus, 'blue' | 'green' | 'yellow' | 'gray' | 'red'> = {
@@ -23,6 +25,7 @@ function calendarLink(appointment: Appointment): string {
 }
 
 function AppointmentRow({ appointment }: { appointment: Appointment }) {
+  const { t } = useTranslation('patients');
   const starts = new Date(appointment.startsAt);
   const ends = new Date(appointment.endsAt);
   return (
@@ -35,15 +38,15 @@ function AppointmentRow({ appointment }: { appointment: Appointment }) {
         />
         <div>
           <p className="text-sm font-medium text-gray-900">
-            {starts.toLocaleDateString(undefined, {
+            {formatDate(starts, {
               weekday: 'short',
               year: 'numeric',
               month: 'short',
               day: 'numeric',
             })}
             {' · '}
-            {starts.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}–
-            {ends.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            {formatDate(starts, { hour: 'numeric', minute: '2-digit' })}–
+            {formatDate(ends, { hour: 'numeric', minute: '2-digit' })}
           </p>
           <p className="text-xs text-gray-500">
             {appointment.providerLastName}, {appointment.providerFirstName} ·{' '}
@@ -53,12 +56,14 @@ function AppointmentRow({ appointment }: { appointment: Appointment }) {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <Badge tone={statusTone[appointment.status]}>{STATUS_LABELS[appointment.status]}</Badge>
+        <Badge tone={statusTone[appointment.status]}>
+          {t(`appts.status.${appointment.status}`)}
+        </Badge>
         <Link
           to={calendarLink(appointment)}
           className="text-sm font-medium text-brand-600 hover:underline"
         >
-          View in calendar
+          {t('appts.viewInCalendar')}
         </Link>
       </div>
     </li>
@@ -66,11 +71,12 @@ function AppointmentRow({ appointment }: { appointment: Appointment }) {
 }
 
 export function AppointmentsTab({ patientId }: { patientId: string }) {
+  const { t } = useTranslation('patients');
   const { data: appointments, isPending } = usePatientAppointments(patientId);
 
-  if (isPending) return <Spinner label="Loading appointments…" />;
+  if (isPending) return <Spinner label={t('appts.loading')} />;
   if (!appointments || appointments.length === 0) {
-    return <p className="text-sm text-gray-500">No appointments on record.</p>;
+    return <p className="text-sm text-gray-500">{t('appts.none')}</p>;
   }
 
   const now = Date.now();
@@ -84,9 +90,11 @@ export function AppointmentsTab({ patientId }: { patientId: string }) {
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Upcoming</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          {t('appts.upcoming')}
+        </h3>
         {upcoming.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">No upcoming appointments.</p>
+          <p className="mt-2 text-sm text-gray-500">{t('appts.noUpcoming')}</p>
         ) : (
           <ul className="mt-2 divide-y divide-gray-100 rounded-md ring-1 ring-gray-100">
             {upcoming.map((a) => (
@@ -96,9 +104,11 @@ export function AppointmentsTab({ patientId }: { patientId: string }) {
         )}
       </section>
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Past</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          {t('appts.past')}
+        </h3>
         {past.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">No past appointments.</p>
+          <p className="mt-2 text-sm text-gray-500">{t('appts.noPast')}</p>
         ) : (
           <ul className="mt-2 divide-y divide-gray-100 rounded-md ring-1 ring-gray-100">
             {past.map((a) => (

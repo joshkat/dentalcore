@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
 import { ApiError } from '../../lib/api';
@@ -14,6 +15,7 @@ import {
 } from './api';
 
 export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite: boolean }) {
+  const { t } = useTranslation('patients');
   const { data: links, isPending } = useFamily(patientId);
   const createLink = useCreateFamilyLink(patientId);
   const deleteLink = useDeleteFamilyLink(patientId);
@@ -26,7 +28,7 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
 
   const add = async () => {
     if (!selectedId) {
-      setError('Select a patient to link');
+      setError(t('family.selectRequired'));
       return;
     }
     setError(null);
@@ -35,11 +37,11 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
       setSearch('');
       setSelectedId('');
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to link patients');
+      setError(e instanceof ApiError ? e.message : t('family.linkFailed'));
     }
   };
 
-  if (isPending) return <Spinner label="Loading family…" />;
+  if (isPending) return <Spinner label={t('family.loading')} />;
 
   return (
     <div className="space-y-4">
@@ -49,7 +51,7 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-64 flex-1">
               <label htmlFor="family-search" className="block text-sm font-medium text-gray-700">
-                Find patient
+                {t('family.findPatient')}
               </label>
               <input
                 id="family-search"
@@ -59,7 +61,7 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
                   setSearch(e.target.value);
                   setSelectedId('');
                 }}
-                placeholder="Search by name…"
+                placeholder={t('family.searchByName')}
                 className="mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
               />
               {search && !selectedId && (
@@ -86,7 +88,7 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
             </div>
             <div>
               <label htmlFor="family-rel" className="block text-sm font-medium text-gray-700">
-                Relationship
+                {t('family.relationship')}
               </label>
               <select
                 id="family-rel"
@@ -94,16 +96,16 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
                 onChange={(e) => setRelationship(e.target.value)}
                 className="mt-1 rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
               >
-                <option value="SPOUSE">Spouse</option>
-                <option value="CHILD">Child</option>
-                <option value="PARENT">Parent</option>
-                <option value="SIBLING">Sibling</option>
-                <option value="GUARANTOR">Guarantor</option>
-                <option value="OTHER">Other</option>
+                <option value="SPOUSE">{t('family.relationshipOption.SPOUSE')}</option>
+                <option value="CHILD">{t('family.relationshipOption.CHILD')}</option>
+                <option value="PARENT">{t('family.relationshipOption.PARENT')}</option>
+                <option value="SIBLING">{t('family.relationshipOption.SIBLING')}</option>
+                <option value="GUARANTOR">{t('family.relationshipOption.GUARANTOR')}</option>
+                <option value="OTHER">{t('family.relationshipOption.OTHER')}</option>
               </select>
             </div>
             <Button onClick={add} loading={createLink.isPending}>
-              Link
+              {t('family.link')}
             </Button>
           </div>
           {error && (
@@ -115,7 +117,7 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
       )}
 
       {links && links.length === 0 ? (
-        <p className="text-sm text-gray-500">No family relationships recorded.</p>
+        <p className="text-sm text-gray-500">{t('family.none')}</p>
       ) : (
         <ul className="divide-y divide-gray-100 rounded-md bg-white">
           {links?.map((link) => (
@@ -127,7 +129,9 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
                 >
                   {link.relatedPatientLastName}, {link.relatedPatientFirstName}
                 </Link>
-                <p className="text-xs text-gray-500">{link.relationship}</p>
+                <p className="text-xs text-gray-500">
+                  {t(`family.relationshipBadge.${link.relationship}`)}
+                </p>
               </div>
               {canWrite && (
                 <Button
@@ -135,7 +139,7 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
                   onClick={() => deleteLink.mutate(link.id)}
                   disabled={deleteLink.isPending}
                 >
-                  Unlink
+                  {t('family.unlink')}
                 </Button>
               )}
             </li>
@@ -151,6 +155,7 @@ export function FamilyTab({ patientId, canWrite }: { patientId: string; canWrite
  * descriptive family links above; write access mirrors the backend gate.
  */
 function GuarantorSection({ patientId }: { patientId: string }) {
+  const { t } = useTranslation('patients');
   const { data: patient } = usePatient(patientId);
   const setGuarantor = useSetGuarantor(patientId);
   const { hasRole } = useAuth();
@@ -170,13 +175,15 @@ function GuarantorSection({ patientId }: { patientId: string }) {
       setEditing(false);
       setSearch('');
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to update guarantor');
+      setError(e instanceof ApiError ? e.message : t('family.updateGuarantorFailed'));
     }
   };
 
   return (
     <div className="rounded-md bg-gray-50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Guarantor</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        {t('family.guarantor')}
+      </p>
       <div className="mt-1 flex flex-wrap items-center gap-3">
         {patient.guarantorId ? (
           <Link
@@ -186,12 +193,12 @@ function GuarantorSection({ patientId }: { patientId: string }) {
             {patient.guarantorLastName}, {patient.guarantorFirstName}
           </Link>
         ) : (
-          <span className="text-sm font-medium text-gray-900">Self</span>
+          <span className="text-sm font-medium text-gray-900">{t('family.self')}</span>
         )}
         {canEdit && (
           <>
             <Button variant="ghost" onClick={() => setEditing((e) => !e)}>
-              {editing ? 'Cancel' : 'Change guarantor'}
+              {editing ? t('common:cancel') : t('family.changeGuarantor')}
             </Button>
             {patient.guarantorId && (
               <Button
@@ -199,7 +206,7 @@ function GuarantorSection({ patientId }: { patientId: string }) {
                 disabled={setGuarantor.isPending}
                 onClick={() => void choose(null)}
               >
-                Clear (self)
+                {t('family.clearSelf')}
               </Button>
             )}
           </>
@@ -208,14 +215,14 @@ function GuarantorSection({ patientId }: { patientId: string }) {
       {editing && canEdit && (
         <div className="mt-2 max-w-md">
           <label htmlFor="guarantor-search" className="block text-sm font-medium text-gray-700">
-            Find guarantor
+            {t('family.findGuarantor')}
           </label>
           <input
             id="guarantor-search"
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name…"
+            placeholder={t('family.searchByName')}
             className="mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
           />
           {search && (

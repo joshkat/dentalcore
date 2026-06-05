@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
@@ -29,6 +30,7 @@ function depthClass(pd: string): string {
 }
 
 export function PerioTab({ patientId, canChart }: { patientId: string; canChart: boolean }) {
+  const { t } = useTranslation('chart');
   const { data: exams, isPending } = usePerioExams(patientId);
   const createExam = useCreatePerioExam(patientId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export function PerioTab({ patientId, canChart }: { patientId: string; canChart:
     }
   }, [exams, selectedId]);
 
-  if (isPending) return <Spinner label="Loading perio history…" />;
+  if (isPending) return <Spinner label={t('perio.loadingHistory')} />;
 
   const selectedSummary = exams?.find((e) => e.id === selectedId);
   const priorExams = exams?.filter((e) => e.id !== selectedId) ?? [];
@@ -64,17 +66,17 @@ export function PerioTab({ patientId, canChart }: { patientId: string; canChart:
                 const exam = await createExam.mutateAsync();
                 setSelectedId(exam.id);
               } catch (e) {
-                setError(e instanceof ApiError ? e.message : 'Failed to create exam');
+                setError(e instanceof ApiError ? e.message : t('perio.createFailed'));
               }
             }}
           >
-            New perio exam
+            {t('perio.newExam')}
           </Button>
         )}
         {exams && exams.length > 0 && (
           <>
             <label htmlFor="perio-exam" className="text-sm text-gray-700">
-              Exam
+              {t('perio.exam')}
             </label>
             <select
               id="perio-exam"
@@ -94,7 +96,7 @@ export function PerioTab({ patientId, canChart }: { patientId: string; canChart:
             {priorExams.length > 0 && (
               <>
                 <label htmlFor="perio-compare" className="text-sm text-gray-700">
-                  Compare with
+                  {t('perio.compareWith')}
                 </label>
                 <select
                   id="perio-compare"
@@ -115,16 +117,22 @@ export function PerioTab({ patientId, canChart }: { patientId: string; canChart:
         )}
         {selectedSummary && selectedSummary.sitesRecorded > 0 && (
           <span className="flex gap-2">
-            <Badge tone="red">{selectedSummary.bleedingSites} bleeding</Badge>
-            <Badge tone="yellow">{selectedSummary.sites4mmPlus} sites ≥4mm</Badge>
-            <Badge tone="gray">{selectedSummary.sites6mmPlus} sites ≥6mm</Badge>
+            <Badge tone="red">
+              {t('perio.bleedingCount', { count: selectedSummary.bleedingSites })}
+            </Badge>
+            <Badge tone="yellow">
+              {t('perio.sites4mm', { count: selectedSummary.sites4mmPlus })}
+            </Badge>
+            <Badge tone="gray">
+              {t('perio.sites6mm', { count: selectedSummary.sites6mmPlus })}
+            </Badge>
           </span>
         )}
       </div>
 
       {!selectedId ? (
         <p className="text-sm text-gray-500">
-          No perio exams yet{canChart ? ' — start one above.' : '.'}
+          {canChart ? t('perio.noExamsStart') : t('perio.noExams')}
         </p>
       ) : (
         <PerioGrid
@@ -152,6 +160,7 @@ function PerioGrid({
   canChart: boolean;
   onError: (message: string | null) => void;
 }) {
+  const { t } = useTranslation('chart');
   const { data: exam, isPending } = usePerioExam(patientId, examId);
   const { data: compareExam } = usePerioExam(patientId, compareId);
   const { data: chart } = useToothChart(patientId);
@@ -198,7 +207,7 @@ function PerioGrid({
     [chart],
   );
 
-  if (isPending || !exam) return <Spinner label="Loading exam…" />;
+  if (isPending || !exam) return <Spinner label={t('perio.loadingExam')} />;
 
   const setCell = (tooth: string, site: number, value: Partial<{ pd: string; bleeding: boolean }>) => {
     setCells((current) => {
@@ -238,7 +247,7 @@ function PerioGrid({
       await savePerio.mutateAsync({ examId, measurements, toothFindings });
       setDirty(false);
     } catch (e) {
-      onError(e instanceof ApiError ? e.message : 'Save failed');
+      onError(e instanceof ApiError ? e.message : t('perio.saveFailed'));
     }
   };
 
@@ -265,7 +274,7 @@ function PerioGrid({
                         if (value.length === 1 && value !== '1') focusNext(e.target);
                         if (value.length === 2) focusNext(e.target);
                       }}
-                      aria-label={`Tooth ${tooth} site ${site} pocket depth`}
+                      aria-label={t('perio.pdAria', { tooth, site })}
                       className={`h-6 w-6 rounded-sm border border-gray-200 text-center text-xs ${depthClass(cell.pd)}`}
                     />
                     <button
@@ -273,7 +282,7 @@ function PerioGrid({
                       tabIndex={-1}
                       disabled={!canChart || missing}
                       onClick={() => setCell(tooth, site, { bleeding: !cell.bleeding })}
-                      aria-label={`Tooth ${tooth} site ${site} bleeding`}
+                      aria-label={t('perio.bleedingAria', { tooth, site })}
                       className={`mt-px h-1.5 w-1.5 rounded-full ${
                         cell.bleeding ? 'bg-red-500' : 'bg-gray-200 hover:bg-gray-300'
                       }`}
@@ -295,7 +304,7 @@ function PerioGrid({
 
   const renderMobilityRow = (teeth: string[]) => (
     <tr>
-      <td className="pr-2 text-xs font-medium text-gray-500">Mobility</td>
+      <td className="pr-2 text-xs font-medium text-gray-500">{t('perio.mobility')}</td>
       {teeth.map((tooth) => (
         <td key={tooth} className="px-0.5 text-center">
           <input
@@ -306,7 +315,7 @@ function PerioGrid({
               setMobility((current) => new Map(current).set(tooth, value));
               setDirty(true);
             }}
-            aria-label={`Tooth ${tooth} mobility`}
+            aria-label={t('perio.mobilityAria', { tooth })}
             className="h-5 w-6 rounded-sm border border-gray-200 text-center text-xs"
           />
         </td>
@@ -327,8 +336,8 @@ function PerioGrid({
         </tr>
       </thead>
       <tbody>
-        {renderSiteRow(teeth, FACIAL_SITES, 'Facial')}
-        {renderSiteRow(teeth, LINGUAL_SITES, 'Lingual')}
+        {renderSiteRow(teeth, FACIAL_SITES, t('perio.facial'))}
+        {renderSiteRow(teeth, LINGUAL_SITES, t('perio.lingual'))}
         {renderMobilityRow(teeth)}
       </tbody>
     </table>
@@ -337,18 +346,17 @@ function PerioGrid({
   return (
     <div className="space-y-4">
       <div ref={gridRef} className="space-y-6 overflow-x-auto pb-2">
-        {renderArch(UPPER, 'Upper')}
-        {renderArch(LOWER, 'Lower')}
+        {renderArch(UPPER, t('perio.upper'))}
+        {renderArch(LOWER, t('perio.lower'))}
       </div>
       <p className="text-xs text-gray-500">
-        Type pocket depths (auto-advances) · click the dot under a site to mark bleeding ·
-        colors: <span className="rounded bg-amber-200 px-1">4–5 mm</span>{' '}
+        {t('perio.help')} <span className="rounded bg-amber-200 px-1">4–5 mm</span>{' '}
         <span className="rounded bg-red-200 px-1">≥6 mm</span>
-        {compareId && ' · gray numbers show the comparison exam'}
+        {compareId && ` · ${t('perio.helpCompare')}`}
       </p>
       {canChart && (
         <Button onClick={save} loading={savePerio.isPending} disabled={!dirty}>
-          Save exam
+          {t('perio.saveExam')}
         </Button>
       )}
     </div>
