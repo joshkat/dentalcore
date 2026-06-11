@@ -1,0 +1,164 @@
+{
+  "page": {
+    "title": "Seguro",
+    "newCarrier": "Nueva aseguradora",
+    "searchCarriersPlaceholder": "Buscar aseguradoras…",
+    "searchCarriersLabel": "Buscar aseguradoras",
+    "loadingCarriers": "Cargando aseguradoras…",
+    "noCarriers": "No se encontraron aseguradoras.",
+    "payerInfo": "ID de pagador {{payerId}} · {{count}} planes"
+  },
+  "carrierForm": {
+    "nameRequired": "El nombre de la aseguradora es obligatorio",
+    "failedToCreate": "No se pudo crear la aseguradora",
+    "name": "Nombre de la aseguradora",
+    "payerId": "ID de pagador"
+  },
+  "plans": {
+    "loading": "Cargando planes…",
+    "nameRequired": "El nombre del plan es obligatorio",
+    "failedToCreate": "No se pudo crear el plan",
+    "columns": {
+      "plan": "Plan",
+      "type": "Tipo",
+      "groupNumber": "N.º de grupo",
+      "annualMax": "Máximo anual",
+      "deductible": "Deducible"
+    },
+    "none": "Aún no hay planes.",
+    "name": "Nombre del plan",
+    "type": "Tipo",
+    "annualMax": "Máximo anual",
+    "deductible": "Deducible",
+    "addPlan": "Agregar plan",
+    "addPlanGhost": "+ Agregar plan",
+    "coverage": "Cobertura"
+  },
+  "feeSchedules": {
+    "loading": "Cargando tablas de tarifas…",
+    "title": "Tablas de tarifas",
+    "description": "Tarifas contratadas (permitidas) por procedimiento. Vincula una tabla a un plan de seguro para calcular estimados y la facturación de reclamaciones.",
+    "newSchedule": "Nueva tabla",
+    "newSchedulePlaceholder": "p. ej. Delta PPO 2026",
+    "failedToCreate": "No se pudo crear la tabla",
+    "feeCount": "{{count}} tarifas",
+    "none": "Aún no hay tablas de tarifas.",
+    "loadingFees": "Cargando tarifas…",
+    "columns": {
+      "code": "Código",
+      "description": "Descripción",
+      "standard": "Estándar",
+      "allowed": "Permitido"
+    },
+    "enterAllowedFirst": "Primero ingresa la tarifa permitida",
+    "failedToSaveFee": "No se pudo guardar la tarifa",
+    "searchPlaceholder": "Agregar tarifa: buscar en el catálogo…",
+    "searchLabel": "Buscar procedimientos para la tarifa",
+    "stdFee": "estándar {{amount}}",
+    "allowedPlaceholder": "Permitido $",
+    "allowedLabel": "Tarifa permitida"
+  },
+  "coverageEditor": {
+    "percentRange": "Los porcentajes deben estar entre 0 y 100",
+    "failedToSave": "No se pudo guardar la cobertura",
+    "saved": "Cobertura guardada.",
+    "feeSchedule": "Tabla de tarifas",
+    "noneStandardFees": "Ninguna (usar tarifas estándar)",
+    "coverageByCategory": "Cobertura % por categoría (en blanco = sin cobertura)",
+    "saveCoverage": "Guardar cobertura"
+  },
+  "tab": {
+    "loading": "Cargando seguro…",
+    "addCoverage": "Agregar cobertura",
+    "noMax": "Sin máximo",
+    "metrics": {
+      "deductible": "Deducible",
+      "deductibleRemaining": "Deducible restante",
+      "benefitsUsed": "Beneficios usados (año)",
+      "benefitsRemaining": "Beneficios restantes"
+    },
+    "secondaryHeading": "Secundario — {{carrier}} · {{plan}}",
+    "noInsurance": "Sin seguro registrado.",
+    "memberInfo": "ID de miembro {{memberId}} · Suscriptor {{subscriber}}",
+    "subscriberSelf": "el mismo",
+    "subscriberOther": "{{name}} ({{relationship}})",
+    "effectiveOn": " · Vigente {{date}}",
+    "terminatesOn": " · Termina {{date}}",
+    "openClaim": "Abrir reclamación",
+    "remove": "Eliminar"
+  },
+  "coverageForm": {
+    "selectPlan": "Selecciona un plan",
+    "memberIdRequired": "El ID de miembro es obligatorio",
+    "selectSubscriber": "Selecciona al suscriptor",
+    "failedToAdd": "No se pudo agregar la cobertura",
+    "carrier": "Aseguradora",
+    "selectEllipsis": "Seleccionar…",
+    "plan": "Plan",
+    "planOption": "{{name}} ({{type}})",
+    "memberId": "ID de miembro",
+    "priority": "Prioridad",
+    "relationship": "Parentesco del paciente con el suscriptor",
+    "subscriber": "Suscriptor (paciente)",
+    "searchPatientsPlaceholder": "Buscar pacientes…",
+    "addCoverage": "Agregar cobertura"
+  },
+  "priority": {
+    "PRIMARY": "Primario",
+    "SECONDARY": "Secundario"
+  },
+  "relationship": {
+    "SELF": "El mismo",
+    "SPOUSE": "Cónyuge",
+    "CHILD": "Hijo/a",
+    "OTHER": "Otro"
+  },
+  "claims": {
+    "title": "Reclamaciones",
+    "subtitle": "Las reclamaciones se abren desde la cobertura en la pestaña Seguro del paciente.",
+    "all": "Todas",
+    "loading": "Cargando reclamaciones…",
+    "failedToLoad": "No se pudieron cargar las reclamaciones.",
+    "none": "No se encontraron reclamaciones.",
+    "memberInfo": "{{carrier}} · {{plan}} · #{{memberId}}",
+    "billedPaid": "Facturado {{billed}} · Pagado {{paid}}",
+    "submittedOn": " · Enviada {{date}}",
+    "secondary": "Secundaria",
+    "actionFailed": "La acción falló",
+    "patientLabel": "Paciente: ",
+    "secondaryOf": "Secundaria de ",
+    "claimLink": "reclamación {{id}}…",
+    "columns": {
+      "code": "Código",
+      "description": "Descripción",
+      "billed": "Facturado",
+      "paid": "Pagado"
+    },
+    "paidAmountLabel": "Monto pagado para {{code}}",
+    "remove": "Eliminar",
+    "addLinePlaceholder": "Agregar partida (buscar en el catálogo)…",
+    "addLineLabel": "Agregar partida de reclamación",
+    "createSecondary": "Crear reclamación secundaria",
+    "resubmit": "Reenviar"
+  },
+  "claimStatus": {
+    "DRAFT": "Borrador",
+    "SUBMITTED": "Enviada",
+    "ACCEPTED": "Aceptada",
+    "DENIED": "Denegada",
+    "PAID": "Pagada",
+    "CLOSED": "Cerrada"
+  },
+  "procedureCategory": {
+    "DIAGNOSTIC": "Diagnóstico",
+    "PREVENTIVE": "Preventivo",
+    "RESTORATIVE": "Restaurador",
+    "ENDODONTICS": "Endodoncia",
+    "PERIODONTICS": "Periodoncia",
+    "PROSTHODONTICS": "Prostodoncia",
+    "ORAL_SURGERY": "Cirugía oral",
+    "ORTHODONTICS": "Ortodoncia",
+    "ADJUNCTIVE": "Adjunto",
+    "OTHER": "Otro"
+  }
+}

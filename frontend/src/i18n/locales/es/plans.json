@@ -1,0 +1,65 @@
+{
+  "loadingPlans": "Cargando planes de tratamiento…",
+  "newPlan": "Nuevo plan de tratamiento",
+  "noPlans": "Aún no hay planes de tratamiento.",
+  "planSummary": "{{procedures}} procedimientos · {{completed}} completados · {{cost}}",
+  "loadingPlan": "Cargando plan…",
+  "actionFailed": "La acción falló",
+  "form": {
+    "enterTitle": "Ingresa un título",
+    "selectProvider": "Selecciona un proveedor",
+    "failedToCreate": "No se pudo crear el plan",
+    "title": "Título",
+    "titlePlaceholder": "p. ej. Fase I — restaurador",
+    "provider": "Proveedor",
+    "selectEllipsis": "Seleccionar…"
+  },
+  "detail": {
+    "providerLabel": "Proveedor: {{name}}",
+    "approvedOn": " · Aprobado {{date}}",
+    "totals": "Total {{total}} · Completado {{completed}}",
+    "columns": {
+      "number": "N.º",
+      "code": "Código",
+      "description": "Descripción",
+      "tooth": "Diente",
+      "estCost": "Costo est.",
+      "status": "Estado"
+    },
+    "remove": "Eliminar",
+    "addProcedure": "Agregar procedimiento",
+    "searchCatalogPlaceholder": "Buscar en el catálogo (p. ej. corona, D1110)…",
+    "toothNumber": "Diente n.º",
+    "backToDraft": "Volver a borrador"
+  },
+  "estimate": {
+    "heading": "Estimado del seguro — {{carrier}} · {{plan}}",
+    "secondarySuffix": " · 2.º: {{carrier}}",
+    "columns": {
+      "code": "Código",
+      "fee": "Tarifa",
+      "allowed": "Permitido",
+      "insurancePays": "Paga seguro",
+      "secondInsurance": "2.º seguro",
+      "patient": "Paciente"
+    },
+    "deductibleInline": "(deduc {{amount}})",
+    "totals": "Totales",
+    "disclaimer": "Solo estimado — según la tabla de tarifas, las reglas de cobertura, el deducible y el máximo anual restante{{remaining}}.",
+    "remainingInline": " ({{amount}} restante)"
+  },
+  "procedureStatus": {
+    "PLANNED": "Planificado",
+    "SCHEDULED": "Agendado",
+    "COMPLETED": "Completado",
+    "CANCELLED": "Cancelado"
+  },
+  "status": {
+    "DRAFT": "Borrador",
+    "PRESENTED": "Presentado",
+    "APPROVED": "Aprobado",
+    "IN_PROGRESS": "En progreso",
+    "COMPLETED": "Completado",
+    "CANCELLED": "Cancelado"
+  }
+}

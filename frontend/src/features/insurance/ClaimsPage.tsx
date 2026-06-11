@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import type { Claim, ClaimStatus } from '../../types/api';
@@ -28,9 +30,10 @@ const statusTone: Record<ClaimStatus, 'blue' | 'green' | 'yellow' | 'gray' | 're
   CLOSED: 'gray',
 };
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+const money = (n: number) => formatMoney(n);
 
 export function ClaimsPage() {
+  const { t } = useTranslation('insurance');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(0);
   const [openClaimId, setOpenClaimId] = useState<string | null>(null);
@@ -41,10 +44,8 @@ export function ClaimsPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-900">Claims</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Claims are opened from a patient's Insurance tab coverage.
-      </p>
+      <h1 className="text-2xl font-bold text-gray-900">{t('claims.title')}</h1>
+      <p className="mt-1 text-sm text-gray-500">{t('claims.subtitle')}</p>
 
       <div className="mt-4 flex gap-1">
         {STATUSES.map((s) => (
@@ -58,18 +59,18 @@ export function ClaimsPage() {
               status === s ? 'bg-brand-600 text-white' : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            {s || 'All'}
+            {s ? t(`claimStatus.${s}`) : t('claims.all')}
           </button>
         ))}
       </div>
 
       <div className="mt-4 overflow-hidden rounded-lg bg-white shadow">
         {isPending ? (
-          <Spinner label="Loading claims…" />
+          <Spinner label={t('claims.loading')} />
         ) : isError ? (
-          <p className="p-8 text-sm text-red-600">Failed to load claims.</p>
+          <p className="p-8 text-sm text-red-600">{t('claims.failedToLoad')}</p>
         ) : data.content.length === 0 ? (
-          <p className="p-8 text-center text-sm text-gray-500">No claims found.</p>
+          <p className="p-8 text-center text-sm text-gray-500">{t('claims.none')}</p>
         ) : (
           <ul className="divide-y divide-gray-100">
             {data.content.map((claim) => (
@@ -82,18 +83,27 @@ export function ClaimsPage() {
                     <p className="text-sm font-medium text-gray-900">
                       {claim.patientLastName}, {claim.patientFirstName}
                       <span className="ml-2 text-xs text-gray-500">
-                        {claim.carrierName} · {claim.planName} · #{claim.memberId}
+                        {t('claims.memberInfo', {
+                          carrier: claim.carrierName,
+                          plan: claim.planName,
+                          memberId: claim.memberId,
+                        })}
                       </span>
                     </p>
                     <p className="text-xs text-gray-500">
-                      Billed {money(claim.totalBilled)} · Paid {money(claim.totalPaid)}
+                      {t('claims.billedPaid', {
+                        billed: money(claim.totalBilled),
+                        paid: money(claim.totalPaid),
+                      })}
                       {claim.submittedAt &&
-                        ` · Submitted ${new Date(claim.submittedAt).toLocaleDateString()}`}
+                        t('claims.submittedOn', { date: formatDate(claim.submittedAt) })}
                     </p>
                   </div>
                   <span className="flex items-center gap-2">
-                    {claim.parentClaimId && <Badge tone="blue">Secondary</Badge>}
-                    <Badge tone={statusTone[claim.status]}>{claim.status}</Badge>
+                    {claim.parentClaimId && <Badge tone="blue">{t('claims.secondary')}</Badge>}
+                    <Badge tone={statusTone[claim.status]}>
+                      {t(`claimStatus.${claim.status}`)}
+                    </Badge>
                   </span>
                 </button>
                 {openClaimId === claim.id && (
@@ -116,18 +126,18 @@ export function ClaimsPage() {
       {data && data.totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
           <span>
-            Page {data.page + 1} of {data.totalPages}
+            {t('common:pageOf', { page: data.page + 1, total: data.totalPages })}
           </span>
           <div className="flex gap-2">
             <Button variant="secondary" disabled={data.page === 0} onClick={() => setPage((p) => p - 1)}>
-              Previous
+              {t('common:previous')}
             </Button>
             <Button
               variant="secondary"
               disabled={data.page + 1 >= data.totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next
+              {t('common:next')}
             </Button>
           </div>
         </div>
@@ -145,6 +155,7 @@ function ClaimDetail({
   canWrite: boolean;
   onOpenClaim: (claimId: string) => void;
 }) {
+  const { t } = useTranslation('insurance');
   const addLine = useAddClaimLine();
   const removeLine = useRemoveClaimLine();
   const recordPayment = useRecordClaimPayment();
@@ -163,7 +174,7 @@ function ClaimDetail({
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Action failed');
+      setError(e instanceof ApiError ? e.message : t('claims.actionFailed'));
     }
   };
 
@@ -176,7 +187,7 @@ function ClaimDetail({
       )}
 
       <p className="text-xs text-gray-500">
-        Patient:{' '}
+        {t('claims.patientLabel')}
         <Link to={`/patients/${claim.patientId}`} className="text-brand-600 hover:underline">
           {claim.patientLastName}, {claim.patientFirstName}
         </Link>
@@ -185,13 +196,13 @@ function ClaimDetail({
 
       {claim.parentClaimId && (
         <p className="text-xs text-gray-500">
-          Secondary of{' '}
+          {t('claims.secondaryOf')}
           <button
             type="button"
             onClick={() => onOpenClaim(claim.parentClaimId!)}
             className="text-brand-600 hover:underline"
           >
-            claim {claim.parentClaimId.slice(0, 8)}…
+            {t('claims.claimLink', { id: claim.parentClaimId.slice(0, 8) })}
           </button>
         </p>
       )}
@@ -200,10 +211,10 @@ function ClaimDetail({
         <table className="min-w-full text-sm">
           <thead>
             <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-              <th className="py-1 pr-3">Code</th>
-              <th className="py-1 pr-3">Description</th>
-              <th className="py-1 pr-3">Billed</th>
-              <th className="py-1 pr-3">Paid</th>
+              <th className="py-1 pr-3">{t('claims.columns.code')}</th>
+              <th className="py-1 pr-3">{t('claims.columns.description')}</th>
+              <th className="py-1 pr-3">{t('claims.columns.billed')}</th>
+              <th className="py-1 pr-3">{t('claims.columns.paid')}</th>
               <th className="py-1" />
             </tr>
           </thead>
@@ -225,7 +236,7 @@ function ClaimDetail({
                         onChange={(e) =>
                           setPayments((p) => ({ ...p, [line.id]: e.target.value }))
                         }
-                        aria-label={`Paid amount for ${line.code}`}
+                        aria-label={t('claims.paidAmountLabel', { code: line.code })}
                         className="w-24 rounded-md border-0 px-2 py-1 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
                       />
                       <Button
@@ -240,7 +251,7 @@ function ClaimDetail({
                           )
                         }
                       >
-                        Save
+                        {t('common:save')}
                       </Button>
                     </span>
                   ) : (
@@ -257,7 +268,7 @@ function ClaimDetail({
                       }
                       className="text-xs text-red-600 hover:underline"
                     >
-                      Remove
+                      {t('claims.remove')}
                     </button>
                   )}
                 </td>
@@ -273,8 +284,8 @@ function ClaimDetail({
             type="search"
             value={codeSearch}
             onChange={(e) => setCodeSearch(e.target.value)}
-            placeholder="Add line item (search catalog)…"
-            aria-label="Add claim line"
+            placeholder={t('claims.addLinePlaceholder')}
+            aria-label={t('claims.addLineLabel')}
             className="block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
           />
           {codeSearch && (
@@ -318,7 +329,7 @@ function ClaimDetail({
                   })
                 }
               >
-                Create secondary claim
+                {t('claims.createSecondary')}
               </Button>
             )}
             {CLAIM_NEXT_STATUSES[claim.status].map((next) => (
@@ -329,7 +340,9 @@ function ClaimDetail({
                   act(() => updateStatus.mutateAsync({ claimId: claim.id, status: next }))
                 }
               >
-                {next === 'SUBMITTED' && claim.status === 'DENIED' ? 'Resubmit' : next}
+                {next === 'SUBMITTED' && claim.status === 'DENIED'
+                  ? t('claims.resubmit')
+                  : t(`claimStatus.${next}`)}
               </Button>
             ))}
           </div>

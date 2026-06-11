@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Spinner } from '../../components/Spinner';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { usePatients } from '../patients/api';
@@ -27,6 +29,7 @@ export function InsuranceTab({
   patientId: string;
   canWrite: boolean;
 }) {
+  const { t } = useTranslation('insurance');
   const { data: coverages, isPending } = usePatientCoverage(patientId);
   const removeCoverage = useRemoveCoverage();
   const createClaim = useCreateClaim();
@@ -36,24 +39,26 @@ export function InsuranceTab({
   const canBill = hasRole('ADMIN', 'BILLING');
   const [adding, setAdding] = useState(false);
 
-  if (isPending) return <Spinner label="Loading insurance…" />;
+  if (isPending) return <Spinner label={t('tab.loading')} />;
 
   return (
     <div className="space-y-4">
-      {canWrite && !adding && <Button onClick={() => setAdding(true)}>Add coverage</Button>}
+      {canWrite && !adding && (
+        <Button onClick={() => setAdding(true)}>{t('tab.addCoverage')}</Button>
+      )}
       {adding && <AddCoverageForm patientId={patientId} onDone={() => setAdding(false)} />}
 
       {benefits?.hasCoverage && (
         <div className="grid grid-cols-2 gap-3 rounded-md bg-gray-50 p-4 sm:grid-cols-4">
           {[
-            ['Deductible', `$${benefits.deductible.toFixed(2)}`],
-            ['Deductible remaining', `$${benefits.deductibleRemaining.toFixed(2)}`],
-            ['Benefits used (year)', `$${benefits.benefitsUsed.toFixed(2)}`],
+            [t('tab.metrics.deductible'), formatMoney(benefits.deductible)],
+            [t('tab.metrics.deductibleRemaining'), formatMoney(benefits.deductibleRemaining)],
+            [t('tab.metrics.benefitsUsed'), formatMoney(benefits.benefitsUsed)],
             [
-              'Benefits remaining',
+              t('tab.metrics.benefitsRemaining'),
               benefits.benefitsRemaining == null
-                ? 'No max'
-                : `$${benefits.benefitsRemaining.toFixed(2)}`,
+                ? t('tab.noMax')
+                : formatMoney(benefits.benefitsRemaining),
             ],
           ].map(([label, value]) => (
             <div key={label}>
@@ -69,21 +74,24 @@ export function InsuranceTab({
       {benefits?.secondary && (
         <div className="rounded-md bg-blue-50/60 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Secondary — {benefits.secondary.carrierName} · {benefits.secondary.planName}
+            {t('tab.secondaryHeading', {
+              carrier: benefits.secondary.carrierName,
+              plan: benefits.secondary.planName,
+            })}
           </p>
           <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              ['Deductible', `$${benefits.secondary.deductible.toFixed(2)}`],
+              [t('tab.metrics.deductible'), formatMoney(benefits.secondary.deductible)],
               [
-                'Deductible remaining',
-                `$${benefits.secondary.deductibleRemaining.toFixed(2)}`,
+                t('tab.metrics.deductibleRemaining'),
+                formatMoney(benefits.secondary.deductibleRemaining),
               ],
-              ['Benefits used (year)', `$${benefits.secondary.benefitsUsed.toFixed(2)}`],
+              [t('tab.metrics.benefitsUsed'), formatMoney(benefits.secondary.benefitsUsed)],
               [
-                'Benefits remaining',
+                t('tab.metrics.benefitsRemaining'),
                 benefits.secondary.benefitsRemaining == null
-                  ? 'No max'
-                  : `$${benefits.secondary.benefitsRemaining.toFixed(2)}`,
+                  ? t('tab.noMax')
+                  : formatMoney(benefits.secondary.benefitsRemaining),
               ],
             ].map(([label, value]) => (
               <div key={label}>
@@ -98,7 +106,7 @@ export function InsuranceTab({
       )}
 
       {coverages && coverages.length === 0 ? (
-        <p className="text-sm text-gray-500">No insurance on file.</p>
+        <p className="text-sm text-gray-500">{t('tab.noInsurance')}</p>
       ) : (
         <ul className="space-y-3">
           {coverages?.map((coverage) => (
@@ -109,7 +117,7 @@ export function InsuranceTab({
               <div>
                 <div className="flex items-center gap-2">
                   <Badge tone={coverage.priority === 'PRIMARY' ? 'green' : 'blue'}>
-                    {coverage.priority}
+                    {t(`priority.${coverage.priority}`)}
                   </Badge>
                   <p className="text-sm font-semibold text-gray-900">
                     {coverage.carrierName} — {coverage.planName}
@@ -117,12 +125,20 @@ export function InsuranceTab({
                   <Badge tone="gray">{coverage.planType}</Badge>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  Member ID {coverage.memberId} · Subscriber{' '}
-                  {coverage.relationshipToSubscriber === 'SELF'
-                    ? 'self'
-                    : `${coverage.subscriberLastName}, ${coverage.subscriberFirstName} (${coverage.relationshipToSubscriber})`}
-                  {coverage.effectiveDate && ` · Effective ${coverage.effectiveDate}`}
-                  {coverage.terminationDate && ` · Terminates ${coverage.terminationDate}`}
+                  {t('tab.memberInfo', {
+                    memberId: coverage.memberId,
+                    subscriber:
+                      coverage.relationshipToSubscriber === 'SELF'
+                        ? t('tab.subscriberSelf')
+                        : t('tab.subscriberOther', {
+                            name: `${coverage.subscriberLastName}, ${coverage.subscriberFirstName}`,
+                            relationship: t(`relationship.${coverage.relationshipToSubscriber}`),
+                          }),
+                  })}
+                  {coverage.effectiveDate &&
+                    t('tab.effectiveOn', { date: formatDate(coverage.effectiveDate) })}
+                  {coverage.terminationDate &&
+                    t('tab.terminatesOn', { date: formatDate(coverage.terminationDate) })}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -135,7 +151,7 @@ export function InsuranceTab({
                       navigate('/claims');
                     }}
                   >
-                    Open claim
+                    {t('tab.openClaim')}
                   </Button>
                 )}
                 {canWrite && (
@@ -144,7 +160,7 @@ export function InsuranceTab({
                     onClick={() => removeCoverage.mutate(coverage.id)}
                     disabled={removeCoverage.isPending}
                   >
-                    Remove
+                    {t('tab.remove')}
                   </Button>
                 )}
               </div>
@@ -157,6 +173,7 @@ export function InsuranceTab({
 }
 
 function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () => void }) {
+  const { t } = useTranslation('insurance');
   const addCoverage = useAddCoverage();
   const { data: carriers } = useCarriers();
   const [carrierId, setCarrierId] = useState('');
@@ -172,10 +189,10 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
   const [error, setError] = useState<string | null>(null);
 
   const submit = async () => {
-    if (!planId) return setError('Select a plan');
-    if (!memberId.trim()) return setError('Member ID is required');
+    if (!planId) return setError(t('coverageForm.selectPlan'));
+    if (!memberId.trim()) return setError(t('coverageForm.memberIdRequired'));
     const subscriber = relationship === 'SELF' ? patientId : subscriberId;
-    if (!subscriber) return setError('Select the subscriber');
+    if (!subscriber) return setError(t('coverageForm.selectSubscriber'));
     setError(null);
     try {
       await addCoverage.mutateAsync({
@@ -188,7 +205,7 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
       });
       onDone();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to add coverage');
+      setError(e instanceof ApiError ? e.message : t('coverageForm.failedToAdd'));
     }
   };
 
@@ -202,7 +219,7 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cov-carrier" className="block text-sm font-medium text-gray-700">
-            Carrier
+            {t('coverageForm.carrier')}
           </label>
           <select
             id="cov-carrier"
@@ -213,7 +230,7 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
             }}
             className={selectClass}
           >
-            <option value="">Select…</option>
+            <option value="">{t('coverageForm.selectEllipsis')}</option>
             {carriers?.content.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -223,7 +240,7 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
         </div>
         <div>
           <label htmlFor="cov-plan" className="block text-sm font-medium text-gray-700">
-            Plan
+            {t('coverageForm.plan')}
           </label>
           <select
             id="cov-plan"
@@ -232,22 +249,22 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
             disabled={!carrierId}
             className={selectClass}
           >
-            <option value="">Select…</option>
+            <option value="">{t('coverageForm.selectEllipsis')}</option>
             {plans?.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.planName} ({p.planType})
+                {t('coverageForm.planOption', { name: p.planName, type: p.planType })}
               </option>
             ))}
           </select>
         </div>
         <Input
-          label="Member ID"
+          label={t('coverageForm.memberId')}
           value={memberId}
           onChange={(e) => setMemberId(e.target.value)}
         />
         <div>
           <label htmlFor="cov-priority" className="block text-sm font-medium text-gray-700">
-            Priority
+            {t('coverageForm.priority')}
           </label>
           <select
             id="cov-priority"
@@ -255,13 +272,13 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
             onChange={(e) => setPriority(e.target.value)}
             className={selectClass}
           >
-            <option value="PRIMARY">Primary</option>
-            <option value="SECONDARY">Secondary</option>
+            <option value="PRIMARY">{t('priority.PRIMARY')}</option>
+            <option value="SECONDARY">{t('priority.SECONDARY')}</option>
           </select>
         </div>
         <div>
           <label htmlFor="cov-rel" className="block text-sm font-medium text-gray-700">
-            Patient's relationship to subscriber
+            {t('coverageForm.relationship')}
           </label>
           <select
             id="cov-rel"
@@ -273,16 +290,16 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
             }}
             className={selectClass}
           >
-            <option value="SELF">Self</option>
-            <option value="SPOUSE">Spouse</option>
-            <option value="CHILD">Child</option>
-            <option value="OTHER">Other</option>
+            <option value="SELF">{t('relationship.SELF')}</option>
+            <option value="SPOUSE">{t('relationship.SPOUSE')}</option>
+            <option value="CHILD">{t('relationship.CHILD')}</option>
+            <option value="OTHER">{t('relationship.OTHER')}</option>
           </select>
         </div>
         {relationship !== 'SELF' && (
           <div>
             <label htmlFor="cov-subscriber" className="block text-sm font-medium text-gray-700">
-              Subscriber (patient)
+              {t('coverageForm.subscriber')}
             </label>
             <input
               id="cov-subscriber"
@@ -292,7 +309,7 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
                 setSubscriberSearch(e.target.value);
                 setSubscriberId('');
               }}
-              placeholder="Search patients…"
+              placeholder={t('coverageForm.searchPatientsPlaceholder')}
               className={selectClass}
             />
             {subscriberSearch && !subscriberId && (
@@ -310,7 +327,7 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
                         }}
                         className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
                       >
-                        {p.lastName}, {p.firstName} ({p.dateOfBirth})
+                        {p.lastName}, {p.firstName} ({formatDate(p.dateOfBirth)})
                       </button>
                     </li>
                   ))}
@@ -321,10 +338,10 @@ function AddCoverageForm({ patientId, onDone }: { patientId: string; onDone: () 
       </div>
       <div className="flex gap-2">
         <Button onClick={submit} loading={addCoverage.isPending}>
-          Add coverage
+          {t('coverageForm.addCoverage')}
         </Button>
         <Button variant="secondary" onClick={onDone}>
-          Cancel
+          {t('common:cancel')}
         </Button>
       </div>
     </div>
