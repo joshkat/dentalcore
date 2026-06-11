@@ -1,0 +1,164 @@
+{
+  "page": {
+    "title": "Insurance",
+    "newCarrier": "New carrier",
+    "searchCarriersPlaceholder": "Search carriers…",
+    "searchCarriersLabel": "Search carriers",
+    "loadingCarriers": "Loading carriers…",
+    "noCarriers": "No carriers found.",
+    "payerInfo": "Payer ID {{payerId}} · {{count}} plans"
+  },
+  "carrierForm": {
+    "nameRequired": "Carrier name is required",
+    "failedToCreate": "Failed to create carrier",
+    "name": "Carrier name",
+    "payerId": "Payer ID"
+  },
+  "plans": {
+    "loading": "Loading plans…",
+    "nameRequired": "Plan name is required",
+    "failedToCreate": "Failed to create plan",
+    "columns": {
+      "plan": "Plan",
+      "type": "Type",
+      "groupNumber": "Group #",
+      "annualMax": "Annual max",
+      "deductible": "Deductible"
+    },
+    "none": "No plans yet.",
+    "name": "Plan name",
+    "type": "Type",
+    "annualMax": "Annual max",
+    "deductible": "Deductible",
+    "addPlan": "Add plan",
+    "addPlanGhost": "+ Add plan",
+    "coverage": "Coverage"
+  },
+  "feeSchedules": {
+    "loading": "Loading fee schedules…",
+    "title": "Fee schedules",
+    "description": "Contracted (allowed) fees per procedure. Link a schedule to an insurance plan to drive estimates and claim billing.",
+    "newSchedule": "New schedule",
+    "newSchedulePlaceholder": "e.g. Delta PPO 2026",
+    "failedToCreate": "Failed to create schedule",
+    "feeCount": "{{count}} fees",
+    "none": "No fee schedules yet.",
+    "loadingFees": "Loading fees…",
+    "columns": {
+      "code": "Code",
+      "description": "Description",
+      "standard": "Standard",
+      "allowed": "Allowed"
+    },
+    "enterAllowedFirst": "Enter the allowed fee first",
+    "failedToSaveFee": "Failed to save fee",
+    "searchPlaceholder": "Add fee: search catalog…",
+    "searchLabel": "Search procedures for fee",
+    "stdFee": "std {{amount}}",
+    "allowedPlaceholder": "Allowed $",
+    "allowedLabel": "Allowed fee"
+  },
+  "coverageEditor": {
+    "percentRange": "Percentages must be 0–100",
+    "failedToSave": "Failed to save coverage",
+    "saved": "Coverage saved.",
+    "feeSchedule": "Fee schedule",
+    "noneStandardFees": "None (use standard fees)",
+    "coverageByCategory": "Coverage % by category (blank = not covered)",
+    "saveCoverage": "Save coverage"
+  },
+  "tab": {
+    "loading": "Loading insurance…",
+    "addCoverage": "Add coverage",
+    "noMax": "No max",
+    "metrics": {
+      "deductible": "Deductible",
+      "deductibleRemaining": "Deductible remaining",
+      "benefitsUsed": "Benefits used (year)",
+      "benefitsRemaining": "Benefits remaining"
+    },
+    "secondaryHeading": "Secondary — {{carrier}} · {{plan}}",
+    "noInsurance": "No insurance on file.",
+    "memberInfo": "Member ID {{memberId}} · Subscriber {{subscriber}}",
+    "subscriberSelf": "self",
+    "subscriberOther": "{{name}} ({{relationship}})",
+    "effectiveOn": " · Effective {{date}}",
+    "terminatesOn": " · Terminates {{date}}",
+    "openClaim": "Open claim",
+    "remove": "Remove"
+  },
+  "coverageForm": {
+    "selectPlan": "Select a plan",
+    "memberIdRequired": "Member ID is required",
+    "selectSubscriber": "Select the subscriber",
+    "failedToAdd": "Failed to add coverage",
+    "carrier": "Carrier",
+    "selectEllipsis": "Select…",
+    "plan": "Plan",
+    "planOption": "{{name}} ({{type}})",
+    "memberId": "Member ID",
+    "priority": "Priority",
+    "relationship": "Patient's relationship to subscriber",
+    "subscriber": "Subscriber (patient)",
+    "searchPatientsPlaceholder": "Search patients…",
+    "addCoverage": "Add coverage"
+  },
+  "priority": {
+    "PRIMARY": "Primary",
+    "SECONDARY": "Secondary"
+  },
+  "relationship": {
+    "SELF": "Self",
+    "SPOUSE": "Spouse",
+    "CHILD": "Child",
+    "OTHER": "Other"
+  },
+  "claims": {
+    "title": "Claims",
+    "subtitle": "Claims are opened from a patient's Insurance tab coverage.",
+    "all": "All",
+    "loading": "Loading claims…",
+    "failedToLoad": "Failed to load claims.",
+    "none": "No claims found.",
+    "memberInfo": "{{carrier}} · {{plan}} · #{{memberId}}",
+    "billedPaid": "Billed {{billed}} · Paid {{paid}}",
+    "submittedOn": " · Submitted {{date}}",
+    "secondary": "Secondary",
+    "actionFailed": "Action failed",
+    "patientLabel": "Patient: ",
+    "secondaryOf": "Secondary of ",
+    "claimLink": "claim {{id}}…",
+    "columns": {
+      "code": "Code",
+      "description": "Description",
+      "billed": "Billed",
+      "paid": "Paid"
+    },
+    "paidAmountLabel": "Paid amount for {{code}}",
+    "remove": "Remove",
+    "addLinePlaceholder": "Add line item (search catalog)…",
+    "addLineLabel": "Add claim line",
+    "createSecondary": "Create secondary claim",
+    "resubmit": "Resubmit"
+  },
+  "claimStatus": {
+    "DRAFT": "Draft",
+    "SUBMITTED": "Submitted",
+    "ACCEPTED": "Accepted",
+    "DENIED": "Denied",
+    "PAID": "Paid",
+    "CLOSED": "Closed"
+  },
+  "procedureCategory": {
+    "DIAGNOSTIC": "Diagnostic",
+    "PREVENTIVE": "Preventive",
+    "RESTORATIVE": "Restorative",
+    "ENDODONTICS": "Endodontics",
+    "PERIODONTICS": "Periodontics",
+    "PROSTHODONTICS": "Prosthodontics",
+    "ORAL_SURGERY": "Oral surgery",
+    "ORTHODONTICS": "Orthodontics",
+    "ADJUNCTIVE": "Adjunctive",
+    "OTHER": "Other"
+  }
+}

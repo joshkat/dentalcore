@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatMoney } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import { useProcedureCodes } from '../procedures/api';
 import {
@@ -10,24 +12,22 @@ import {
   useUpsertScheduleFees,
 } from './api';
 
-const money = (n: number | null) => (n == null ? '—' : `$${n.toFixed(2)}`);
+const money = (n: number | null) => (n == null ? '—' : formatMoney(n));
 
 export function FeeSchedulesSection({ canManage }: { canManage: boolean }) {
+  const { t } = useTranslation('insurance');
   const { data: schedules, isPending } = useFeeSchedules();
   const createSchedule = useCreateFeeSchedule();
   const [openId, setOpenId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  if (isPending) return <Spinner label="Loading fee schedules…" />;
+  if (isPending) return <Spinner label={t('feeSchedules.loading')} />;
 
   return (
     <div className="rounded-lg bg-white p-4 shadow">
-      <h2 className="text-lg font-semibold text-gray-900">Fee schedules</h2>
-      <p className="text-xs text-gray-500">
-        Contracted (allowed) fees per procedure. Link a schedule to an insurance plan to
-        drive estimates and claim billing.
-      </p>
+      <h2 className="text-lg font-semibold text-gray-900">{t('feeSchedules.title')}</h2>
+      <p className="text-xs text-gray-500">{t('feeSchedules.description')}</p>
       {error && (
         <p role="alert" className="mt-2 rounded-md bg-red-50 p-2 text-sm text-red-700">
           {error}
@@ -38,13 +38,13 @@ export function FeeSchedulesSection({ canManage }: { canManage: boolean }) {
         <div className="mt-3 flex items-end gap-2">
           <div>
             <label htmlFor="fs-name" className="block text-sm font-medium text-gray-700">
-              New schedule
+              {t('feeSchedules.newSchedule')}
             </label>
             <input
               id="fs-name"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="e.g. Delta PPO 2026"
+              placeholder={t('feeSchedules.newSchedulePlaceholder')}
               className="mt-1 rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
             />
           </div>
@@ -57,11 +57,11 @@ export function FeeSchedulesSection({ canManage }: { canManage: boolean }) {
                 await createSchedule.mutateAsync({ name: newName.trim() });
                 setNewName('');
               } catch (e) {
-                setError(e instanceof ApiError ? e.message : 'Failed to create schedule');
+                setError(e instanceof ApiError ? e.message : t('feeSchedules.failedToCreate'));
               }
             }}
           >
-            Create
+            {t('common:create')}
           </Button>
         </div>
       )}
@@ -74,7 +74,9 @@ export function FeeSchedulesSection({ canManage }: { canManage: boolean }) {
               className="flex w-full items-center justify-between py-2 text-left hover:bg-gray-50"
             >
               <span className="text-sm font-medium text-gray-900">{schedule.name}</span>
-              <span className="text-xs text-gray-500">{schedule.feeCount} fees</span>
+              <span className="text-xs text-gray-500">
+                {t('feeSchedules.feeCount', { count: schedule.feeCount })}
+              </span>
             </button>
             {openId === schedule.id && (
               <ScheduleFees scheduleId={schedule.id} canManage={canManage} />
@@ -82,7 +84,7 @@ export function FeeSchedulesSection({ canManage }: { canManage: boolean }) {
           </li>
         ))}
         {schedules?.length === 0 && (
-          <li className="py-2 text-sm text-gray-500">No fee schedules yet.</li>
+          <li className="py-2 text-sm text-gray-500">{t('feeSchedules.none')}</li>
         )}
       </ul>
     </div>
@@ -90,6 +92,7 @@ export function FeeSchedulesSection({ canManage }: { canManage: boolean }) {
 }
 
 function ScheduleFees({ scheduleId, canManage }: { scheduleId: string; canManage: boolean }) {
+  const { t } = useTranslation('insurance');
   const { data: detail, isPending } = useFeeSchedule(scheduleId);
   const upsertFees = useUpsertScheduleFees(scheduleId);
   const [codeSearch, setCodeSearch] = useState('');
@@ -97,7 +100,7 @@ function ScheduleFees({ scheduleId, canManage }: { scheduleId: string; canManage
   const [error, setError] = useState<string | null>(null);
   const { data: catalog } = useProcedureCodes(codeSearch);
 
-  if (isPending || !detail) return <Spinner label="Loading fees…" />;
+  if (isPending || !detail) return <Spinner label={t('feeSchedules.loadingFees')} />;
 
   return (
     <div className="space-y-3 pb-3 pl-2">
@@ -110,10 +113,10 @@ function ScheduleFees({ scheduleId, canManage }: { scheduleId: string; canManage
         <table className="min-w-full text-sm">
           <thead>
             <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-              <th className="py-1 pr-3">Code</th>
-              <th className="py-1 pr-3">Description</th>
-              <th className="py-1 pr-3 text-right">Standard</th>
-              <th className="py-1 text-right">Allowed</th>
+              <th className="py-1 pr-3">{t('feeSchedules.columns.code')}</th>
+              <th className="py-1 pr-3">{t('feeSchedules.columns.description')}</th>
+              <th className="py-1 pr-3 text-right">{t('feeSchedules.columns.standard')}</th>
+              <th className="py-1 text-right">{t('feeSchedules.columns.allowed')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -137,8 +140,8 @@ function ScheduleFees({ scheduleId, canManage }: { scheduleId: string; canManage
               type="search"
               value={codeSearch}
               onChange={(e) => setCodeSearch(e.target.value)}
-              placeholder="Add fee: search catalog…"
-              aria-label="Search procedures for fee"
+              placeholder={t('feeSchedules.searchPlaceholder')}
+              aria-label={t('feeSchedules.searchLabel')}
               className="block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
             />
             {codeSearch && (
@@ -150,7 +153,7 @@ function ScheduleFees({ scheduleId, canManage }: { scheduleId: string; canManage
                       onClick={async () => {
                         const fee = Number(feeInput);
                         if (!fee || fee < 0) {
-                          setError('Enter the allowed fee first');
+                          setError(t('feeSchedules.enterAllowedFirst'));
                           return;
                         }
                         setError(null);
@@ -161,13 +164,13 @@ function ScheduleFees({ scheduleId, canManage }: { scheduleId: string; canManage
                           setCodeSearch('');
                           setFeeInput('');
                         } catch (e) {
-                          setError(e instanceof ApiError ? e.message : 'Failed to save fee');
+                          setError(e instanceof ApiError ? e.message : t('feeSchedules.failedToSaveFee'));
                         }
                       }}
                       className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
                     >
-                      <span className="font-mono">{entry.code}</span> — {entry.description} (std $
-                      {entry.standardFee.toFixed(2)})
+                      <span className="font-mono">{entry.code}</span> — {entry.description} (
+                      {t('feeSchedules.stdFee', { amount: money(entry.standardFee) })})
                     </button>
                   </li>
                 ))}
@@ -180,8 +183,8 @@ function ScheduleFees({ scheduleId, canManage }: { scheduleId: string; canManage
             step="0.01"
             value={feeInput}
             onChange={(e) => setFeeInput(e.target.value)}
-            placeholder="Allowed $"
-            aria-label="Allowed fee"
+            placeholder={t('feeSchedules.allowedPlaceholder')}
+            aria-label={t('feeSchedules.allowedLabel')}
             className="w-28 rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
           />
         </div>
