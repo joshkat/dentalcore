@@ -1,0 +1,19 @@
+{
+  "loadingDocuments": "Loading documents…",
+  "category": "Category",
+  "uploadFile": "Upload file",
+  "uploadHint": "PDF, images, or text · max 25 MB",
+  "uploadFailed": "Upload failed",
+  "downloadFailed": "Download failed",
+  "noDocuments": "No documents on file.",
+  "download": "Download",
+  "delete": "Delete",
+  "categoryLabel": {
+    "XRAY": "X-ray",
+    "PHOTO": "Photo",
+    "CONSENT": "Consent",
+    "INSURANCE": "Insurance",
+    "REFERRAL": "Referral",
+    "OTHER": "Other"
+  }
+}

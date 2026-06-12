@@ -1,14 +1,14 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDate, formatDateTime, formatMoney } from '../../i18n/format';
 import { downloadDocumentById } from '../documents/api';
 import { ApiError } from '../../lib/api';
 import type { StatementRun } from '../../types/api';
 import { useCreateStatementRun, useStatementRun, useStatementRuns } from './api';
-
-const money = (n: number) => `$${n.toFixed(2)}`;
 
 function localIso(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
@@ -31,6 +31,7 @@ function statusTone(status: string): 'green' | 'red' | 'yellow' | 'gray' {
 }
 
 export function StatementRunsReport() {
+  const { t } = useTranslation('reports');
   const defaults = lastMonthRange();
   const [fromDate, setFromDate] = useState(defaults.from);
   const [toDate, setToDate] = useState(defaults.to);
@@ -47,20 +48,24 @@ export function StatementRunsReport() {
     setCreated(null);
     const balance = Number(minBalance);
     if (!fromDate || !toDate) {
-      setFormError('From and To dates are required.');
+      setFormError(t('stmt.datesRequired'));
       return;
     }
     if (fromDate > toDate) {
-      setFormError('From date must be on or before the To date.');
+      setFormError(t('stmt.fromAfterTo'));
       return;
     }
     if (!Number.isFinite(balance) || balance < 0) {
-      setFormError('Minimum balance must be zero or more.');
+      setFormError(t('stmt.minBalanceNegative'));
       return;
     }
     if (
       !window.confirm(
-        `Generate statements for all accounts with balance ≥ ${money(balance)} for activity ${fromDate} to ${toDate}?`,
+        t('stmt.confirmGenerate', {
+          balance: formatMoney(balance),
+          from: formatDate(fromDate),
+          to: formatDate(toDate),
+        }),
       )
     ) {
       return;
@@ -73,19 +78,19 @@ export function StatementRunsReport() {
           setExpandedId(run.id);
         },
         onError: (e) =>
-          setFormError(e instanceof ApiError ? e.message : 'Failed to generate statements'),
+          setFormError(e instanceof ApiError ? e.message : t('stmt.generateFailed')),
       },
     );
   };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Statement runs</h2>
+      <h2 className="text-lg font-semibold text-gray-900">{t('stmt.title')}</h2>
 
       <div className="flex flex-wrap items-end gap-3 rounded-md bg-gray-50 p-4">
         <div>
           <label htmlFor="stmt-from" className="block text-sm font-medium text-gray-700">
-            From
+            {t('stmt.from')}
           </label>
           <input
             id="stmt-from"
@@ -97,7 +102,7 @@ export function StatementRunsReport() {
         </div>
         <div>
           <label htmlFor="stmt-to" className="block text-sm font-medium text-gray-700">
-            To
+            {t('stmt.to')}
           </label>
           <input
             id="stmt-to"
@@ -109,7 +114,7 @@ export function StatementRunsReport() {
         </div>
         <div>
           <label htmlFor="stmt-min-balance" className="block text-sm font-medium text-gray-700">
-            Min balance
+            {t('stmt.minBalance')}
           </label>
           <input
             id="stmt-min-balance"
@@ -122,7 +127,7 @@ export function StatementRunsReport() {
           />
         </div>
         <Button onClick={onGenerate} loading={createRun.isPending}>
-          Generate statements
+          {t('stmt.generate')}
         </Button>
       </div>
 
@@ -134,25 +139,27 @@ export function StatementRunsReport() {
 
       {created && (
         <p className="rounded-md bg-green-50 p-3 text-sm text-green-800" data-testid="stmt-run-created">
-          Generated {created.totalAccounts} statement{created.totalAccounts === 1 ? '' : 's'}{' '}
-          totalling {money(created.totalAmount)}.
+          {t('stmt.createdSummary', {
+            count: created.totalAccounts,
+            amount: formatMoney(created.totalAmount),
+          })}
         </p>
       )}
 
       {isPending ? (
-        <Spinner label="Loading statement runs…" />
+        <Spinner label={t('stmt.loadingRuns')} />
       ) : !runs || runs.length === 0 ? (
-        <p className="text-sm text-gray-500">No statement runs yet.</p>
+        <p className="text-sm text-gray-500">{t('stmt.noRuns')}</p>
       ) : (
         <table className="min-w-full divide-y divide-gray-200 text-sm" data-testid="stmt-run-history">
           <thead>
             <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-              <th className="py-2 pr-3">Created</th>
-              <th className="py-2 pr-3">Range</th>
-              <th className="py-2 pr-3 text-right">Min balance</th>
-              <th className="py-2 pr-3 text-right">Accounts</th>
-              <th className="py-2 pr-3 text-right">Total</th>
-              <th className="py-2 pr-3">Status</th>
+              <th className="py-2 pr-3">{t('stmt.col.created')}</th>
+              <th className="py-2 pr-3">{t('stmt.col.range')}</th>
+              <th className="py-2 pr-3 text-right">{t('stmt.col.minBalance')}</th>
+              <th className="py-2 pr-3 text-right">{t('stmt.col.accounts')}</th>
+              <th className="py-2 pr-3 text-right">{t('stmt.col.total')}</th>
+              <th className="py-2 pr-3">{t('stmt.col.status')}</th>
               <th className="py-2" />
             </tr>
           </thead>
@@ -181,24 +188,25 @@ function StatementRunRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation('reports');
   return (
     <>
       <tr>
         <td className="py-2 pr-3 whitespace-nowrap text-gray-600">
-          {new Date(run.createdAt).toLocaleString()}
+          {formatDateTime(run.createdAt)}
         </td>
         <td className="py-2 pr-3 whitespace-nowrap text-gray-600">
-          {run.fromDate} → {run.toDate}
+          {formatDate(run.fromDate)} → {formatDate(run.toDate)}
         </td>
-        <td className="py-2 pr-3 text-right">{money(run.minBalance)}</td>
+        <td className="py-2 pr-3 text-right">{formatMoney(run.minBalance)}</td>
         <td className="py-2 pr-3 text-right">{run.totalAccounts}</td>
-        <td className="py-2 pr-3 text-right font-medium">{money(run.totalAmount)}</td>
+        <td className="py-2 pr-3 text-right font-medium">{formatMoney(run.totalAmount)}</td>
         <td className="py-2 pr-3">
           <Badge tone={statusTone(run.status)}>{run.status}</Badge>
         </td>
         <td className="py-2 text-right">
           <Button variant="ghost" onClick={onToggle}>
-            {expanded ? 'Hide items' : 'View items'}
+            {expanded ? t('stmt.hideItems') : t('stmt.viewItems')}
           </Button>
         </td>
       </tr>
@@ -214,13 +222,14 @@ function StatementRunRow({
 }
 
 function StatementRunItems({ runId }: { runId: string }) {
+  const { t } = useTranslation('reports');
   const { data, isPending } = useStatementRun(runId);
   const [error, setError] = useState<string | null>(null);
 
-  if (isPending) return <Spinner label="Loading statements…" />;
+  if (isPending) return <Spinner label={t('stmt.loadingItems')} />;
   const items = data?.items ?? [];
   if (items.length === 0)
-    return <p className="text-sm text-gray-500">No accounts matched this run.</p>;
+    return <p className="text-sm text-gray-500">{t('stmt.noAccounts')}</p>;
 
   return (
     <div className="space-y-2">
@@ -232,8 +241,8 @@ function StatementRunItems({ runId }: { runId: string }) {
       <table className="min-w-full text-sm">
         <thead>
           <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-            <th className="py-1 pr-3">Guarantor</th>
-            <th className="py-1 pr-3 text-right">Balance</th>
+            <th className="py-1 pr-3">{t('stmt.col.guarantor')}</th>
+            <th className="py-1 pr-3 text-right">{t('stmt.col.balance')}</th>
             <th className="py-1" />
           </tr>
         </thead>
@@ -248,7 +257,7 @@ function StatementRunItems({ runId }: { runId: string }) {
                   {item.guarantorName}
                 </Link>
               </td>
-              <td className="py-1.5 pr-3 text-right">{money(item.balance)}</td>
+              <td className="py-1.5 pr-3 text-right">{formatMoney(item.balance)}</td>
               <td className="py-1.5 text-right">
                 <Button
                   variant="secondary"
@@ -260,11 +269,11 @@ function StatementRunItems({ runId }: { runId: string }) {
                         `statement-${item.guarantorName.replace(/\s+/g, '-')}-${data?.fromDate ?? ''}.pdf`,
                       );
                     } catch {
-                      setError('Download failed');
+                      setError(t('stmt.downloadFailed'));
                     }
                   }}
                 >
-                  PDF
+                  {t('stmt.pdf')}
                 </Button>
               </td>
             </tr>
