@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDateTime } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import {
   DOCUMENT_CATEGORIES,
@@ -34,6 +36,7 @@ export function DocumentsTab({
   patientId: string;
   canWrite: boolean;
 }) {
+  const { t } = useTranslation('documents');
   const { data: documents, isPending } = useDocuments(patientId);
   const uploadDocument = useUploadDocument(patientId);
   const deleteDocument = useDeleteDocument();
@@ -47,13 +50,13 @@ export function DocumentsTab({
     try {
       await uploadDocument.mutateAsync({ file, category });
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Upload failed');
+      setError(e instanceof ApiError ? e.message : t('uploadFailed'));
     } finally {
       if (fileInput.current) fileInput.current.value = '';
     }
   };
 
-  if (isPending) return <Spinner label="Loading documents…" />;
+  if (isPending) return <Spinner label={t('loadingDocuments')} />;
 
   return (
     <div className="space-y-4">
@@ -61,7 +64,7 @@ export function DocumentsTab({
         <div className="flex flex-wrap items-end gap-3 rounded-md bg-gray-50 p-4">
           <div>
             <label htmlFor="doc-category" className="block text-sm font-medium text-gray-700">
-              Category
+              {t('category')}
             </label>
             <select
               id="doc-category"
@@ -71,7 +74,7 @@ export function DocumentsTab({
             >
               {DOCUMENT_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {t(`categoryLabel.${c}`)}
                 </option>
               ))}
             </select>
@@ -87,9 +90,9 @@ export function DocumentsTab({
             onClick={() => fileInput.current?.click()}
             loading={uploadDocument.isPending}
           >
-            Upload file
+            {t('uploadFile')}
           </Button>
-          <p className="text-xs text-gray-500">PDF, images, or text · max 25 MB</p>
+          <p className="text-xs text-gray-500">{t('uploadHint')}</p>
         </div>
       )}
 
@@ -100,7 +103,7 @@ export function DocumentsTab({
       )}
 
       {documents && documents.content.length === 0 ? (
-        <p className="text-sm text-gray-500">No documents on file.</p>
+        <p className="text-sm text-gray-500">{t('noDocuments')}</p>
       ) : (
         <ul className="divide-y divide-gray-100 rounded-md ring-1 ring-gray-100">
           {documents?.content.map((doc) => (
@@ -109,11 +112,13 @@ export function DocumentsTab({
               className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
             >
               <div className="flex items-center gap-3">
-                <Badge tone={categoryTone[doc.category]}>{doc.category}</Badge>
+                <Badge tone={categoryTone[doc.category]}>
+                  {t(`categoryLabel.${doc.category}`)}
+                </Badge>
                 <div>
                   <p className="text-sm font-medium text-gray-900">{doc.filename}</p>
                   <p className="text-xs text-gray-500">
-                    {formatSize(doc.sizeBytes)} · {new Date(doc.createdAt).toLocaleString()}
+                    {formatSize(doc.sizeBytes)} · {formatDateTime(doc.createdAt)}
                     {doc.notes ? ` · ${doc.notes}` : ''}
                   </p>
                 </div>
@@ -126,11 +131,11 @@ export function DocumentsTab({
                     try {
                       await downloadDocument(doc);
                     } catch {
-                      setError('Download failed');
+                      setError(t('downloadFailed'));
                     }
                   }}
                 >
-                  Download
+                  {t('download')}
                 </Button>
                 {canWrite && (
                   <Button
@@ -138,7 +143,7 @@ export function DocumentsTab({
                     onClick={() => deleteDocument.mutate(doc.id)}
                     disabled={deleteDocument.isPending}
                   >
-                    Delete
+                    {t('delete')}
                   </Button>
                 )}
               </div>

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Modal } from '../../components/Modal';
@@ -32,19 +34,38 @@ export function parseOptions(raw: string): string[] {
     .filter(Boolean);
 }
 
-/** Returns the first validation problem, or null when the draft is saveable. */
-export function validateTemplateDraft(name: string, fields: FieldDraft[]): string | null {
-  if (!name.trim()) return 'Template name is required';
-  if (fields.length === 0) return 'Add at least one field';
+/**
+ * Returns the first validation problem, or null when the draft is saveable.
+ * `t` is optional so the pure validator can be unit-tested without an i18n
+ * provider; when omitted it falls back to the English copy.
+ */
+export function validateTemplateDraft(
+  name: string,
+  fields: FieldDraft[],
+  t?: TFunction,
+): string | null {
+  const msg = (key: string, fallback: string, opts?: Record<string, unknown>): string =>
+    t ? t(key, opts) : fallback;
+  if (!name.trim()) return msg('validation.nameRequired', 'Template name is required');
+  if (fields.length === 0) return msg('validation.addAtLeastOneField', 'Add at least one field');
   for (const field of fields) {
-    if (!field.label.trim()) return 'Every field needs a label';
+    if (!field.label.trim())
+      return msg('validation.everyFieldNeedsLabel', 'Every field needs a label');
     if (field.type === 'SELECT' && parseOptions(field.options).length === 0) {
-      return `SELECT field “${field.label.trim()}” needs at least one option`;
+      const label = field.label.trim();
+      return msg('validation.selectNeedsOption', `SELECT field “${label}” needs at least one option`, {
+        label,
+      });
     }
   }
   const keys = fields.map((f) => slugifyKey(f.label));
   const dup = keys.find((k, i) => keys.indexOf(k) !== i);
-  if (dup) return `Duplicate field keys: “${dup}” — labels must produce unique keys`;
+  if (dup)
+    return msg(
+      'validation.duplicateKeys',
+      `Duplicate field keys: “${dup}” — labels must produce unique keys`,
+      { key: dup },
+    );
   return null;
 }
 
@@ -71,6 +92,7 @@ export function TemplateBuilderModal({
   template: FormTemplate | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('forms');
   const [name, setName] = useState(template?.name ?? '');
   const [description, setDescription] = useState(template?.description ?? '');
   const [fields, setFields] = useState<FieldDraft[]>(
@@ -102,7 +124,7 @@ export function TemplateBuilderModal({
     });
 
   const save = async () => {
-    const problem = validateTemplateDraft(name, fields);
+    const problem = validateTemplateDraft(name, fields, t);
     if (problem) return setError(problem);
     setError(null);
     const payload = {
@@ -118,13 +140,13 @@ export function TemplateBuilderModal({
       }
       onClose();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to save template');
+      setError(e instanceof ApiError ? e.message : t('saveFailed'));
     }
   };
 
   return (
     <Modal
-      title={template ? 'Edit form template' : 'New form template'}
+      title={template ? t('editTemplate') : t('newTemplateTitle')}
       open
       onClose={onClose}
       size="lg"
@@ -136,25 +158,25 @@ export function TemplateBuilderModal({
           </p>
         )}
         <Input
-          label="Template name"
+          label={t('templateName')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. New patient intake"
+          placeholder={t('templateNamePlaceholder')}
         />
         <Input
-          label="Description"
+          label={t('description')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional"
+          placeholder={t('descriptionPlaceholder')}
         />
 
         <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-700">Fields</p>
+          <p className="text-sm font-medium text-gray-700">{t('fieldsHeading')}</p>
           {fields.map((field, index) => (
             <div key={index} className="space-y-2 rounded-md bg-gray-50 p-3">
               <div className="flex flex-wrap items-end gap-3">
                 <Input
-                  label={`Field ${index + 1} label`}
+                  label={t('fieldLabel', { index: index + 1 })}
                   value={field.label}
                   onChange={(e) => patch(index, { label: e.target.value })}
                   className="min-w-40 flex-1"
@@ -164,7 +186,7 @@ export function TemplateBuilderModal({
                     htmlFor={`field-type-${index}`}
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Type
+                    {t('type')}
                   </label>
                   <select
                     id={`field-type-${index}`}
@@ -172,9 +194,9 @@ export function TemplateBuilderModal({
                     onChange={(e) => patch(index, { type: e.target.value as FormFieldType })}
                     className={selectClass}
                   >
-                    {FIELD_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
+                    {FIELD_TYPES.map((ft) => (
+                      <option key={ft} value={ft}>
+                        {t(`fieldType.${ft}`)}
                       </option>
                     ))}
                   </select>
@@ -186,12 +208,12 @@ export function TemplateBuilderModal({
                     onChange={(e) => patch(index, { required: e.target.checked })}
                     className="rounded border-gray-300"
                   />
-                  Required
+                  {t('required')}
                 </label>
                 <div className="flex gap-1 pb-1">
                   <Button
                     variant="ghost"
-                    aria-label={`Move field ${index + 1} up`}
+                    aria-label={t('moveFieldUp', { index: index + 1 })}
                     disabled={index === 0}
                     onClick={() => move(index, -1)}
                   >
@@ -199,7 +221,7 @@ export function TemplateBuilderModal({
                   </Button>
                   <Button
                     variant="ghost"
-                    aria-label={`Move field ${index + 1} down`}
+                    aria-label={t('moveFieldDown', { index: index + 1 })}
                     disabled={index === fields.length - 1}
                     onClick={() => move(index, 1)}
                   >
@@ -207,7 +229,7 @@ export function TemplateBuilderModal({
                   </Button>
                   <Button
                     variant="ghost"
-                    aria-label={`Remove field ${index + 1}`}
+                    aria-label={t('removeField', { index: index + 1 })}
                     onClick={() => setFields((prev) => prev.filter((_, i) => i !== index))}
                   >
                     ✕
@@ -216,30 +238,30 @@ export function TemplateBuilderModal({
               </div>
               {field.type === 'SELECT' && (
                 <Input
-                  label={`Field ${index + 1} options (comma-separated)`}
+                  label={t('fieldOptions', { index: index + 1 })}
                   value={field.options}
                   onChange={(e) => patch(index, { options: e.target.value })}
-                  placeholder="e.g. Yes, No, Unsure"
+                  placeholder={t('fieldOptionsPlaceholder')}
                 />
               )}
               {field.label.trim() && (
                 <p className="text-xs text-gray-500">
-                  Key: <code>{slugifyKey(field.label)}</code>
+                  {t('key')} <code>{slugifyKey(field.label)}</code>
                 </p>
               )}
             </div>
           ))}
           <Button variant="secondary" onClick={() => setFields((prev) => [...prev, emptyField()])}>
-            Add field
+            {t('addField')}
           </Button>
         </div>
 
         <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t('common:cancel')}
           </Button>
           <Button onClick={save} loading={saving}>
-            {template ? 'Save template' : 'Create template'}
+            {template ? t('saveTemplate') : t('createTemplate')}
           </Button>
         </div>
       </div>

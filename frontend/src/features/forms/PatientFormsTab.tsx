@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { Spinner } from '../../components/Spinner';
+import { formatDate, formatDateTime } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import type {
@@ -32,13 +34,14 @@ const inputClass =
   'mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600';
 
 export function PatientFormsTab({ patientId }: { patientId: string }) {
+  const { t } = useTranslation('forms');
   const { hasRole } = useAuth();
   const canWrite = hasRole('ADMIN', 'FRONT_DESK', 'DENTIST', 'HYGIENIST');
   const { data: instances, isPending } = useFormInstances(patientId);
   const [openId, setOpenId] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
 
-  if (isPending) return <Spinner label="Loading forms…" />;
+  if (isPending) return <Spinner label={t('loadingForms')} />;
 
   if (openId) {
     return <FormFillView instanceId={openId} canWrite={canWrite} onBack={() => setOpenId(null)} />;
@@ -46,10 +49,10 @@ export function PatientFormsTab({ patientId }: { patientId: string }) {
 
   return (
     <div className="space-y-4">
-      {canWrite && <Button onClick={() => setPicking(true)}>New form</Button>}
+      {canWrite && <Button onClick={() => setPicking(true)}>{t('newForm')}</Button>}
 
       {instances && instances.length === 0 ? (
-        <p className="text-sm text-gray-500">No forms on file.</p>
+        <p className="text-sm text-gray-500">{t('noForms')}</p>
       ) : (
         <ul className="divide-y divide-gray-100 rounded-md ring-1 ring-gray-100">
           {instances?.map((instance) => (
@@ -61,14 +64,17 @@ export function PatientFormsTab({ patientId }: { patientId: string }) {
                 <div>
                   <p className="text-sm font-medium text-gray-900">{instance.templateName}</p>
                   <p className="text-xs text-gray-500">
-                    Started {new Date(instance.createdAt).toLocaleDateString()}
+                    {t('startedOn', { date: formatDate(instance.createdAt) })}
                     {instance.signedAt &&
-                      ` · Signed ${new Date(instance.signedAt).toLocaleDateString()} by ${
-                        instance.signedByName ?? '—'
-                      }`}
+                      t('signedByOn', {
+                        date: formatDate(instance.signedAt),
+                        name: instance.signedByName ?? t('dash'),
+                      })}
                   </p>
                 </div>
-                <Badge tone={statusTone[instance.status]}>{instance.status}</Badge>
+                <Badge tone={statusTone[instance.status]}>
+                  {t(`status.${instance.status}`)}
+                </Badge>
               </button>
             </li>
           ))}
@@ -98,26 +104,27 @@ function TemplatePickerModal({
   onClose: () => void;
   onCreated: (instance: FormInstance) => void;
 }) {
+  const { t } = useTranslation('forms');
   const { data: templates, isPending } = useFormTemplates();
   const createInstance = useCreateFormInstance(patientId);
   const [templateId, setTemplateId] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const active = (templates ?? []).filter((t) => t.active);
+  const active = (templates ?? []).filter((tpl) => tpl.active);
 
   const start = async () => {
-    if (!templateId) return setError('Choose a template');
+    if (!templateId) return setError(t('chooseTemplate'));
     setError(null);
     try {
       onCreated(await createInstance.mutateAsync(templateId));
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to create form');
+      setError(e instanceof ApiError ? e.message : t('createFormFailed'));
     }
   };
 
   return (
-    <Modal title="New form" open onClose={onClose}>
+    <Modal title={t('newForm')} open onClose={onClose}>
       {isPending ? (
-        <Spinner label="Loading templates…" />
+        <Spinner label={t('loadingTemplates')} />
       ) : (
         <div className="space-y-4">
           {error && (
@@ -127,7 +134,7 @@ function TemplatePickerModal({
           )}
           <div>
             <label htmlFor="form-template" className="block text-sm font-medium text-gray-700">
-              Template
+              {t('template')}
             </label>
             <select
               id="form-template"
@@ -135,23 +142,23 @@ function TemplatePickerModal({
               onChange={(e) => setTemplateId(e.target.value)}
               className={inputClass}
             >
-              <option value="">Choose a template…</option>
-              {active.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              <option value="">{t('chooseTemplatePlaceholder')}</option>
+              {active.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name}
                 </option>
               ))}
             </select>
             {active.length === 0 && (
-              <p className="mt-1 text-xs text-gray-500">No active templates available.</p>
+              <p className="mt-1 text-xs text-gray-500">{t('noActiveTemplates')}</p>
             )}
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={onClose}>
-              Cancel
+              {t('common:cancel')}
             </Button>
             <Button onClick={start} loading={createInstance.isPending}>
-              Start form
+              {t('startForm')}
             </Button>
           </div>
         </div>
@@ -169,6 +176,7 @@ function FormFillView({
   canWrite: boolean;
   onBack: () => void;
 }) {
+  const { t } = useTranslation('forms');
   const { data: instance, isPending } = useFormInstance(instanceId);
   const { data: templates } = useFormTemplates();
   const saveAnswers = useSaveFormAnswers();
@@ -181,10 +189,10 @@ function FormFillView({
     if (instance) setAnswers((prev) => ({ ...instance.answers, ...prev }));
   }, [instance]);
 
-  if (isPending) return <Spinner label="Loading form…" />;
-  if (!instance) return <p className="text-sm text-red-600">Form not found.</p>;
+  if (isPending) return <Spinner label={t('loadingForm')} />;
+  if (!instance) return <p className="text-sm text-red-600">{t('formNotFound')}</p>;
 
-  const template = templates?.find((t) => t.id === instance.templateId);
+  const template = templates?.find((tpl) => tpl.id === instance.templateId);
   const fields: FormField[] = template?.fields ?? [];
   const readOnly = instance.status === 'SIGNED' || !canWrite;
 
@@ -194,7 +202,7 @@ function FormFillView({
       { id: instance.id, answers: next },
       {
         onError: (e) =>
-          setError(e instanceof ApiError ? e.message : 'Failed to save answers'),
+          setError(e instanceof ApiError ? e.message : t('saveAnswersFailed')),
       },
     );
   };
@@ -207,7 +215,7 @@ function FormFillView({
     signInstance.mutate(
       { id: instance.id, ...payload },
       {
-        onError: (e) => setError(e instanceof ApiError ? e.message : 'Failed to sign form'),
+        onError: (e) => setError(e instanceof ApiError ? e.message : t('signFormFailed')),
       },
     );
   };
@@ -217,10 +225,10 @@ function FormFillView({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" onClick={onBack}>
-            ← All forms
+            {t('allForms')}
           </Button>
           <h3 className="text-base font-semibold text-gray-900">{instance.templateName}</h3>
-          <Badge tone={statusTone[instance.status]}>{instance.status}</Badge>
+          <Badge tone={statusTone[instance.status]}>{t(`status.${instance.status}`)}</Badge>
         </div>
         {instance.status === 'SIGNED' && instance.documentId && (
           <Button
@@ -230,11 +238,11 @@ function FormFillView({
               try {
                 await downloadFormPdf(instance.documentId!, `${instance.templateName}.pdf`);
               } catch {
-                setError('Download failed');
+                setError(t('downloadFailed'));
               }
             }}
           >
-            View PDF
+            {t('viewPdf')}
           </Button>
         )}
       </div>
@@ -262,20 +270,20 @@ function FormFillView({
         </div>
       )}
 
-      {saveAnswers.isPending && <p className="text-xs text-gray-400">Saving…</p>}
+      {saveAnswers.isPending && <p className="text-xs text-gray-400">{t('saving')}</p>}
 
       {instance.status === 'COMPLETED' && canWrite && (
         <SignaturePanel onSign={sign} signing={signInstance.isPending} />
       )}
       {instance.status === 'DRAFT' && (
-        <p className="text-xs text-gray-500">
-          Fill in all required fields (*) — signing unlocks once the form is complete.
-        </p>
+        <p className="text-xs text-gray-500">{t('draftHint')}</p>
       )}
       {instance.status === 'SIGNED' && (
         <p className="text-sm text-gray-600">
-          Signed {instance.signedAt && new Date(instance.signedAt).toLocaleString()} by{' '}
-          {instance.signedByName ?? '—'}. This form is read-only.
+          {t('signedReadOnly', {
+            date: instance.signedAt ? formatDateTime(instance.signedAt) : '',
+            name: instance.signedByName ?? t('dash'),
+          })}
         </p>
       )}
     </div>
@@ -386,8 +394,9 @@ function FieldInput({
 
 /** Read-only dump when the template (and its field labels) is no longer available. */
 function SignedAnswersFallback({ answers }: { answers: Record<string, FormAnswerValue> }) {
+  const { t } = useTranslation('forms');
   const entries = Object.entries(answers);
-  if (entries.length === 0) return <p className="text-sm text-gray-500">No answers recorded.</p>;
+  if (entries.length === 0) return <p className="text-sm text-gray-500">{t('noAnswers')}</p>;
   return (
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {entries.map(([key, value]) => (

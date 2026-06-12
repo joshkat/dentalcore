@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Link } from 'react-router-dom';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatMoney } from '../../i18n/format';
 import { useAuth } from '../../lib/auth';
 import {
   useAppointmentsByProvider,
@@ -29,8 +32,6 @@ const REPORTS = [
 ] as const;
 type Report = (typeof REPORTS)[number];
 
-const money = (n: number) => `$${n.toFixed(2)}`;
-
 function isoDaysAgo(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
@@ -38,6 +39,7 @@ function isoDaysAgo(days: number): string {
 }
 
 export function ReportsPage() {
+  const { t } = useTranslation('reports');
   const { hasRole } = useAuth();
   const canSeeFinancials = hasRole('ADMIN', 'BILLING');
   const canSeeDaySheet = hasRole('ADMIN', 'BILLING', 'FRONT_DESK');
@@ -65,19 +67,19 @@ export function ReportsPage() {
   if (!canSeeReports) {
     return (
       <div className="p-8 text-sm text-gray-600">
-        You do not have permission to view reports.
+        {t('noPermission')}
       </div>
     );
   }
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
 
       <div className="mt-4 flex flex-wrap items-end gap-3">
         <div>
           <label htmlFor="report-select" className="block text-sm font-medium text-gray-700">
-            Report
+            {t('reportLabel')}
           </label>
           <select
             id="report-select"
@@ -86,14 +88,16 @@ export function ReportsPage() {
             className="mt-1 rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
           >
             {reports.map((r) => (
-              <option key={r}>{r}</option>
+              <option key={r} value={r}>
+                {t(`reportName.${r}`)}
+              </option>
             ))}
           </select>
         </div>
         {report === 'Day sheet' && (
           <div>
             <label htmlFor="report-date" className="block text-sm font-medium text-gray-700">
-              Date
+              {t('date')}
             </label>
             <input
               id="report-date"
@@ -108,7 +112,7 @@ export function ReportsPage() {
           <>
             <div>
               <label htmlFor="report-from" className="block text-sm font-medium text-gray-700">
-                From
+                {t('from')}
               </label>
               <input
                 id="report-from"
@@ -120,7 +124,7 @@ export function ReportsPage() {
             </div>
             <div>
               <label htmlFor="report-to" className="block text-sm font-medium text-gray-700">
-                To
+                {t('to')}
               </label>
               <input
                 id="report-to"
@@ -160,23 +164,24 @@ function Bar({ value, max, color = '#3b82f6' }: { value: number; max: number; co
 }
 
 function AppointmentsReport({ from, to }: { from: string; to: string }) {
+  const { t } = useTranslation('reports');
   const { data, isPending } = useAppointmentsByProvider(from, to);
-  if (isPending) return <Spinner label="Running report…" />;
+  if (isPending) return <Spinner label={t('running')} />;
   if (!data || data.length === 0)
-    return <p className="text-sm text-gray-500">No appointments in this range.</p>;
+    return <p className="text-sm text-gray-500">{t('noAppointments')}</p>;
   const max = Math.max(...data.map((r) => r.total));
   return (
     <table className="min-w-full divide-y divide-gray-200 text-sm">
       <thead>
         <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-          <th className="py-2 pr-3">Provider</th>
-          <th className="py-2 pr-3">Total</th>
+          <th className="py-2 pr-3">{t('col.provider')}</th>
+          <th className="py-2 pr-3">{t('col.total')}</th>
           <th className="py-2 pr-3" />
-          <th className="py-2 pr-3">Completed</th>
-          <th className="py-2 pr-3">Scheduled</th>
-          <th className="py-2 pr-3">Confirmed</th>
-          <th className="py-2 pr-3">No-show</th>
-          <th className="py-2">Cancelled</th>
+          <th className="py-2 pr-3">{t('col.completed')}</th>
+          <th className="py-2 pr-3">{t('col.scheduled')}</th>
+          <th className="py-2 pr-3">{t('col.confirmed')}</th>
+          <th className="py-2 pr-3">{t('col.noShow')}</th>
+          <th className="py-2">{t('col.cancelled')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
@@ -200,52 +205,53 @@ function AppointmentsReport({ from, to }: { from: string; to: string }) {
 }
 
 function ProductionReport({ from, to }: { from: string; to: string }) {
+  const { t } = useTranslation('reports');
   const { data, isPending } = useDailyProduction(from, to, true);
-  if (isPending) return <Spinner label="Running report…" />;
+  if (isPending) return <Spinner label={t('running')} />;
   if (!data || data.days.length === 0)
-    return <p className="text-sm text-gray-500">No ledger activity in this range.</p>;
+    return <p className="text-sm text-gray-500">{t('noLedgerActivity')}</p>;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         {[
-          ['Production', data.totalCharges],
-          ['Patient collections', data.totalPatientPayments],
-          ['Insurance collections', data.totalInsurancePayments],
-          ['Adjustments', data.totalAdjustments],
-          ['Net', data.totalNet],
-        ].map(([label, value]) => (
-          <div key={label as string} className="rounded-md bg-gray-50 p-3">
+          ['production', data.totalCharges],
+          ['patientCollections', data.totalPatientPayments],
+          ['insuranceCollections', data.totalInsurancePayments],
+          ['adjustments', data.totalAdjustments],
+          ['net', data.totalNet],
+        ].map(([key, value]) => (
+          <div key={key as string} className="rounded-md bg-gray-50 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              {label}
+              {t(`summary.${key}`)}
             </p>
-            <p className="text-lg font-bold text-gray-900">{money(value as number)}</p>
+            <p className="text-lg font-bold text-gray-900">{formatMoney(value as number)}</p>
           </div>
         ))}
       </div>
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead>
           <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-            <th className="py-2 pr-3">Date</th>
-            <th className="py-2 pr-3 text-right">Charges</th>
-            <th className="py-2 pr-3 text-right">Patient pmts</th>
-            <th className="py-2 pr-3 text-right">Insurance pmts</th>
-            <th className="py-2 pr-3 text-right">Adjustments</th>
-            <th className="py-2 text-right">Net</th>
+            <th className="py-2 pr-3">{t('col.date')}</th>
+            <th className="py-2 pr-3 text-right">{t('col.charges')}</th>
+            <th className="py-2 pr-3 text-right">{t('col.patientPmts')}</th>
+            <th className="py-2 pr-3 text-right">{t('col.insurancePmts')}</th>
+            <th className="py-2 pr-3 text-right">{t('col.adjustments')}</th>
+            <th className="py-2 text-right">{t('col.net')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
           {data.days.map((day) => (
             <tr key={day.date}>
               <td className="py-2 pr-3 text-gray-600">{day.date}</td>
-              <td className="py-2 pr-3 text-right">{money(day.charges)}</td>
+              <td className="py-2 pr-3 text-right">{formatMoney(day.charges)}</td>
               <td className="py-2 pr-3 text-right text-green-700">
-                {money(day.patientPayments)}
+                {formatMoney(day.patientPayments)}
               </td>
               <td className="py-2 pr-3 text-right text-blue-700">
-                {money(day.insurancePayments)}
+                {formatMoney(day.insurancePayments)}
               </td>
-              <td className="py-2 pr-3 text-right text-yellow-700">{money(day.adjustments)}</td>
-              <td className="py-2 text-right font-medium">{money(day.net)}</td>
+              <td className="py-2 pr-3 text-right text-yellow-700">{formatMoney(day.adjustments)}</td>
+              <td className="py-2 text-right font-medium">{formatMoney(day.net)}</td>
             </tr>
           ))}
         </tbody>
@@ -261,41 +267,39 @@ const entryTone: Record<DaySheetEntryType, 'red' | 'green' | 'yellow' | 'gray'> 
   REVERSAL: 'gray',
 };
 
-const entryLabel: Record<DaySheetEntryType, string> = {
-  CHARGE: 'Charge',
-  PAYMENT: 'Payment',
-  ADJUSTMENT: 'Adjustment',
-  REVERSAL: 'Reversal',
-};
-
-const signedMoney = (n: number) => `${n < 0 ? '−' : ''}$${Math.abs(n).toFixed(2)}`;
+const entryLabel = (t: TFunction, type: DaySheetEntryType): string => t(`entryLabel.${type}`);
 
 function DaySheetReportView({ date }: { date: string }) {
+  const { t } = useTranslation('reports');
   const { data, isPending } = useDaySheet(date);
-  if (isPending) return <Spinner label="Running report…" />;
-  if (!data) return <p className="text-sm text-gray-500">No day sheet for this date.</p>;
+  if (isPending) return <Spinner label={t('running')} />;
+  if (!data) return <p className="text-sm text-gray-500">{t('daySheet.noData')}</p>;
 
   return (
     <div className="print-area space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-gray-900">Day sheet — {data.date}</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          {t('daySheet.title', { date: data.date })}
+        </h2>
         <Button variant="secondary" className="no-print" onClick={() => window.print()}>
-          Print
+          {t('print')}
         </Button>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         {(
           [
-            ['Production', data.totals.production, 'day-sheet-production'],
-            ['Collections', data.totals.collections, 'day-sheet-collections'],
-            ['Adjustments', data.totals.adjustments, 'day-sheet-adjustments'],
+            ['daySheet.production', data.totals.production, 'day-sheet-production'],
+            ['daySheet.collections', data.totals.collections, 'day-sheet-collections'],
+            ['daySheet.adjustments', data.totals.adjustments, 'day-sheet-adjustments'],
           ] as const
-        ).map(([label, value, testId]) => (
-          <div key={label} className="rounded-md bg-gray-50 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+        ).map(([labelKey, value, testId]) => (
+          <div key={testId} className="rounded-md bg-gray-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              {t(labelKey)}
+            </p>
             <p data-testid={testId} className="text-lg font-bold text-gray-900">
-              {signedMoney(value)}
+              {formatMoney(value)}
             </p>
           </div>
         ))}
@@ -303,26 +307,26 @@ function DaySheetReportView({ date }: { date: string }) {
 
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          By provider
+          {t('daySheet.byProvider')}
         </h3>
         {data.providers.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">No provider activity.</p>
+          <p className="mt-2 text-sm text-gray-500">{t('daySheet.noProviderActivity')}</p>
         ) : (
           <table className="mt-2 min-w-full divide-y divide-gray-200 text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-                <th className="py-2 pr-3">Provider</th>
-                <th className="py-2 pr-3 text-right">Production</th>
-                <th className="py-2 text-right">Collections</th>
+                <th className="py-2 pr-3">{t('col.provider')}</th>
+                <th className="py-2 pr-3 text-right">{t('daySheet.production')}</th>
+                <th className="py-2 text-right">{t('daySheet.collections')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {data.providers.map((row) => (
                 <tr key={row.providerId}>
                   <td className="py-2 pr-3 font-medium text-gray-900">{row.providerName}</td>
-                  <td className="py-2 pr-3 text-right">{signedMoney(row.production)}</td>
+                  <td className="py-2 pr-3 text-right">{formatMoney(row.production)}</td>
                   <td className="py-2 text-right text-green-700">
-                    {signedMoney(row.collections)}
+                    {formatMoney(row.collections)}
                   </td>
                 </tr>
               ))}
@@ -332,19 +336,21 @@ function DaySheetReportView({ date }: { date: string }) {
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Entries</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          {t('daySheet.entries')}
+        </h3>
         {data.entries.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">No activity on this date.</p>
+          <p className="mt-2 text-sm text-gray-500">{t('daySheet.noActivity')}</p>
         ) : (
           <table className="mt-2 min-w-full divide-y divide-gray-200 text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-                <th className="py-2 pr-3">Time</th>
-                <th className="py-2 pr-3">Patient</th>
-                <th className="py-2 pr-3">Provider</th>
-                <th className="py-2 pr-3">Type</th>
-                <th className="py-2 pr-3">Description</th>
-                <th className="py-2 text-right">Amount</th>
+                <th className="py-2 pr-3">{t('col.time')}</th>
+                <th className="py-2 pr-3">{t('col.patient')}</th>
+                <th className="py-2 pr-3">{t('col.provider')}</th>
+                <th className="py-2 pr-3">{t('col.type')}</th>
+                <th className="py-2 pr-3">{t('col.description')}</th>
+                <th className="py-2 text-right">{t('col.amount')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -359,7 +365,7 @@ function DaySheetReportView({ date }: { date: string }) {
                   <td className="py-2 pr-3 font-medium text-gray-900">{entry.patientName}</td>
                   <td className="py-2 pr-3 text-gray-600">{entry.providerName ?? '—'}</td>
                   <td className="py-2 pr-3">
-                    <Badge tone={entryTone[entry.type]}>{entryLabel[entry.type]}</Badge>
+                    <Badge tone={entryTone[entry.type]}>{entryLabel(t, entry.type)}</Badge>
                   </td>
                   <td className="py-2 pr-3 text-gray-600">{entry.description}</td>
                   <td
@@ -367,7 +373,7 @@ function DaySheetReportView({ date }: { date: string }) {
                       entry.amount < 0 ? 'text-red-600' : 'text-gray-900'
                     }`}
                   >
-                    {signedMoney(entry.amount)}
+                    {formatMoney(entry.amount)}
                   </td>
                 </tr>
               ))}
@@ -378,17 +384,17 @@ function DaySheetReportView({ date }: { date: string }) {
 
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Deposit slip
+          {t('daySheet.depositSlip')}
         </h3>
         {data.depositSlip.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">No payments collected.</p>
+          <p className="mt-2 text-sm text-gray-500">{t('daySheet.noPayments')}</p>
         ) : (
           <table className="mt-2 min-w-full divide-y divide-gray-200 text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-                <th className="py-2 pr-3">Method</th>
-                <th className="py-2 pr-3 text-right">Count</th>
-                <th className="py-2 text-right">Total</th>
+                <th className="py-2 pr-3">{t('col.method')}</th>
+                <th className="py-2 pr-3 text-right">{t('col.count')}</th>
+                <th className="py-2 text-right">{t('col.total')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -396,7 +402,7 @@ function DaySheetReportView({ date }: { date: string }) {
                 <tr key={row.method}>
                   <td className="py-2 pr-3 font-medium text-gray-900">{row.method}</td>
                   <td className="py-2 pr-3 text-right">{row.count}</td>
-                  <td className="py-2 text-right font-medium">{signedMoney(row.total)}</td>
+                  <td className="py-2 text-right font-medium">{formatMoney(row.total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -408,19 +414,20 @@ function DaySheetReportView({ date }: { date: string }) {
 }
 
 function GrowthReport() {
+  const { t } = useTranslation('reports');
   const { data, isPending } = usePatientGrowth(12);
-  if (isPending) return <Spinner label="Running report…" />;
+  if (isPending) return <Spinner label={t('running')} />;
   if (!data || data.length === 0)
-    return <p className="text-sm text-gray-500">No patients yet.</p>;
+    return <p className="text-sm text-gray-500">{t('noPatients')}</p>;
   const max = Math.max(...data.map((r) => r.newPatients));
   return (
     <table className="min-w-full divide-y divide-gray-200 text-sm">
       <thead>
         <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-          <th className="py-2 pr-3">Month</th>
-          <th className="py-2 pr-3">New patients</th>
+          <th className="py-2 pr-3">{t('col.month')}</th>
+          <th className="py-2 pr-3">{t('col.newPatients')}</th>
           <th className="py-2 pr-3" />
-          <th className="py-2">Cumulative</th>
+          <th className="py-2">{t('col.cumulative')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
@@ -440,21 +447,22 @@ function GrowthReport() {
 }
 
 function UtilizationReport({ from, to }: { from: string; to: string }) {
+  const { t } = useTranslation('reports');
   const { data, isPending } = useProviderUtilization(from, to);
-  if (isPending) return <Spinner label="Running report…" />;
+  if (isPending) return <Spinner label={t('running')} />;
   if (!data || data.length === 0)
-    return <p className="text-sm text-gray-500">No booked time in this range.</p>;
+    return <p className="text-sm text-gray-500">{t('noBookedTime')}</p>;
   const max = Math.max(...data.map((r) => r.bookedMinutes));
   return (
     <table className="min-w-full divide-y divide-gray-200 text-sm">
       <thead>
         <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-          <th className="py-2 pr-3">Provider</th>
-          <th className="py-2 pr-3">Appointments</th>
-          <th className="py-2 pr-3">Booked</th>
+          <th className="py-2 pr-3">{t('col.provider')}</th>
+          <th className="py-2 pr-3">{t('col.appointments')}</th>
+          <th className="py-2 pr-3">{t('col.booked')}</th>
           <th className="py-2 pr-3" />
-          <th className="py-2 pr-3">Completed time</th>
-          <th className="py-2">Patients</th>
+          <th className="py-2 pr-3">{t('col.completedTime')}</th>
+          <th className="py-2">{t('col.patients')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
@@ -463,12 +471,12 @@ function UtilizationReport({ from, to }: { from: string; to: string }) {
             <td className="py-2 pr-3 font-medium text-gray-900">{row.providerName}</td>
             <td className="py-2 pr-3">{row.appointments}</td>
             <td className="py-2 pr-3">
-              {(row.bookedMinutes / 60).toFixed(1)}h
+              {t('hours', { value: (row.bookedMinutes / 60).toFixed(1) })}
             </td>
             <td className="py-2 pr-3">
               <Bar value={row.bookedMinutes} max={max} color="#7c3aed" />
             </td>
-            <td className="py-2 pr-3">{(row.completedMinutes / 60).toFixed(1)}h</td>
+            <td className="py-2 pr-3">{t('hours', { value: (row.completedMinutes / 60).toFixed(1) })}</td>
             <td className="py-2">{row.distinctPatients}</td>
           </tr>
         ))}
@@ -488,22 +496,22 @@ type ArSortKey =
   | 'total'
   | 'lastPaymentDate';
 
-const AR_COLUMNS: Array<{ key: ArSortKey; label: string; numeric: boolean }> = [
-  { key: 'guarantorName', label: 'Guarantor', numeric: false },
-  { key: 'current', label: 'Current', numeric: true },
-  { key: 'days30', label: '30 days', numeric: true },
-  { key: 'days60', label: '60 days', numeric: true },
-  { key: 'days90plus', label: '90+ days', numeric: true },
-  { key: 'total', label: 'Total', numeric: true },
-  { key: 'lastPaymentDate', label: 'Last payment', numeric: false },
+const AR_COLUMNS: Array<{ key: ArSortKey; labelKey: string; numeric: boolean }> = [
+  { key: 'guarantorName', labelKey: 'col.guarantor', numeric: false },
+  { key: 'current', labelKey: 'col.current', numeric: true },
+  { key: 'days30', labelKey: 'col.days30', numeric: true },
+  { key: 'days60', labelKey: 'col.days60', numeric: true },
+  { key: 'days90plus', labelKey: 'col.days90plus', numeric: true },
+  { key: 'total', labelKey: 'col.total', numeric: true },
+  { key: 'lastPaymentDate', labelKey: 'col.lastPayment', numeric: false },
 ];
 
 const AR_BUCKETS = [
-  ['current', 'Current'],
-  ['days30', '30 days'],
-  ['days60', '60 days'],
-  ['days90plus', '90+ days'],
-  ['total', 'Total'],
+  ['current', 'col.current'],
+  ['days30', 'col.days30'],
+  ['days60', 'col.days60'],
+  ['days90plus', 'col.days90plus'],
+  ['total', 'col.total'],
 ] as const;
 
 function compareAr(a: ArAgingRow, b: ArAgingRow, key: ArSortKey): number {
@@ -517,6 +525,7 @@ function compareAr(a: ArAgingRow, b: ArAgingRow, key: ArSortKey): number {
 }
 
 function ArAgingReportView() {
+  const { t } = useTranslation('reports');
   const { data, isPending } = useArAging();
   const [sortKey, setSortKey] = useState<ArSortKey>('total');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -526,8 +535,8 @@ function ArAgingReportView() {
     return sortDir === 'desc' ? sorted.reverse() : sorted;
   }, [data, sortKey, sortDir]);
 
-  if (isPending) return <Spinner label="Running report…" />;
-  if (!data) return <p className="text-sm text-gray-500">No A/R data.</p>;
+  if (isPending) return <Spinner label={t('running')} />;
+  if (!data) return <p className="text-sm text-gray-500">{t('ar.noData')}</p>;
 
   const toggleSort = (key: ArSortKey) => {
     if (key === sortKey) {
@@ -541,27 +550,27 @@ function ArAgingReportView() {
   return (
     <div className="print-area space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-gray-900">Accounts receivable aging</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('ar.title')}</h2>
         <Button variant="secondary" className="no-print" onClick={() => window.print()}>
-          Print
+          {t('print')}
         </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-        {AR_BUCKETS.map(([key, label]) => (
+        {AR_BUCKETS.map(([key, labelKey]) => (
           <div key={key} className="rounded-md bg-gray-50 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              {label}
+              {t(labelKey)}
             </p>
             <p data-testid={`ar-bucket-${key}`} className="text-lg font-bold text-gray-900">
-              {money(data.buckets[key])}
+              {formatMoney(data.buckets[key])}
             </p>
           </div>
         ))}
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-500">No outstanding balances.</p>
+        <p className="text-sm text-gray-500">{t('ar.noBalances')}</p>
       ) : (
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead>
@@ -569,7 +578,7 @@ function ArAgingReportView() {
               <th className="py-2 pr-3 text-left">
                 <SortHeader column={AR_COLUMNS[0]} sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
               </th>
-              <th className="py-2 pr-3 text-left">Phone</th>
+              <th className="py-2 pr-3 text-left">{t('col.phone')}</th>
               {AR_COLUMNS.slice(1, 6).map((column) => (
                 <th key={column.key} className="py-2 pr-3 text-right">
                   <SortHeader column={column} sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
@@ -592,12 +601,12 @@ function ArAgingReportView() {
                   </Link>
                 </td>
                 <td className="py-2 pr-3 whitespace-nowrap text-gray-600">{row.phone ?? '—'}</td>
-                <td className="py-2 pr-3 text-right">{money(row.current)}</td>
-                <td className="py-2 pr-3 text-right">{money(row.days30)}</td>
-                <td className="py-2 pr-3 text-right">{money(row.days60)}</td>
-                <td className="py-2 pr-3 text-right text-red-600">{money(row.days90plus)}</td>
-                <td className="py-2 pr-3 text-right font-semibold">{money(row.total)}</td>
-                <td className="py-2 text-gray-600">{row.lastPaymentDate ?? 'Never'}</td>
+                <td className="py-2 pr-3 text-right">{formatMoney(row.current)}</td>
+                <td className="py-2 pr-3 text-right">{formatMoney(row.days30)}</td>
+                <td className="py-2 pr-3 text-right">{formatMoney(row.days60)}</td>
+                <td className="py-2 pr-3 text-right text-red-600">{formatMoney(row.days90plus)}</td>
+                <td className="py-2 pr-3 text-right font-semibold">{formatMoney(row.total)}</td>
+                <td className="py-2 text-gray-600">{row.lastPaymentDate ?? t('ar.never')}</td>
               </tr>
             ))}
           </tbody>
@@ -613,11 +622,12 @@ function SortHeader({
   sortDir,
   onSort,
 }: {
-  column: { key: ArSortKey; label: string };
+  column: { key: ArSortKey; labelKey: string };
   sortKey: ArSortKey;
   sortDir: 'asc' | 'desc';
   onSort: (key: ArSortKey) => void;
 }) {
+  const { t } = useTranslation('reports');
   const active = sortKey === column.key;
   return (
     <button
@@ -625,7 +635,7 @@ function SortHeader({
       onClick={() => onSort(column.key)}
       className={`uppercase hover:text-gray-700 ${active ? 'text-gray-900' : ''}`}
     >
-      {column.label}
+      {t(column.labelKey)}
       {active && <span aria-hidden> {sortDir === 'asc' ? '▲' : '▼'}</span>}
     </button>
   );
@@ -634,19 +644,20 @@ function SortHeader({
 // ---- Collections ----
 
 function CollectionsReportView() {
+  const { t } = useTranslation('reports');
   const { data, isPending } = useCollections();
-  if (isPending) return <Spinner label="Running report…" />;
+  if (isPending) return <Spinner label={t('running')} />;
   if (!data || data.length === 0)
-    return <p className="text-sm text-gray-500">No overdue accounts. Nice work.</p>;
+    return <p className="text-sm text-gray-500">{t('collections.none')}</p>;
   return (
     <table className="min-w-full divide-y divide-gray-200 text-sm" data-testid="collections-table">
       <thead>
         <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-          <th className="py-2 pr-3">Guarantor</th>
-          <th className="py-2 pr-3">Phone</th>
-          <th className="py-2 pr-3 text-right">Overdue</th>
-          <th className="py-2 pr-3">Last payment</th>
-          <th className="py-2">Oldest charge</th>
+          <th className="py-2 pr-3">{t('col.guarantor')}</th>
+          <th className="py-2 pr-3">{t('col.phone')}</th>
+          <th className="py-2 pr-3 text-right">{t('col.overdue')}</th>
+          <th className="py-2 pr-3">{t('col.lastPayment')}</th>
+          <th className="py-2">{t('col.oldestCharge')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
@@ -662,9 +673,9 @@ function CollectionsReportView() {
             </td>
             <td className="py-2 pr-3 whitespace-nowrap text-gray-600">{row.phone ?? '—'}</td>
             <td className="py-2 pr-3 text-right font-semibold text-red-600">
-              {money(row.totalOverdue)}
+              {formatMoney(row.totalOverdue)}
             </td>
-            <td className="py-2 pr-3 text-gray-600">{row.lastPaymentDate ?? 'Never'}</td>
+            <td className="py-2 pr-3 text-gray-600">{row.lastPaymentDate ?? t('collections.never')}</td>
             <td className="py-2 text-gray-600">{row.oldestChargeDate}</td>
           </tr>
         ))}

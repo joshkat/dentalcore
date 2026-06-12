@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 
@@ -24,6 +25,7 @@ export function SignaturePanel({
   signing?: boolean;
   error?: string | null;
 }) {
+  const { t } = useTranslation('forms');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const [hasDrawing, setHasDrawing] = useState(false);
@@ -90,21 +92,21 @@ export function SignaturePanel({
 
   return (
     <div className="space-y-3 rounded-md bg-gray-50 p-4">
-      <p className="text-sm font-medium text-gray-900">Sign this form</p>
+      <p className="text-sm font-medium text-gray-900">{t('signThisForm')}</p>
       {error && (
         <p role="alert" className="rounded-md bg-red-50 p-2 text-sm text-red-700">
           {error}
         </p>
       )}
       <Input
-        label="Signed by (full name)"
+        label={t('signedByFullName')}
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="e.g. Emma Demoson"
+        placeholder={t('signedByPlaceholder')}
         className="max-w-sm"
       />
       <div>
-        <p className="text-sm font-medium text-gray-700">Signature</p>
+        <p className="text-sm font-medium text-gray-700">{t('signature')}</p>
         <canvas
           ref={canvasRef}
           data-testid="signature-canvas"
@@ -116,14 +118,14 @@ export function SignaturePanel({
           onPointerLeave={stopDrawing}
           className="mt-1 w-full max-w-md cursor-crosshair touch-none rounded-md bg-white ring-1 ring-inset ring-gray-300"
         />
-        <p className="mt-1 text-xs text-gray-500">Draw your signature above.</p>
+        <p className="mt-1 text-xs text-gray-500">{t('drawHint')}</p>
       </div>
       <div className="flex gap-2">
         <Button onClick={sign} disabled={!hasDrawing || !name.trim()} loading={signing}>
-          Sign
+          {t('sign')}
         </Button>
         <Button variant="secondary" onClick={clear}>
-          Clear
+          {t('clear')}
         </Button>
       </div>
     </div>
