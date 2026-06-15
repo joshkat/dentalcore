@@ -1,34 +1,37 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Modal } from '../../components/Modal';
 import { ApiError } from '../../lib/api';
 import { ALL_ROLES, type Role, type UserResponse } from '../../types/api';
-import { passwordRules } from '../auth/schemas';
+import { makePasswordRules, type Translate } from '../auth/schemas';
 import { useCreateUser, useUpdateUser } from './api';
-import { useState } from 'react';
 
-const baseFields = {
-  firstName: z.string().min(1, 'First name is required').max(100),
-  lastName: z.string().min(1, 'Last name is required').max(100),
-  roles: z.array(z.enum(ALL_ROLES as [Role, ...Role[]])).min(1, 'Select at least one role'),
-};
-
-const createSchema = z.object({
-  ...baseFields,
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
-  password: passwordRules,
+const makeBaseFields = (t: Translate) => ({
+  firstName: z.string().min(1, t('users:validation.firstNameRequired')).max(100),
+  lastName: z.string().min(1, t('users:validation.lastNameRequired')).max(100),
+  roles: z.array(z.enum(ALL_ROLES as [Role, ...Role[]])).min(1, t('users:validation.rolesRequired')),
 });
 
-const editSchema = z.object({
-  ...baseFields,
-  status: z.enum(['ACTIVE', 'DISABLED']),
-});
+const makeCreateSchema = (t: Translate) =>
+  z.object({
+    ...makeBaseFields(t),
+    email: z.string().min(1, t('users:validation.emailRequired')).email(t('users:validation.emailInvalid')),
+    password: makePasswordRules(t),
+  });
 
-type CreateForm = z.infer<typeof createSchema>;
-type EditForm = z.infer<typeof editSchema>;
+const makeEditSchema = (t: Translate) =>
+  z.object({
+    ...makeBaseFields(t),
+    status: z.enum(['ACTIVE', 'DISABLED']),
+  });
+
+type CreateForm = z.infer<ReturnType<typeof makeCreateSchema>>;
+type EditForm = z.infer<ReturnType<typeof makeEditSchema>>;
 
 interface UserFormModalProps {
   open: boolean;
@@ -37,8 +40,9 @@ interface UserFormModalProps {
 }
 
 export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
+  const { t } = useTranslation('users');
   return (
-    <Modal title={user ? 'Edit user' : 'New user'} open={open} onClose={onClose}>
+    <Modal title={user ? t('editUser') : t('newUser')} open={open} onClose={onClose}>
       {user ? (
         <EditUserForm user={user} onClose={onClose} />
       ) : (
@@ -57,9 +61,10 @@ function RoleCheckboxes({
   toggle: (role: Role) => void;
   error?: string;
 }) {
+  const { t } = useTranslation('users');
   return (
     <fieldset>
-      <legend className="block text-sm font-medium text-gray-700">Roles</legend>
+      <legend className="block text-sm font-medium text-gray-700">{t('rolesLegend')}</legend>
       <div className="mt-2 grid grid-cols-2 gap-2">
         {ALL_ROLES.map((role) => (
           <label key={role} className="flex items-center gap-2 text-sm text-gray-700">
@@ -69,7 +74,7 @@ function RoleCheckboxes({
               onChange={() => toggle(role)}
               className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-600"
             />
-            {role.replace('_', ' ')}
+            {t(`role.${role}`)}
           </label>
         ))}
       </div>
@@ -83,8 +88,10 @@ function RoleCheckboxes({
 }
 
 function CreateUserForm({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('users');
   const createUser = useCreateUser();
   const [serverError, setServerError] = useState<string | null>(null);
+  const createSchema = useMemo(() => makeCreateSchema(t), [t]);
   const {
     register,
     handleSubmit,
@@ -110,7 +117,7 @@ function CreateUserForm({ onClose }: { onClose: () => void }) {
       await createUser.mutateAsync(data);
       onClose();
     } catch (error) {
-      setServerError(error instanceof ApiError ? error.message : 'Failed to create user');
+      setServerError(error instanceof ApiError ? error.message : t('createFailed'));
     }
   };
 
@@ -121,13 +128,13 @@ function CreateUserForm({ onClose }: { onClose: () => void }) {
           {serverError}
         </div>
       )}
-      <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
+      <Input label={t('emailLabel')} type="email" error={errors.email?.message} {...register('email')} />
       <div className="grid grid-cols-2 gap-4">
-        <Input label="First name" error={errors.firstName?.message} {...register('firstName')} />
-        <Input label="Last name" error={errors.lastName?.message} {...register('lastName')} />
+        <Input label={t('firstNameLabel')} error={errors.firstName?.message} {...register('firstName')} />
+        <Input label={t('lastNameLabel')} error={errors.lastName?.message} {...register('lastName')} />
       </div>
       <Input
-        label="Temporary password"
+        label={t('temporaryPasswordLabel')}
         type="password"
         autoComplete="new-password"
         error={errors.password?.message}
@@ -136,10 +143,10 @@ function CreateUserForm({ onClose }: { onClose: () => void }) {
       <RoleCheckboxes selected={roles} toggle={toggleRole} error={errors.roles?.message} />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onClose}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button type="submit" loading={isSubmitting}>
-          Create user
+          {t('createUser')}
         </Button>
       </div>
     </form>
@@ -147,8 +154,10 @@ function CreateUserForm({ onClose }: { onClose: () => void }) {
 }
 
 function EditUserForm({ user, onClose }: { user: UserResponse; onClose: () => void }) {
+  const { t } = useTranslation('users');
   const updateUser = useUpdateUser(user.id);
   const [serverError, setServerError] = useState<string | null>(null);
+  const editSchema = useMemo(() => makeEditSchema(t), [t]);
   const {
     register,
     handleSubmit,
@@ -179,7 +188,7 @@ function EditUserForm({ user, onClose }: { user: UserResponse; onClose: () => vo
       await updateUser.mutateAsync(data);
       onClose();
     } catch (error) {
-      setServerError(error instanceof ApiError ? error.message : 'Failed to update user');
+      setServerError(error instanceof ApiError ? error.message : t('updateFailed'));
     }
   };
 
@@ -191,29 +200,29 @@ function EditUserForm({ user, onClose }: { user: UserResponse; onClose: () => vo
         </div>
       )}
       <div className="grid grid-cols-2 gap-4">
-        <Input label="First name" error={errors.firstName?.message} {...register('firstName')} />
-        <Input label="Last name" error={errors.lastName?.message} {...register('lastName')} />
+        <Input label={t('firstNameLabel')} error={errors.firstName?.message} {...register('firstName')} />
+        <Input label={t('lastNameLabel')} error={errors.lastName?.message} {...register('lastName')} />
       </div>
       <div>
         <label htmlFor="user-status" className="block text-sm font-medium text-gray-700">
-          Status
+          {t('statusLabel')}
         </label>
         <select
           id="user-status"
           className="mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600"
           {...register('status')}
         >
-          <option value="ACTIVE">Active</option>
-          <option value="DISABLED">Disabled</option>
+          <option value="ACTIVE">{t('status.ACTIVE')}</option>
+          <option value="DISABLED">{t('status.DISABLED')}</option>
         </select>
       </div>
       <RoleCheckboxes selected={roles} toggle={toggleRole} error={errors.roles?.message} />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onClose}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button type="submit" loading={isSubmitting}>
-          Save changes
+          {t('saveChanges')}
         </Button>
       </div>
     </form>

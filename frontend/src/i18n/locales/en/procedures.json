@@ -1,0 +1,47 @@
+{
+  "title": "Procedure catalog",
+  "newProcedure": "New procedure",
+  "searchPlaceholder": "Search by code or description…",
+  "searchAriaLabel": "Search procedures",
+  "loading": "Loading catalog…",
+  "loadFailed": "Failed to load the catalog.",
+  "colCode": "Code",
+  "colDescription": "Description",
+  "colCategory": "Category",
+  "colStandardFee": "Standard fee",
+  "colStatus": "Status",
+  "edit": "Edit",
+  "empty": "No procedures found.",
+  "statusBadge": {
+    "active": "ACTIVE",
+    "inactive": "INACTIVE"
+  },
+  "category": {
+    "DIAGNOSTIC": "DIAGNOSTIC",
+    "PREVENTIVE": "PREVENTIVE",
+    "RESTORATIVE": "RESTORATIVE",
+    "ENDODONTICS": "ENDODONTICS",
+    "PERIODONTICS": "PERIODONTICS",
+    "PROSTHODONTICS": "PROSTHODONTICS",
+    "ORAL_SURGERY": "ORAL SURGERY",
+    "ORTHODONTICS": "ORTHODONTICS",
+    "ADJUNCTIVE": "ADJUNCTIVE",
+    "OTHER": "OTHER"
+  },
+  "editProcedure": "Edit procedure",
+  "codeLabel": "Code",
+  "cdtCodeLabel": "CDT code (optional)",
+  "descriptionLabel": "Description",
+  "categoryLabel": "Category",
+  "standardFeeLabel": "Standard fee ($)",
+  "activeLabel": "Active",
+  "cancel": "Cancel",
+  "createProcedure": "Create procedure",
+  "saveChanges": "Save changes",
+  "saveFailed": "Failed to save procedure",
+  "validation": {
+    "codeRequired": "Code is required",
+    "descriptionRequired": "Description is required",
+    "feeNegative": "Fee cannot be negative"
+  }
+}

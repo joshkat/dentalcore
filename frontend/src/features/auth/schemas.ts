@@ -39,17 +39,6 @@ export function makePasswordRules(t: Translate) {
     .regex(/\d/, t('auth:validation.passwordNeedsDigit'));
 }
 
-/**
- * @deprecated English-only static rules kept for callers not yet migrated to
- * i18n (features/users/UserFormModal). Use makePasswordRules(t) instead.
- */
-export const passwordRules = z
-  .string()
-  .min(12, 'Password must be at least 12 characters')
-  .max(128, 'Password must be at most 128 characters')
-  .regex(/[A-Za-z]/, 'Password must contain a letter')
-  .regex(/\d/, 'Password must contain a digit');
-
 export function makeResetPasswordSchema(t: Translate) {
   return z
     .object({

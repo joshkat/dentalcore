@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
@@ -7,6 +8,7 @@ import { useUsers } from './api';
 import { UserFormModal } from './UserFormModal';
 
 export function UsersPage() {
+  const { t } = useTranslation('users');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
@@ -26,44 +28,44 @@ export function UsersPage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-        <Button onClick={openCreate}>New user</Button>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <Button onClick={openCreate}>{t('newUser')}</Button>
       </div>
 
       <div className="mt-4">
         <input
           type="search"
-          placeholder="Search by name or email…"
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(0);
           }}
-          aria-label="Search users"
+          aria-label={t('searchAriaLabel')}
           className="w-full max-w-sm rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600"
         />
       </div>
 
       <div className="mt-4 overflow-hidden rounded-lg bg-white shadow">
         {isPending ? (
-          <Spinner label="Loading users…" />
+          <Spinner label={t('loading')} />
         ) : isError ? (
-          <p className="p-8 text-sm text-red-600">Failed to load users.</p>
+          <p className="p-8 text-sm text-red-600">{t('loadFailed')}</p>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                  Name
+                  {t('colName')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                  Email
+                  {t('colEmail')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                  Roles
+                  {t('colRoles')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                  Status
+                  {t('colStatus')}
                 </th>
                 <th className="px-4 py-3" />
               </tr>
@@ -79,18 +81,18 @@ export function UsersPage() {
                     <div className="flex flex-wrap gap-1">
                       {user.roles.map((role) => (
                         <Badge key={role} tone="blue">
-                          {role.replace('_', ' ')}
+                          {t(`role.${role}`)}
                         </Badge>
                       ))}
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     {user.locked ? (
-                      <Badge tone="yellow">LOCKED</Badge>
+                      <Badge tone="yellow">{t('statusBadge.LOCKED')}</Badge>
                     ) : user.status === 'ACTIVE' ? (
-                      <Badge tone="green">ACTIVE</Badge>
+                      <Badge tone="green">{t('statusBadge.ACTIVE')}</Badge>
                     ) : (
-                      <Badge tone="red">DISABLED</Badge>
+                      <Badge tone="red">{t('statusBadge.DISABLED')}</Badge>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -98,7 +100,7 @@ export function UsersPage() {
                       onClick={() => openEdit(user)}
                       className="text-sm text-brand-600 hover:underline"
                     >
-                      Edit
+                      {t('edit')}
                     </button>
                   </td>
                 </tr>
@@ -106,7 +108,7 @@ export function UsersPage() {
               {data.content.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">
-                    No users found.
+                    {t('empty')}
                   </td>
                 </tr>
               )}
@@ -118,7 +120,11 @@ export function UsersPage() {
       {data && data.totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
           <span>
-            Page {data.page + 1} of {data.totalPages} ({data.totalElements} users)
+            {t('pageInfo', {
+              page: data.page + 1,
+              totalPages: data.totalPages,
+              count: data.totalElements,
+            })}
           </span>
           <div className="flex gap-2">
             <Button
@@ -126,14 +132,14 @@ export function UsersPage() {
               disabled={data.page === 0}
               onClick={() => setPage((p) => p - 1)}
             >
-              Previous
+              {t('previous')}
             </Button>
             <Button
               variant="secondary"
               disabled={data.page + 1 >= data.totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next
+              {t('next')}
             </Button>
           </div>
         </div>

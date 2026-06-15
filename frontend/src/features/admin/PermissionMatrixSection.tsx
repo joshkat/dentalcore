@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
 import { ApiError } from '../../lib/api';
@@ -23,6 +24,7 @@ function sameSet(a: string[], b: string[]): boolean {
 }
 
 export function PermissionMatrixSection() {
+  const { t } = useTranslation('admin');
   const { data, isPending, isError } = usePermissionMatrix();
   const updateRole = useUpdateRolePermissions();
   // Per-role draft grants; a role is "dirty" when its draft differs from the server state.
@@ -41,11 +43,11 @@ export function PermissionMatrixSection() {
     return [...byCategory.entries()];
   }, [data]);
 
-  if (isPending) return <Spinner label="Loading permissions…" />;
+  if (isPending) return <Spinner label={t('loadingPermissions')} />;
   if (isError || !data)
     return (
       <p role="alert" className="text-sm text-red-600">
-        Failed to load the permission matrix.
+        {t('matrixLoadFailed')}
       </p>
     );
 
@@ -75,17 +77,17 @@ export function PermissionMatrixSection() {
             return rest;
           }),
         onError: (e) =>
-          setError(e instanceof ApiError ? e.message : 'Failed to save permissions'),
+          setError(e instanceof ApiError ? e.message : t('matrixSaveFailed')),
         onSettled: () => setSavingRole(null),
       },
     );
   };
 
   return (
-    <section aria-label="Permission matrix" className="rounded-lg bg-white p-6 shadow">
-      <h2 className="text-lg font-semibold text-gray-900">Permission matrix</h2>
+    <section aria-label={t('matrixSectionLabel')} className="rounded-lg bg-white p-6 shadow">
+      <h2 className="text-lg font-semibold text-gray-900">{t('matrixTitle')}</h2>
       <p className="mt-2 rounded-md bg-yellow-50 p-2 text-sm text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-        Changes apply immediately to active sessions.
+        {t('changesApplyImmediately')}
       </p>
       {error && (
         <p role="alert" className="mt-2 rounded-md bg-red-50 p-2 text-sm text-red-700">
@@ -97,10 +99,10 @@ export function PermissionMatrixSection() {
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead>
             <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-              <th className="py-2 pr-3">Permission</th>
+              <th className="py-2 pr-3">{t('permissionColumn')}</th>
               {ALL_ROLES.map((role) => (
                 <th key={role} className="px-2 py-2 text-center align-top">
-                  <span className="block">{role}</span>
+                  <span className="block">{t(`role.${role}`)}</span>
                   {isDirty(role) && (
                     <Button
                       className="mt-1 px-2 py-1 text-xs normal-case"
@@ -108,7 +110,7 @@ export function PermissionMatrixSection() {
                       loading={savingRole === role && updateRole.isPending}
                       aria-label={`Save ${role}`}
                     >
-                      Save
+                      {t('save')}
                     </Button>
                   )}
                 </th>
@@ -146,11 +148,7 @@ export function PermissionMatrixSection() {
                           data-code={permission.code}
                           checked={grantsFor(role).includes(permission.code)}
                           disabled={locked}
-                          title={
-                            locked
-                              ? 'ADMIN always keeps this permission; the server refuses to revoke it.'
-                              : undefined
-                          }
+                          title={locked ? t('lockedAdminTooltip') : undefined}
                           onChange={() => toggle(role, permission.code)}
                         />
                       </td>

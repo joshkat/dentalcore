@@ -1,33 +1,36 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Modal } from '../../components/Modal';
 import { ApiError } from '../../lib/api';
 import type { Provider } from '../../types/api';
+import type { Translate } from '../auth/schemas';
 import { useCreateProvider, useUpdateProvider } from './api';
 
-const providerSchema = z.object({
-  type: z.enum(['DENTIST', 'HYGIENIST', 'ASSISTANT']),
-  firstName: z.string().min(1, 'First name is required').max(100),
-  lastName: z.string().min(1, 'Last name is required').max(100),
-  npi: z
-    .string()
-    .regex(/^\d{10}$/, 'NPI must be exactly 10 digits')
-    .optional()
-    .or(z.literal('')),
-  specialty: z.string().max(100).optional().or(z.literal('')),
-  licenseNumber: z.string().max(50).optional().or(z.literal('')),
-  licenseState: z.string().max(50).optional().or(z.literal('')),
-  email: z.string().email('Enter a valid email').max(320).optional().or(z.literal('')),
-  phone: z.string().max(30).optional().or(z.literal('')),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex color like #3b82f6'),
-  active: z.boolean(),
-});
+const makeProviderSchema = (t: Translate) =>
+  z.object({
+    type: z.enum(['DENTIST', 'HYGIENIST', 'ASSISTANT']),
+    firstName: z.string().min(1, t('providers:validation.firstNameRequired')).max(100),
+    lastName: z.string().min(1, t('providers:validation.lastNameRequired')).max(100),
+    npi: z
+      .string()
+      .regex(/^\d{10}$/, t('providers:validation.npiInvalid'))
+      .optional()
+      .or(z.literal('')),
+    specialty: z.string().max(100).optional().or(z.literal('')),
+    licenseNumber: z.string().max(50).optional().or(z.literal('')),
+    licenseState: z.string().max(50).optional().or(z.literal('')),
+    email: z.string().email(t('providers:validation.emailInvalid')).max(320).optional().or(z.literal('')),
+    phone: z.string().max(30).optional().or(z.literal('')),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/, t('providers:validation.colorInvalid')),
+    active: z.boolean(),
+  });
 
-type ProviderFormValues = z.infer<typeof providerSchema>;
+type ProviderFormValues = z.infer<ReturnType<typeof makeProviderSchema>>;
 
 const selectClass =
   'mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600';
@@ -39,17 +42,20 @@ interface ProviderFormModalProps {
 }
 
 export function ProviderFormModal({ open, onClose, provider }: ProviderFormModalProps) {
+  const { t } = useTranslation('providers');
   return (
-    <Modal title={provider ? 'Edit provider' : 'New provider'} open={open} onClose={onClose}>
+    <Modal title={provider ? t('editProvider') : t('newProvider')} open={open} onClose={onClose}>
       <ProviderForm key={provider?.id ?? 'new'} provider={provider} onClose={onClose} />
     </Modal>
   );
 }
 
 function ProviderForm({ provider, onClose }: { provider: Provider | null; onClose: () => void }) {
+  const { t } = useTranslation('providers');
   const createProvider = useCreateProvider();
   const updateProvider = useUpdateProvider(provider?.id ?? '');
   const [serverError, setServerError] = useState<string | null>(null);
+  const providerSchema = useMemo(() => makeProviderSchema(t), [t]);
 
   const {
     register,
@@ -105,7 +111,7 @@ function ProviderForm({ provider, onClose }: { provider: Provider | null; onClos
       }
       onClose();
     } catch (error) {
-      setServerError(error instanceof ApiError ? error.message : 'Failed to save provider');
+      setServerError(error instanceof ApiError ? error.message : t('saveFailed'));
     }
   };
 
@@ -119,17 +125,17 @@ function ProviderForm({ provider, onClose }: { provider: Provider | null; onClos
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="provider-type" className="block text-sm font-medium text-gray-700">
-            Type
+            {t('typeLabel')}
           </label>
           <select id="provider-type" className={selectClass} {...register('type')}>
-            <option value="DENTIST">Dentist</option>
-            <option value="HYGIENIST">Hygienist</option>
-            <option value="ASSISTANT">Assistant</option>
+            <option value="DENTIST">{t('type.DENTIST')}</option>
+            <option value="HYGIENIST">{t('type.HYGIENIST')}</option>
+            <option value="ASSISTANT">{t('type.ASSISTANT')}</option>
           </select>
         </div>
         <div>
           <label htmlFor="provider-color" className="block text-sm font-medium text-gray-700">
-            Calendar color
+            {t('colorLabel')}
           </label>
           <input
             id="provider-color"
@@ -143,22 +149,22 @@ function ProviderForm({ provider, onClose }: { provider: Provider | null; onClos
             </p>
           )}
         </div>
-        <Input label="First name" error={errors.firstName?.message} {...register('firstName')} />
-        <Input label="Last name" error={errors.lastName?.message} {...register('lastName')} />
-        <Input label="NPI" error={errors.npi?.message} {...register('npi')} />
-        <Input label="Specialty" error={errors.specialty?.message} {...register('specialty')} />
+        <Input label={t('firstNameLabel')} error={errors.firstName?.message} {...register('firstName')} />
+        <Input label={t('lastNameLabel')} error={errors.lastName?.message} {...register('lastName')} />
+        <Input label={t('npiLabel')} error={errors.npi?.message} {...register('npi')} />
+        <Input label={t('specialtyLabel')} error={errors.specialty?.message} {...register('specialty')} />
         <Input
-          label="License number"
+          label={t('licenseNumberLabel')}
           error={errors.licenseNumber?.message}
           {...register('licenseNumber')}
         />
         <Input
-          label="License state"
+          label={t('licenseStateLabel')}
           error={errors.licenseState?.message}
           {...register('licenseState')}
         />
-        <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
-        <Input label="Phone" error={errors.phone?.message} {...register('phone')} />
+        <Input label={t('emailLabel')} type="email" error={errors.email?.message} {...register('email')} />
+        <Input label={t('phoneLabel')} error={errors.phone?.message} {...register('phone')} />
       </div>
       <label className="flex items-center gap-2 text-sm text-gray-700">
         <input
@@ -166,14 +172,14 @@ function ProviderForm({ provider, onClose }: { provider: Provider | null; onClos
           className="h-4 w-4 rounded border-gray-300 text-brand-600"
           {...register('active')}
         />
-        Active
+        {t('activeLabel')}
       </label>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onClose}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button type="submit" loading={isSubmitting}>
-          {provider ? 'Save changes' : 'Create provider'}
+          {provider ? t('saveChanges') : t('createProvider')}
         </Button>
       </div>
     </form>

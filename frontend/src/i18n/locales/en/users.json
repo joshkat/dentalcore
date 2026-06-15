@@ -1,0 +1,53 @@
+{
+  "title": "Users",
+  "newUser": "New user",
+  "searchPlaceholder": "Search by name or email…",
+  "searchAriaLabel": "Search users",
+  "loading": "Loading users…",
+  "loadFailed": "Failed to load users.",
+  "colName": "Name",
+  "colEmail": "Email",
+  "colRoles": "Roles",
+  "colStatus": "Status",
+  "edit": "Edit",
+  "empty": "No users found.",
+  "pageInfo": "Page {{page}} of {{totalPages}} ({{count}} users)",
+  "previous": "Previous",
+  "next": "Next",
+  "editUser": "Edit user",
+  "rolesLegend": "Roles",
+  "emailLabel": "Email",
+  "firstNameLabel": "First name",
+  "lastNameLabel": "Last name",
+  "temporaryPasswordLabel": "Temporary password",
+  "statusLabel": "Status",
+  "cancel": "Cancel",
+  "createUser": "Create user",
+  "saveChanges": "Save changes",
+  "createFailed": "Failed to create user",
+  "updateFailed": "Failed to update user",
+  "role": {
+    "ADMIN": "Administrator",
+    "DENTIST": "Dentist",
+    "HYGIENIST": "Hygienist",
+    "FRONT_DESK": "Front Desk",
+    "BILLING": "Billing",
+    "READ_ONLY": "Read Only"
+  },
+  "status": {
+    "ACTIVE": "Active",
+    "DISABLED": "Disabled"
+  },
+  "statusBadge": {
+    "ACTIVE": "ACTIVE",
+    "DISABLED": "DISABLED",
+    "LOCKED": "LOCKED"
+  },
+  "validation": {
+    "firstNameRequired": "First name is required",
+    "lastNameRequired": "Last name is required",
+    "rolesRequired": "Select at least one role",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Enter a valid email address"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "title": "Usuarios",
+  "newUser": "Nuevo usuario",
+  "searchPlaceholder": "Buscar por nombre o correo…",
+  "searchAriaLabel": "Buscar usuarios",
+  "loading": "Cargando usuarios…",
+  "loadFailed": "No se pudieron cargar los usuarios.",
+  "colName": "Nombre",
+  "colEmail": "Correo",
+  "colRoles": "Roles",
+  "colStatus": "Estado",
+  "edit": "Editar",
+  "empty": "No se encontraron usuarios.",
+  "pageInfo": "Página {{page}} de {{totalPages}} ({{count}} usuarios)",
+  "previous": "Anterior",
+  "next": "Siguiente",
+  "editUser": "Editar usuario",
+  "rolesLegend": "Roles",
+  "emailLabel": "Correo",
+  "firstNameLabel": "Nombre",
+  "lastNameLabel": "Apellido",
+  "temporaryPasswordLabel": "Contraseña temporal",
+  "statusLabel": "Estado",
+  "cancel": "Cancelar",
+  "createUser": "Crear usuario",
+  "saveChanges": "Guardar cambios",
+  "createFailed": "No se pudo crear el usuario",
+  "updateFailed": "No se pudo actualizar el usuario",
+  "role": {
+    "ADMIN": "Administrador",
+    "DENTIST": "Dentista",
+    "HYGIENIST": "Higienista",
+    "FRONT_DESK": "Recepción",
+    "BILLING": "Facturación",
+    "READ_ONLY": "Solo lectura"
+  },
+  "status": {
+    "ACTIVE": "Activo",
+    "DISABLED": "Deshabilitado"
+  },
+  "statusBadge": {
+    "ACTIVE": "ACTIVO",
+    "DISABLED": "DESHABILITADO",
+    "LOCKED": "BLOQUEADO"
+  },
+  "validation": {
+    "firstNameRequired": "El nombre es obligatorio",
+    "lastNameRequired": "El apellido es obligatorio",
+    "rolesRequired": "Seleccione al menos un rol",
+    "emailRequired": "El correo es obligatorio",
+    "emailInvalid": "Ingrese un correo válido"
+  }
+}

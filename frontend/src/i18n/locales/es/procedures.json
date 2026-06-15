@@ -1,0 +1,47 @@
+{
+  "title": "Catálogo de procedimientos",
+  "newProcedure": "Nuevo procedimiento",
+  "searchPlaceholder": "Buscar por código o descripción…",
+  "searchAriaLabel": "Buscar procedimientos",
+  "loading": "Cargando catálogo…",
+  "loadFailed": "No se pudo cargar el catálogo.",
+  "colCode": "Código",
+  "colDescription": "Descripción",
+  "colCategory": "Categoría",
+  "colStandardFee": "Tarifa estándar",
+  "colStatus": "Estado",
+  "edit": "Editar",
+  "empty": "No se encontraron procedimientos.",
+  "statusBadge": {
+    "active": "ACTIVO",
+    "inactive": "INACTIVO"
+  },
+  "category": {
+    "DIAGNOSTIC": "Diagnóstico",
+    "PREVENTIVE": "Preventivo",
+    "RESTORATIVE": "Restaurativo",
+    "ENDODONTICS": "Endodoncia",
+    "PERIODONTICS": "Periodoncia",
+    "PROSTHODONTICS": "Prostodoncia",
+    "ORAL_SURGERY": "Cirugía oral",
+    "ORTHODONTICS": "Ortodoncia",
+    "ADJUNCTIVE": "Auxiliar",
+    "OTHER": "Otro"
+  },
+  "editProcedure": "Editar procedimiento",
+  "codeLabel": "Código",
+  "cdtCodeLabel": "Código CDT (opcional)",
+  "descriptionLabel": "Descripción",
+  "categoryLabel": "Categoría",
+  "standardFeeLabel": "Tarifa estándar ($)",
+  "activeLabel": "Activo",
+  "cancel": "Cancelar",
+  "createProcedure": "Crear procedimiento",
+  "saveChanges": "Guardar cambios",
+  "saveFailed": "No se pudo guardar el procedimiento",
+  "validation": {
+    "codeRequired": "El código es obligatorio",
+    "descriptionRequired": "La descripción es obligatoria",
+    "feeNegative": "La tarifa no puede ser negativa"
+  }
+}

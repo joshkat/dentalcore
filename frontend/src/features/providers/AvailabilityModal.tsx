@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { Spinner } from '../../components/Spinner';
 import { ApiError } from '../../lib/api';
+import { formatDateTime } from '../../i18n/format';
 import type { Provider } from '../../types/api';
 import {
   useAddTimeOff,
@@ -22,9 +24,17 @@ export function AvailabilityModal({
   provider: Provider | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('providers');
   return (
     <Modal
-      title={provider ? `Availability — ${provider.lastName}, ${provider.firstName}` : ''}
+      title={
+        provider
+          ? t('availabilityTitle', {
+              lastName: provider.lastName,
+              firstName: provider.firstName,
+            })
+          : ''
+      }
       open={provider !== null}
       onClose={onClose}
     >
@@ -34,6 +44,7 @@ export function AvailabilityModal({
 }
 
 function AvailabilityBody({ providerId }: { providerId: string }) {
+  const { t } = useTranslation('providers');
   const { data: savedHours, isPending } = useProviderHours(providerId);
   const replaceHours = useReplaceProviderHours(providerId);
   const { data: timeOff } = useProviderTimeOff(providerId);
@@ -53,14 +64,14 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
     }
   }, [savedHours]);
 
-  if (isPending) return <Spinner label="Loading availability…" />;
+  if (isPending) return <Spinner label={t('loadingAvailability')} />;
 
   const act = async (fn: () => Promise<unknown>) => {
     setError(null);
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Action failed');
+      setError(e instanceof ApiError ? e.message : t('actionFailed'));
     }
   };
 
@@ -73,15 +84,13 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
       )}
 
       <section>
-        <h3 className="text-sm font-semibold text-gray-900">Weekly working hours</h3>
-        <p className="text-xs text-gray-500">
-          No blocks = bookable at any time. Appointments outside these hours are rejected.
-        </p>
+        <h3 className="text-sm font-semibold text-gray-900">{t('weeklyWorkingHours')}</h3>
+        <p className="text-xs text-gray-500">{t('weeklyHoursHint')}</p>
         <div className="mt-2 space-y-2">
           {blocks.map((block, index) => (
             <div key={index} className="flex items-center gap-2">
               <select
-                aria-label="Day"
+                aria-label={t('dayAriaLabel')}
                 value={block.dayOfWeek}
                 onChange={(e) =>
                   setBlocks((current) =>
@@ -94,13 +103,13 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
               >
                 {DAYS.map((d, i) => (
                   <option key={d} value={i + 1}>
-                    {d}
+                    {t(`day.${d}`)}
                   </option>
                 ))}
               </select>
               <input
                 type="time"
-                aria-label="Start time"
+                aria-label={t('startTime')}
                 value={block.startTime}
                 onChange={(e) =>
                   setBlocks((current) =>
@@ -114,7 +123,7 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
               <span className="text-gray-400">–</span>
               <input
                 type="time"
-                aria-label="End time"
+                aria-label={t('endTime')}
                 value={block.endTime}
                 onChange={(e) =>
                   setBlocks((current) =>
@@ -127,7 +136,7 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
                 onClick={() => setBlocks((current) => current.filter((_, i) => i !== index))}
                 className="text-xs text-red-600 hover:underline"
               >
-                Remove
+                {t('remove')}
               </button>
             </div>
           ))}
@@ -141,44 +150,44 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
                 ])
               }
             >
-              Add block
+              {t('addBlock')}
             </Button>
             <Button
               loading={replaceHours.isPending}
               onClick={() => act(() => replaceHours.mutateAsync(blocks))}
             >
-              Save hours
+              {t('saveHours')}
             </Button>
           </div>
         </div>
       </section>
 
       <section className="border-t border-gray-100 pt-4">
-        <h3 className="text-sm font-semibold text-gray-900">Time off</h3>
+        <h3 className="text-sm font-semibold text-gray-900">{t('timeOff')}</h3>
         <ul className="mt-2 space-y-1">
           {timeOff?.map((block) => (
             <li key={block.id} className="flex items-center justify-between text-sm">
               <span>
-                {new Date(block.startsAt).toLocaleString()} →{' '}
-                {new Date(block.endsAt).toLocaleString()}
+                {formatDateTime(block.startsAt)} →{' '}
+                {formatDateTime(block.endsAt)}
                 {block.reason && <span className="text-gray-500"> · {block.reason}</span>}
               </span>
               <button
                 onClick={() => act(() => removeTimeOff.mutateAsync(block.id))}
                 className="text-xs text-red-600 hover:underline"
               >
-                Remove
+                {t('remove')}
               </button>
             </li>
           ))}
           {timeOff && timeOff.length === 0 && (
-            <li className="text-sm text-gray-500">No time off scheduled.</li>
+            <li className="text-sm text-gray-500">{t('noTimeOff')}</li>
           )}
         </ul>
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <div>
             <label htmlFor="off-start" className="block text-xs font-medium text-gray-700">
-              From
+              {t('from')}
             </label>
             <input
               id="off-start"
@@ -190,7 +199,7 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
           </div>
           <div>
             <label htmlFor="off-end" className="block text-xs font-medium text-gray-700">
-              To
+              {t('to')}
             </label>
             <input
               id="off-end"
@@ -202,7 +211,7 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
           </div>
           <div>
             <label htmlFor="off-reason" className="block text-xs font-medium text-gray-700">
-              Reason
+              {t('reason')}
             </label>
             <input
               id="off-reason"
@@ -215,7 +224,7 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
             loading={addTimeOff.isPending}
             onClick={() =>
               act(async () => {
-                if (!offStart || !offEnd) throw new ApiError(400, { detail: 'Pick both times' });
+                if (!offStart || !offEnd) throw new ApiError(400, { detail: t('pickBothTimes') });
                 await addTimeOff.mutateAsync({
                   startsAt: new Date(offStart).toISOString(),
                   endsAt: new Date(offEnd).toISOString(),
@@ -227,7 +236,7 @@ function AvailabilityBody({ providerId }: { providerId: string }) {
               })
             }
           >
-            Block time
+            {t('blockTime')}
           </Button>
         </div>
       </section>
