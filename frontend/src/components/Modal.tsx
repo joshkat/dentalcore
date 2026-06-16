@@ -30,7 +30,7 @@ export function Modal({ title, open, onClose, size = 'md', children }: ModalProp
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative z-10 w-full ${
+        className={`relative z-10 max-h-[90vh] w-full overflow-y-auto ${
           size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
         } rounded-lg bg-white p-6 shadow-xl`}
       >

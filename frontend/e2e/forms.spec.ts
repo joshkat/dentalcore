@@ -93,8 +93,8 @@ test.describe('forms & e-signature', () => {
     await picker.getByLabel('Template').selectOption({ label: templateName });
     await picker.getByRole('button', { name: 'Start form' }).click();
 
-    // fill view opens in DRAFT
-    await expect(page.getByText('DRAFT', { exact: true })).toBeVisible();
+    // fill view opens in Draft (localized status display)
+    await expect(page.getByText('Draft', { exact: true })).toBeVisible();
     // exact name incl. the required asterisk — substring 'Full name' would
     // also match the sign panel's "Signed by (full name)" once it mounts
     await page.getByLabel('Full name *', { exact: true }).fill('Fern Demoson');
@@ -103,8 +103,8 @@ test.describe('forms & e-signature', () => {
     // blur the focused field so the autosave PUT fires
     await page.getByLabel('Full name *', { exact: true }).blur();
 
-    // server flips DRAFT -> COMPLETED once required answers exist; sign panel appears
-    await expect(page.getByText('COMPLETED', { exact: true })).toBeVisible();
+    // server flips Draft -> Completed once required answers exist; sign panel appears
+    await expect(page.getByText('Completed', { exact: true })).toBeVisible();
     await expect(page.getByText('Sign this form')).toBeVisible();
 
     // --- e-signature: name + canvas drawing ---
@@ -115,13 +115,13 @@ test.describe('forms & e-signature', () => {
     await expect(signButton).toBeEnabled();
     await signButton.click();
 
-    await expect(page.getByText('SIGNED', { exact: true })).toBeVisible();
+    await expect(page.getByText('Signed', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'View PDF' })).toBeVisible();
 
     // list view shows the SIGNED badge too
     await page.getByRole('button', { name: '← All forms' }).click();
     await expect(page.getByText(templateName)).toBeVisible();
-    await expect(page.getByText('SIGNED', { exact: true })).toBeVisible();
+    await expect(page.getByText('Signed', { exact: true })).toBeVisible();
 
     // --- the generated PDF appears in the patient's Documents tab ---
     await page.getByRole('button', { name: 'Documents', exact: true }).click();
