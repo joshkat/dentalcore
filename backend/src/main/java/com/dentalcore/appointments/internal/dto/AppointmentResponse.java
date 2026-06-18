@@ -22,6 +22,8 @@ public record AppointmentResponse(
         String color,
         String cancelledReason,
         boolean asap,
+        UUID seriesId,
+        Instant confirmationSentAt,
         List<ProcedureDto> procedures,
         Instant createdAt,
         Instant updatedAt

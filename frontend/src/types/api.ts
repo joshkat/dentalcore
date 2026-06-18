@@ -244,12 +244,31 @@ export interface Appointment {
   endsAt: string;
   status: AppointmentStatus;
   asap: boolean;
+  seriesId: string | null;
+  confirmationSentAt: string | null;
   notes: string | null;
   color: string;
   cancelledReason: string | null;
   procedures: AppointmentProcedure[];
   createdAt: string;
   updatedAt: string;
+}
+
+export type RecurrenceFrequency = 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+
+export interface RecurringResult {
+  seriesId: string;
+  created: Appointment[];
+  skipped: { startsAt: string; reason: string }[];
+}
+
+export interface Blockout {
+  id: string;
+  operatoryId: string;
+  operatoryName: string | null;
+  startsAt: string;
+  endsAt: string;
+  reason: string | null;
 }
 
 export interface Operatory {

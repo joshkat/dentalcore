@@ -7,7 +7,7 @@ import { Modal } from '../../components/Modal';
 import { formatDate } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import type { Appointment, AppointmentStatus } from '../../types/api';
-import { NEXT_STATUSES, useUpdateAppointmentStatus } from './api';
+import { NEXT_STATUSES, useSendConfirmation, useUpdateAppointmentStatus } from './api';
 
 const statusTone: Record<AppointmentStatus, 'blue' | 'green' | 'yellow' | 'gray' | 'red'> = {
   SCHEDULED: 'blue',
@@ -66,6 +66,7 @@ function DetailBody({
 }) {
   const { t } = useTranslation('schedule');
   const updateStatus = useUpdateAppointmentStatus(appointment.id);
+  const sendConfirmation = useSendConfirmation();
   const [error, setError] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [confirmingCancel, setConfirmingCancel] = useState(false);
@@ -121,8 +122,12 @@ function DetailBody({
             {appointment.operatoryName}
           </p>
         </div>
-        <span className="flex shrink-0 items-center gap-2">
+        <span className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {appointment.asap && <Badge tone="yellow">{t('asapBadge')}</Badge>}
+          {appointment.seriesId && <Badge tone="blue">{t('seriesBadge')}</Badge>}
+          {appointment.confirmationSentAt && (
+            <Badge tone="green">{t('confirmationSentBadge')}</Badge>
+          )}
           <Badge tone={statusTone[appointment.status]}>{t(`status.${appointment.status}`)}</Badge>
         </span>
       </div>
@@ -194,6 +199,21 @@ function DetailBody({
                     {t(`status.${status}`)}
                   </Button>
                 ))}
+              {(appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && (
+                <Button
+                  variant="secondary"
+                  disabled={sendConfirmation.isPending}
+                  onClick={() =>
+                    sendConfirmation.mutate(appointment.id, {
+                      onError: () => setError(t('confirmationFailed')),
+                    })
+                  }
+                >
+                  {appointment.confirmationSentAt
+                    ? t('resendConfirmation')
+                    : t('sendConfirmation')}
+                </Button>
+              )}
               {nextStatuses.includes('CANCELLED') && (
                 <Button variant="danger" onClick={() => setConfirmingCancel(true)}>
                   {t('cancelEllipsis')}

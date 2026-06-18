@@ -4,13 +4,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { api, ApiError } from '../../lib/api';
-import type { Appointment, Provider } from '../../types/api';
+import type { Appointment, Provider, RecurrenceFrequency } from '../../types/api';
 import { usePatients } from '../patients/api';
 import { QuickPatientModal } from '../patients/QuickPatientModal';
 import { useProcedureCodes } from '../procedures/api';
 import { useProviders } from '../providers/api';
 import {
   useCreateAppointment,
+  useCreateRecurring,
   useOperatories,
   useUpdateAppointment,
   type AppointmentInput,
@@ -62,6 +63,7 @@ function toLocalDate(iso: string): string {
 function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormModalProps) {
   const { t } = useTranslation('schedule');
   const createAppointment = useCreateAppointment();
+  const createRecurring = useCreateRecurring();
   const updateAppointment = useUpdateAppointment(appointment?.id ?? '');
   const { data: providers } = useProviders(false);
   const { data: operatories } = useOperatories();
@@ -87,6 +89,8 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
   });
   const [notes, setNotes] = useState(appointment?.notes ?? '');
   const [asap, setAsap] = useState(appointment?.asap ?? false);
+  const [repeat, setRepeat] = useState<'NONE' | RecurrenceFrequency>('NONE');
+  const [occurrences, setOccurrences] = useState(4);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -122,6 +126,27 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
     setError(null);
     setSubmitting(true);
     try {
+      // Recurring series (new appointments only): book the whole run at once.
+      if (!appointment && repeat !== 'NONE') {
+        const result = await createRecurring.mutateAsync({
+          base: input,
+          frequency: repeat,
+          occurrences,
+        });
+        if (result.skipped.length > 0) {
+          setError(
+            t('recurringSummary', {
+              created: result.created.length,
+              skipped: result.skipped.length,
+            }),
+          );
+          setSubmitting(false);
+          return;
+        }
+        onClose();
+        return;
+      }
+
       let appointmentId: string;
       if (appointment) {
         const updated = await updateAppointment.mutateAsync(input);
@@ -364,6 +389,43 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
         />
         {t('asapWantsEarlier')}
       </label>
+
+      {!appointment && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="appt-repeat" className="block text-sm font-medium text-gray-700">
+              {t('repeat')}
+            </label>
+            <select
+              id="appt-repeat"
+              value={repeat}
+              onChange={(e) => setRepeat(e.target.value as 'NONE' | RecurrenceFrequency)}
+              className={selectClass}
+            >
+              <option value="NONE">{t('repeatNone')}</option>
+              <option value="WEEKLY">{t('repeatWeekly')}</option>
+              <option value="BIWEEKLY">{t('repeatBiweekly')}</option>
+              <option value="MONTHLY">{t('repeatMonthly')}</option>
+            </select>
+          </div>
+          {repeat !== 'NONE' && (
+            <div>
+              <label htmlFor="appt-occurrences" className="block text-sm font-medium text-gray-700">
+                {t('occurrences')}
+              </label>
+              <input
+                id="appt-occurrences"
+                type="number"
+                min={2}
+                max={52}
+                value={occurrences}
+                onChange={(e) => setOccurrences(Number(e.target.value))}
+                className={selectClass}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       <div>
         <label htmlFor="appt-notes" className="block text-sm font-medium text-gray-700">

@@ -7,9 +7,14 @@ import { formatDate } from '../../i18n/format';
 import { useAuth } from '../../lib/auth';
 import type { Appointment } from '../../types/api';
 import { CheckoutModal } from '../checkout/CheckoutModal';
-import { useAppointments } from './api';
+import {
+  useAppointments,
+  useBlockouts,
+  useRescheduleAppointment,
+} from './api';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import { AppointmentFormModal } from './AppointmentFormModal';
+import { BlockTimeModal } from './BlockTimeModal';
 import { OperatoriesModal } from './OperatoriesModal';
 
 const DAY_START_HOUR = 7;
@@ -49,6 +54,7 @@ export function CalendarPage() {
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [checkingOut, setCheckingOut] = useState<Appointment | null>(null);
   const [managingOps, setManagingOps] = useState(false);
+  const [blocking, setBlocking] = useState(false);
   const { hasRole } = useAuth();
   const canWrite = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK');
   const isAdmin = hasRole('ADMIN');
@@ -58,6 +64,38 @@ export function CalendarPage() {
     weekStart.toISOString(),
     weekEnd.toISOString(),
   );
+  const { data: blockouts } = useBlockouts(weekStart.toISOString(), weekEnd.toISOString());
+  const reschedule = useRescheduleAppointment();
+
+  // Drag an appointment onto a day column to reschedule it to that day/time,
+  // keeping its duration, provider, and operatory. Backend re-validates.
+  const onDropReschedule = (day: Date, e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('appointmentId');
+    const appt = appointments?.find((a) => a.id === id);
+    if (!appt) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const hoursFromTop = (e.clientY - rect.top) / HOUR_PX;
+    const rawHour = DAY_START_HOUR + hoursFromTop;
+    const clampedHour = Math.max(DAY_START_HOUR, Math.min(DAY_END_HOUR - 0.25, rawHour));
+    const quarter = Math.round(clampedHour * 4) / 4;
+    const durationMs = new Date(appt.endsAt).getTime() - new Date(appt.startsAt).getTime();
+    const start = new Date(day);
+    start.setHours(Math.floor(quarter), Math.round((quarter % 1) * 60), 0, 0);
+    if (start.getTime() === new Date(appt.startsAt).getTime()) return;
+    reschedule.mutate({
+      id,
+      input: {
+        patientId: appt.patientId,
+        providerId: appt.providerId,
+        operatoryId: appt.operatoryId,
+        startsAt: start.toISOString(),
+        endsAt: new Date(start.getTime() + durationMs).toISOString(),
+        notes: appt.notes,
+        asap: appt.asap,
+      },
+    });
+  };
 
   // Deep link: /schedule?date=YYYY-MM-DD&appointment=<id> opens that appointment.
   const appointmentParam = searchParams.get('appointment');
@@ -123,6 +161,11 @@ export function CalendarPage() {
               {t('operatories')}
             </Button>
           )}
+          {canWrite && (
+            <Button variant="ghost" onClick={() => setBlocking(true)}>
+              {t('blockTime')}
+            </Button>
+          )}
           {canWrite && <Button onClick={() => setCreating(true)}>{t('newAppointment')}</Button>}
         </div>
       </div>
@@ -170,6 +213,8 @@ export function CalendarPage() {
                 key={day.toISOString()}
                 className="relative border-l border-gray-100"
                 style={{ height: hours.length * HOUR_PX }}
+                onDragOver={canWrite ? (e) => e.preventDefault() : undefined}
+                onDrop={canWrite ? (e) => onDropReschedule(day, e) : undefined}
               >
                 {hours.map((hour, i) => (
                   <div
@@ -178,6 +223,27 @@ export function CalendarPage() {
                     style={{ top: i * HOUR_PX }}
                   />
                 ))}
+                {blockouts
+                  ?.filter((b) => toDateInput(new Date(b.startsAt)) === toDateInput(day))
+                  .map((b) => {
+                    const bs = new Date(b.startsAt);
+                    const be = new Date(b.endsAt);
+                    const top = (bs.getHours() + bs.getMinutes() / 60 - DAY_START_HOUR) * HOUR_PX;
+                    const height = Math.max(
+                      ((be.getTime() - bs.getTime()) / 3_600_000) * HOUR_PX,
+                      12,
+                    );
+                    return (
+                      <div
+                        key={b.id}
+                        className="absolute inset-x-0 z-0 overflow-hidden bg-gray-200/70 px-2 py-0.5 text-[10px] text-gray-600"
+                        style={{ top, height }}
+                        title={`${b.operatoryName ?? ''} ${b.reason ?? ''}`.trim()}
+                      >
+                        {b.reason ?? t('blockouts')}
+                      </div>
+                    );
+                  })}
                 {byDay.get(toDateInput(day))?.map((appointment) => {
                   const starts = new Date(appointment.startsAt);
                   const ends = new Date(appointment.endsAt);
@@ -193,9 +259,11 @@ export function CalendarPage() {
                     <button
                       key={appointment.id}
                       onClick={() => setSelected(appointment)}
-                      className={`absolute inset-x-1 overflow-hidden rounded-md px-2 py-1 text-left text-xs text-white shadow transition-opacity hover:opacity-90 ${
+                      draggable={canWrite && !inactive}
+                      onDragStart={(e) => e.dataTransfer.setData('appointmentId', appointment.id)}
+                      className={`absolute inset-x-1 z-10 overflow-hidden rounded-md px-2 py-1 text-left text-xs text-white shadow transition-opacity hover:opacity-90 ${
                         inactive ? 'opacity-40 line-through' : ''
-                      }`}
+                      } ${canWrite && !inactive ? 'cursor-grab active:cursor-grabbing' : ''}`}
                       style={{ top, height, backgroundColor: appointment.color }}
                       title={`${appointment.patientLastName}, ${appointment.patientFirstName}`}
                     >
@@ -239,6 +307,9 @@ export function CalendarPage() {
       />
       <CheckoutModal appointment={checkingOutFresh} onClose={() => setCheckingOut(null)} />
       <OperatoriesModal open={managingOps} onClose={() => setManagingOps(false)} />
+      {blocking && (
+        <BlockTimeModal defaultDate={toDateInput(weekStart)} onClose={() => setBlocking(false)} />
+      )}
     </div>
   );
 }

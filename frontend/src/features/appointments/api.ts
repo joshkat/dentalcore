@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import type { Appointment, AppointmentStatus, Operatory } from '../../types/api';
+import type {
+  Appointment,
+  AppointmentStatus,
+  Blockout,
+  Operatory,
+  RecurrenceFrequency,
+  RecurringResult,
+} from '../../types/api';
 
 export interface AppointmentInput {
   patientId: string;
@@ -61,6 +68,71 @@ export function useUpdateAppointmentStatus(id: string) {
     mutationFn: (input: { status: AppointmentStatus; cancelReason?: string }) =>
       api<Appointment>(`/api/v1/appointments/${id}/status`, { method: 'PATCH', body: input }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
+  });
+}
+
+export function useRescheduleAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: AppointmentInput }) =>
+      api<Appointment>(`/api/v1/appointments/${id}`, { method: 'PUT', body: input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
+  });
+}
+
+export function useCreateRecurring() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      base: AppointmentInput;
+      frequency: RecurrenceFrequency;
+      occurrences: number;
+    }) => api<RecurringResult>('/api/v1/appointments/recurring', { method: 'POST', body: input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
+  });
+}
+
+export function useSendConfirmation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<Appointment>(`/api/v1/appointments/${id}/send-confirmation`, { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
+  });
+}
+
+export function useBlockouts(from: string, to: string) {
+  return useQuery({
+    queryKey: ['blockouts', from, to],
+    queryFn: () =>
+      api<Blockout[]>(
+        `/api/v1/blockouts?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      ),
+  });
+}
+
+export function useCreateBlockout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      operatoryId: string;
+      startsAt: string;
+      endsAt: string;
+      reason?: string;
+    }) => api<Blockout>('/api/v1/blockouts', { method: 'POST', body: input }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blockouts'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+  });
+}
+
+export function useDeleteBlockout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<void>(`/api/v1/blockouts/${id}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blockouts'] }),
   });
 }
 

@@ -55,6 +55,9 @@ public class AppointmentService implements AppointmentApi {
     private final ProcedureCatalogApi catalogApi;
     private final CompletedProcedureApi completedProcedureApi;
     private final AvailabilityService availabilityService;
+    private final BlockoutService blockoutService;
+    private final com.dentalcore.infrastructure.time.ClinicTimeService clinicTime;
+    private final com.dentalcore.shared.notifications.NotificationPort notifications;
     private final ApplicationEventPublisher events;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
@@ -65,6 +68,9 @@ public class AppointmentService implements AppointmentApi {
                               ProcedureCatalogApi catalogApi,
                               CompletedProcedureApi completedProcedureApi,
                               AvailabilityService availabilityService,
+                              BlockoutService blockoutService,
+                              com.dentalcore.infrastructure.time.ClinicTimeService clinicTime,
+                              com.dentalcore.shared.notifications.NotificationPort notifications,
                               ApplicationEventPublisher events) {
         this.appointmentRepository = appointmentRepository;
         this.operatoryRepository = operatoryRepository;
@@ -74,6 +80,9 @@ public class AppointmentService implements AppointmentApi {
         this.catalogApi = catalogApi;
         this.completedProcedureApi = completedProcedureApi;
         this.availabilityService = availabilityService;
+        this.blockoutService = blockoutService;
+        this.clinicTime = clinicTime;
+        this.notifications = notifications;
         this.events = events;
     }
 
@@ -123,6 +132,8 @@ public class AppointmentService implements AppointmentApi {
                 request.startsAt(), request.endsAt());
         requireNoConflicts(request.providerId(), request.operatoryId(),
                 request.startsAt(), request.endsAt(), null);
+        blockoutService.requireNoBlockout(request.operatoryId(),
+                request.startsAt(), request.endsAt());
 
         Appointment appointment = new Appointment(
                 DEFAULT_CLINIC_ID, request.patientId(), request.providerId(),
@@ -137,6 +148,87 @@ public class AppointmentService implements AppointmentApi {
         return toResponses(List.of(appointment)).get(0);
     }
 
+    public record RecurringResult(UUID seriesId, List<AppointmentResponse> created,
+                                  List<SkippedOccurrence> skipped) {
+    }
+
+    public record SkippedOccurrence(Instant startsAt, String reason) {
+    }
+
+    /**
+     * Book a recurring series from a base appointment. Occurrences that conflict
+     * (double-booking, provider time off, blocked operatory, outside hours) are
+     * skipped and reported rather than failing the whole series. Pre-checks run
+     * before each save so a skip never poisons the surrounding transaction.
+     */
+    public RecurringResult createRecurring(AppointmentRequest base, String frequency,
+                                           int occurrences) {
+        validateReferences(base);
+        validateTimes(base.startsAt(), base.endsAt());
+        if (occurrences < 2 || occurrences > 52) {
+            throw new InvalidRequestException("occurrences must be between 2 and 52");
+        }
+        if (!List.of("WEEKLY", "BIWEEKLY", "MONTHLY").contains(frequency)) {
+            throw new InvalidRequestException("frequency must be WEEKLY, BIWEEKLY, or MONTHLY");
+        }
+
+        java.time.ZoneId zone = clinicTime.clinicZone(DEFAULT_CLINIC_ID);
+        UUID seriesId = UUID.randomUUID();
+        List<AppointmentResponse> created = new java.util.ArrayList<>();
+        List<SkippedOccurrence> skipped = new java.util.ArrayList<>();
+
+        for (int i = 0; i < occurrences; i++) {
+            Instant start = shift(base.startsAt(), zone, frequency, i);
+            Instant end = shift(base.endsAt(), zone, frequency, i);
+            try {
+                availabilityService.requireAvailable(base.providerId(), start, end);
+                requireNoConflicts(base.providerId(), base.operatoryId(), start, end, null);
+                blockoutService.requireNoBlockout(base.operatoryId(), start, end);
+            } catch (InvalidRequestException | ConflictException ex) {
+                skipped.add(new SkippedOccurrence(start, ex.getMessage()));
+                continue;
+            }
+            Appointment appt = new Appointment(DEFAULT_CLINIC_ID, base.patientId(),
+                    base.providerId(), base.operatoryId(), start, end);
+            appt.updateDetails(base.notes(), base.colorOverride(), base.asapOrDefault());
+            appt.assignSeries(seriesId);
+            appt = appointmentRepository.saveAndFlush(appt);
+            created.add(toResponses(List.of(appt)).get(0));
+        }
+
+        if (created.isEmpty()) {
+            throw new InvalidRequestException("No occurrences could be booked (all conflicted)");
+        }
+        publishAudit(UUID.fromString(created.get(0).id().toString()),
+                AuditEvent.AuditAction.CREATE, null,
+                Map.of("seriesId", seriesId.toString(), "occurrences", created.size()));
+        return new RecurringResult(seriesId, created, skipped);
+    }
+
+    private Instant shift(Instant base, java.time.ZoneId zone, String frequency, int n) {
+        java.time.ZonedDateTime z = base.atZone(zone);
+        return switch (frequency) {
+            case "WEEKLY" -> z.plusWeeks(n).toInstant();
+            case "BIWEEKLY" -> z.plusWeeks(2L * n).toInstant();
+            default -> z.plusMonths(n).toInstant();
+        };
+    }
+
+    /** Record that a confirmation request was sent; the patient confirms via status. */
+    public AppointmentResponse sendConfirmation(UUID id) {
+        Appointment appointment = findAppointment(id);
+        appointment.markConfirmationSent(Instant.now());
+        appointmentRepository.save(appointment);
+        String name = patientApi.findSummary(appointment.getPatientId())
+                .map(p -> p.firstName() + " " + p.lastName())
+                .orElse(appointment.getPatientId().toString());
+        notifications.sendSms(name,
+                "Please confirm your upcoming dental appointment.");
+        publishAudit(id, AuditEvent.AuditAction.UPDATE, null,
+                Map.of("confirmationSentAt", appointment.getConfirmationSentAt().toString()));
+        return toResponses(List.of(appointment)).get(0);
+    }
+
     public AppointmentResponse update(UUID id, AppointmentRequest request) {
         Appointment appointment = findAppointment(id);
         validateReferences(request);
@@ -145,6 +237,8 @@ public class AppointmentService implements AppointmentApi {
                 request.startsAt(), request.endsAt());
         requireNoConflicts(request.providerId(), request.operatoryId(),
                 request.startsAt(), request.endsAt(), id);
+        blockoutService.requireNoBlockout(request.operatoryId(),
+                request.startsAt(), request.endsAt());
 
         Map<String, Object> before = Map.of(
                 "startsAt", appointment.getStartsAt().toString(),
@@ -339,6 +433,8 @@ public class AppointmentService implements AppointmentApi {
                     color,
                     a.getCancelledReason(),
                     a.isAsap(),
+                    a.getSeriesId(),
+                    a.getConfirmationSentAt(),
                     proceduresByAppointment.getOrDefault(a.getId(), List.of()),
                     a.getCreatedAt(),
                     a.getUpdatedAt());

@@ -88,4 +88,26 @@ public class AppointmentController {
                                              @Valid @RequestBody SetAppointmentProceduresRequest request) {
         return appointmentService.setProcedures(id, request.procedureCodeIds());
     }
+
+    @PostMapping("/recurring")
+    @PreAuthorize(CAN_WRITE)
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Book a recurring series; conflicting occurrences are skipped")
+    public AppointmentService.RecurringResult createRecurring(
+            @Valid @RequestBody RecurringRequest request) {
+        return appointmentService.createRecurring(request.base(), request.frequency(),
+                request.occurrences());
+    }
+
+    @PostMapping("/{id}/send-confirmation")
+    @PreAuthorize(CAN_WRITE)
+    @Operation(summary = "Send a confirmation request to the patient")
+    public AppointmentResponse sendConfirmation(@PathVariable UUID id) {
+        return appointmentService.sendConfirmation(id);
+    }
+
+    public record RecurringRequest(@Valid @jakarta.validation.constraints.NotNull AppointmentRequest base,
+                                   @jakarta.validation.constraints.NotNull String frequency,
+                                   int occurrences) {
+    }
 }

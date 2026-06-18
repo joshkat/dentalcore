@@ -53,6 +53,14 @@ public class Appointment extends BaseEntity {
     @Column(name = "asap", nullable = false)
     private boolean asap;
 
+    /** Shared by all appointments generated from one recurrence (null = one-off). */
+    @Column(name = "series_id")
+    private UUID seriesId;
+
+    /** When a confirmation request was last sent to the patient (null = none). */
+    @Column(name = "confirmation_sent_at")
+    private Instant confirmationSentAt;
+
     @Version
     @Column(name = "version", nullable = false)
     private long version;
@@ -107,6 +115,14 @@ public class Appointment extends BaseEntity {
         this.asap = asap;
     }
 
+    public void assignSeries(UUID seriesId) {
+        this.seriesId = seriesId;
+    }
+
+    public void markConfirmationSent(Instant at) {
+        this.confirmationSentAt = at;
+    }
+
     public UUID getClinicId() {
         return clinicId;
     }
@@ -149,5 +165,13 @@ public class Appointment extends BaseEntity {
 
     public boolean isAsap() {
         return asap;
+    }
+
+    public UUID getSeriesId() {
+        return seriesId;
+    }
+
+    public Instant getConfirmationSentAt() {
+        return confirmationSentAt;
     }
 }

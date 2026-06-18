@@ -128,17 +128,37 @@ test.describe('checkout flow', () => {
     await expect(page.getByText('Completed', { exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Close' }).click();
 
-    // ---- day sheet shows today's production and collections ----
+    // ---- day sheet shows the charge's production and collections ----
+    // Charges use the clinic-local business date, which can be the prior
+    // calendar day when the runner's clock is just past UTC midnight but the
+    // clinic timezone hasn't rolled over yet — so check today, then yesterday.
     await nav(page, 'Reports').click();
     await page.getByLabel('Report', { exact: true }).selectOption('Day sheet');
-    const production = page.getByTestId('day-sheet-production');
-    await expect(production).toBeVisible();
-    await expect
-      .poll(async () => parseMoney(await production.innerText()))
-      .toBeGreaterThan(0);
-    await expect
-      .poll(async () => parseMoney(await page.getByTestId('day-sheet-collections').innerText()))
-      .toBeGreaterThan(0);
+    const dateInput = page.getByLabel('Date', { exact: true });
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const candidates = [today, yesterday].map(
+      (d) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+          d.getDate(),
+        ).padStart(2, '0')}`,
+    );
+
+    let production = 0;
+    let collections = 0;
+    for (const day of candidates) {
+      await dateInput.fill(day);
+      await expect(page.getByTestId('day-sheet-production')).toBeVisible();
+      // give the day-sheet query a beat to refetch for the new date
+      await page.waitForTimeout(500);
+      production = parseMoney(await page.getByTestId('day-sheet-production').innerText());
+      if (production > 0) {
+        collections = parseMoney(await page.getByTestId('day-sheet-collections').innerText());
+        break;
+      }
+    }
+    expect(production, 'day-sheet production for the charge').toBeGreaterThan(0);
+    expect(collections, 'day-sheet collections for the payment').toBeGreaterThan(0);
 
     // ---- worklists: both tabs render ----
     await nav(page, 'Worklists').click();
