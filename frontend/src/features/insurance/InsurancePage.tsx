@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Spinner } from '../../components/Spinner';
+import { formatMoney } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import type { InsurancePlan } from '../../types/api';
@@ -12,9 +14,10 @@ import { PlanCoverageEditor } from './PlanCoverageEditor';
 
 const PLAN_TYPES = ['PPO', 'HMO', 'INDEMNITY', 'MEDICAID', 'DISCOUNT', 'OTHER'];
 
-const money = (n: number | null) => (n == null ? '—' : `$${n.toFixed(2)}`);
+const money = (n: number | null) => (n == null ? '—' : formatMoney(n));
 
 export function InsurancePage() {
+  const { t } = useTranslation('insurance');
   const [search, setSearch] = useState('');
   const [openCarrierId, setOpenCarrierId] = useState<string | null>(null);
   const [addingCarrier, setAddingCarrier] = useState(false);
@@ -26,9 +29,9 @@ export function InsurancePage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Insurance</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('page.title')}</h1>
         {canManage && !addingCarrier && (
-          <Button onClick={() => setAddingCarrier(true)}>New carrier</Button>
+          <Button onClick={() => setAddingCarrier(true)}>{t('page.newCarrier')}</Button>
         )}
       </div>
 
@@ -41,16 +44,16 @@ export function InsurancePage() {
       <div className="mt-4">
         <input
           type="search"
-          placeholder="Search carriers…"
+          placeholder={t('page.searchCarriersPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search carriers"
+          aria-label={t('page.searchCarriersLabel')}
           className="w-full max-w-md rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
         />
       </div>
 
       {isPending ? (
-        <Spinner label="Loading carriers…" />
+        <Spinner label={t('page.loadingCarriers')} />
       ) : (
         <ul className="mt-4 space-y-3">
           {carriers?.content.map((carrier) => (
@@ -64,7 +67,10 @@ export function InsurancePage() {
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{carrier.name}</p>
                   <p className="text-xs text-gray-500">
-                    Payer ID {carrier.payerId ?? '—'} · {carrier.planCount} plans
+                    {t('page.payerInfo', {
+                      payerId: carrier.payerId ?? '—',
+                      count: carrier.planCount,
+                    })}
                   </p>
                 </div>
                 <span className="text-sm text-gray-400">
@@ -77,7 +83,7 @@ export function InsurancePage() {
             </li>
           ))}
           {carriers?.content.length === 0 && (
-            <p className="p-4 text-sm text-gray-500">No carriers found.</p>
+            <p className="p-4 text-sm text-gray-500">{t('page.noCarriers')}</p>
           )}
         </ul>
       )}
@@ -86,19 +92,20 @@ export function InsurancePage() {
 }
 
 function NewCarrierForm({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation('insurance');
   const createCarrier = useCreateCarrier();
   const [name, setName] = useState('');
   const [payerId, setPayerId] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const submit = async () => {
-    if (!name.trim()) return setError('Carrier name is required');
+    if (!name.trim()) return setError(t('carrierForm.nameRequired'));
     setError(null);
     try {
       await createCarrier.mutateAsync({ name: name.trim(), payerId: payerId || null });
       onDone();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to create carrier');
+      setError(e instanceof ApiError ? e.message : t('carrierForm.failedToCreate'));
     }
   };
 
@@ -110,23 +117,28 @@ function NewCarrierForm({ onDone }: { onDone: () => void }) {
         </p>
       )}
       <Input
-        label="Carrier name"
+        label={t('carrierForm.name')}
         className="min-w-64"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <Input label="Payer ID" value={payerId} onChange={(e) => setPayerId(e.target.value)} />
+      <Input
+        label={t('carrierForm.payerId')}
+        value={payerId}
+        onChange={(e) => setPayerId(e.target.value)}
+      />
       <Button onClick={submit} loading={createCarrier.isPending}>
-        Create
+        {t('common:create')}
       </Button>
       <Button variant="secondary" onClick={onDone}>
-        Cancel
+        {t('common:cancel')}
       </Button>
     </div>
   );
 }
 
 function CarrierPlans({ carrierId, canManage }: { carrierId: string; canManage: boolean }) {
+  const { t } = useTranslation('insurance');
   const { data: plans, isPending } = useCarrierPlans(carrierId);
   const createPlan = useCreatePlan();
   const [adding, setAdding] = useState(false);
@@ -136,10 +148,10 @@ function CarrierPlans({ carrierId, canManage }: { carrierId: string; canManage: 
   const [deductible, setDeductible] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  if (isPending) return <Spinner label="Loading plans…" />;
+  if (isPending) return <Spinner label={t('plans.loading')} />;
 
   const submit = async () => {
-    if (!planName.trim()) return setError('Plan name is required');
+    if (!planName.trim()) return setError(t('plans.nameRequired'));
     setError(null);
     try {
       await createPlan.mutateAsync({
@@ -152,7 +164,7 @@ function CarrierPlans({ carrierId, canManage }: { carrierId: string; canManage: 
       setPlanName('');
       setAdding(false);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to create plan');
+      setError(e instanceof ApiError ? e.message : t('plans.failedToCreate'));
     }
   };
 
@@ -162,11 +174,11 @@ function CarrierPlans({ carrierId, canManage }: { carrierId: string; canManage: 
         <table className="min-w-full text-sm">
           <thead>
             <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-              <th className="py-1 pr-3">Plan</th>
-              <th className="py-1 pr-3">Type</th>
-              <th className="py-1 pr-3">Group #</th>
-              <th className="py-1 pr-3">Annual max</th>
-              <th className="py-1 pr-3">Deductible</th>
+              <th className="py-1 pr-3">{t('plans.columns.plan')}</th>
+              <th className="py-1 pr-3">{t('plans.columns.type')}</th>
+              <th className="py-1 pr-3">{t('plans.columns.groupNumber')}</th>
+              <th className="py-1 pr-3">{t('plans.columns.annualMax')}</th>
+              <th className="py-1 pr-3">{t('plans.columns.deductible')}</th>
               <th className="py-1" />
             </tr>
           </thead>
@@ -177,7 +189,7 @@ function CarrierPlans({ carrierId, canManage }: { carrierId: string; canManage: 
           </tbody>
         </table>
       ) : (
-        <p className="text-sm text-gray-500">No plans yet.</p>
+        <p className="text-sm text-gray-500">{t('plans.none')}</p>
       )}
 
       {canManage &&
@@ -189,14 +201,14 @@ function CarrierPlans({ carrierId, canManage }: { carrierId: string; canManage: 
               </p>
             )}
             <Input
-              label="Plan name"
+              label={t('plans.name')}
               className="min-w-48"
               value={planName}
               onChange={(e) => setPlanName(e.target.value)}
             />
             <div>
               <label htmlFor={`plan-type-${carrierId}`} className="block text-sm font-medium text-gray-700">
-                Type
+                {t('plans.type')}
               </label>
               <select
                 id={`plan-type-${carrierId}`}
@@ -210,29 +222,29 @@ function CarrierPlans({ carrierId, canManage }: { carrierId: string; canManage: 
               </select>
             </div>
             <Input
-              label="Annual max"
+              label={t('plans.annualMax')}
               type="number"
               className="w-32"
               value={annualMax}
               onChange={(e) => setAnnualMax(e.target.value)}
             />
             <Input
-              label="Deductible"
+              label={t('plans.deductible')}
               type="number"
               className="w-32"
               value={deductible}
               onChange={(e) => setDeductible(e.target.value)}
             />
             <Button onClick={submit} loading={createPlan.isPending}>
-              Add plan
+              {t('plans.addPlan')}
             </Button>
             <Button variant="secondary" onClick={() => setAdding(false)}>
-              Cancel
+              {t('common:cancel')}
             </Button>
           </div>
         ) : (
           <Button variant="ghost" className="mt-2" onClick={() => setAdding(true)}>
-            + Add plan
+            {t('plans.addPlanGhost')}
           </Button>
         ))}
     </div>
@@ -240,6 +252,7 @@ function CarrierPlans({ carrierId, canManage }: { carrierId: string; canManage: 
 }
 
 function PlanRow({ plan, canManage }: { plan: InsurancePlan; canManage: boolean }) {
+  const { t } = useTranslation('insurance');
   const [showCoverage, setShowCoverage] = useState(false);
   return (
     <>
@@ -256,7 +269,7 @@ function PlanRow({ plan, canManage }: { plan: InsurancePlan; canManage: boolean 
             onClick={() => setShowCoverage((v) => !v)}
             className="text-sm text-brand-600 hover:underline"
           >
-            Coverage
+            {t('plans.coverage')}
           </button>
         </td>
       </tr>

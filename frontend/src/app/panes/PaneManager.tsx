@@ -6,6 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   MemoryRouter,
   Navigate,
@@ -89,13 +90,15 @@ function Split({ node, primaryContent }: { node: SplitNode; primaryContent: Reac
 }
 
 function PaneLeaf({ leaf, primaryContent }: { leaf: LeafNode; primaryContent: ReactNode }) {
+  // Subscribing via useTranslation also re-renders pageTitle() output on language change.
+  const { t } = useTranslation('nav');
   const { paneCount, dragging, close } = usePanes();
   const isPrimary = leaf.kind === 'primary';
 
   return (
     <section
       className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white"
-      aria-label={isPrimary ? 'Main pane' : `Pane: ${pageTitle(leaf.path)}`}
+      aria-label={isPrimary ? t('mainPane') : t('paneTitle', { title: pageTitle(leaf.path) })}
       data-pane={leaf.id}
     >
       {paneCount > 1 && (
@@ -113,7 +116,7 @@ function PaneLeaf({ leaf, primaryContent }: { leaf: LeafNode; primaryContent: Re
           {!isPrimary && (
             <button
               onClick={() => close(leaf.id)}
-              aria-label="Close pane"
+              aria-label={t('closePane')}
               className="rounded px-1 text-xs text-gray-400 hover:bg-gray-200 hover:text-gray-700"
             >
               ✕

@@ -1,37 +1,42 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { useAuth } from '../../lib/auth';
 import { useDashboard } from '../reports/api';
 
 export function DashboardPage() {
+  const { t } = useTranslation('dashboard');
   const { user, hasRole } = useAuth();
   const { data } = useDashboard();
   const canSeeFinancials = hasRole('ADMIN', 'BILLING');
 
   const tiles: Array<{ title: string; value: string; hint: string; to: string }> = [
     {
-      title: 'Active patients',
+      title: t('activePatients'),
       value: data ? String(data.activePatients) : '…',
-      hint: 'patients with ACTIVE status',
+      hint: t('activePatientsHint'),
       to: '/patients',
     },
     {
-      title: "Today's appointments",
+      title: t('todaysAppointments'),
       value: data ? `${data.todaysCompletedAppointments}/${data.todaysAppointments}` : '…',
-      hint: 'completed / scheduled today',
+      hint: t('todaysAppointmentsHint'),
       to: '/schedule',
     },
     ...(canSeeFinancials
       ? [
           {
-            title: "Today's production",
-            value: data ? `$${data.todaysProduction.toFixed(2)}` : '…',
-            hint: `collections $${data ? data.todaysCollections.toFixed(2) : '…'}`,
+            title: t('todaysProduction'),
+            value: data ? formatMoney(data.todaysProduction) : '…',
+            hint: t('collectionsHint', {
+              amount: data ? formatMoney(data.todaysCollections) : '…',
+            }),
             to: '/reports',
           },
           {
-            title: 'Open claims',
+            title: t('openClaims'),
             value: data ? String(data.openClaims) : '…',
-            hint: 'draft, submitted, accepted, or denied',
+            hint: t('openClaimsHint'),
             to: '/claims',
           },
         ]
@@ -41,21 +46,22 @@ export function DashboardPage() {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-gray-900">
-        Welcome back, {user?.firstName}
+        {t('welcomeBack', { name: user?.firstName ?? '' })}
       </h1>
       <p className="mt-1 text-sm text-gray-500">
-        Today is{' '}
-        {new Date().toLocaleDateString(undefined, {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
+        {t('todayIs', {
+          date: formatDate(new Date(), {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
         })}
       </p>
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map((tile) => (
           <Link
-            key={tile.title}
+            key={tile.to}
             to={tile.to}
             className="rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-md"
           >

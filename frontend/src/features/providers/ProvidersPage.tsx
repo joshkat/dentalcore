@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
@@ -9,6 +10,7 @@ import { AvailabilityModal } from './AvailabilityModal';
 import { ProviderFormModal } from './ProviderFormModal';
 
 export function ProvidersPage() {
+  const { t } = useTranslation('providers');
   const [includeInactive, setIncludeInactive] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Provider | null>(null);
@@ -21,7 +23,7 @@ export function ProvidersPage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Providers</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {isAdmin && (
           <Button
             onClick={() => {
@@ -29,7 +31,7 @@ export function ProvidersPage() {
               setModalOpen(true);
             }}
           >
-            New provider
+            {t('newProvider')}
           </Button>
         )}
       </div>
@@ -41,24 +43,34 @@ export function ProvidersPage() {
           onChange={(e) => setIncludeInactive(e.target.checked)}
           className="h-4 w-4 rounded border-gray-300 text-brand-600"
         />
-        Show inactive providers
+        {t('showInactive')}
       </label>
 
       <div className="mt-4 overflow-hidden rounded-lg bg-white shadow">
         {isPending ? (
-          <Spinner label="Loading providers…" />
+          <Spinner label={t('loading')} />
         ) : isError ? (
-          <p className="p-8 text-sm text-red-600">Failed to load providers.</p>
+          <p className="p-8 text-sm text-red-600">{t('loadFailed')}</p>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {['Name', 'Type', 'NPI', 'Specialty', 'License', 'Status', ''].map((h, i) => (
+                {(
+                  [
+                    'colName',
+                    'colType',
+                    'colNpi',
+                    'colSpecialty',
+                    'colLicense',
+                    'colStatus',
+                    null,
+                  ] as const
+                ).map((key, i) => (
                   <th
                     key={i}
                     className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500"
                   >
-                    {h}
+                    {key ? t(key) : ''}
                   </th>
                 ))}
               </tr>
@@ -76,7 +88,7 @@ export function ProvidersPage() {
                       {provider.lastName}, {provider.firstName}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{provider.type}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{t(`type.${provider.type}`)}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{provider.npi ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{provider.specialty ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">
@@ -86,9 +98,9 @@ export function ProvidersPage() {
                   </td>
                   <td className="px-4 py-3">
                     {provider.active ? (
-                      <Badge tone="green">ACTIVE</Badge>
+                      <Badge tone="green">{t('statusBadge.active')}</Badge>
                     ) : (
-                      <Badge tone="gray">INACTIVE</Badge>
+                      <Badge tone="gray">{t('statusBadge.inactive')}</Badge>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -98,7 +110,7 @@ export function ProvidersPage() {
                           onClick={() => setAvailabilityFor(provider)}
                           className="text-sm text-brand-600 hover:underline"
                         >
-                          Hours
+                          {t('hours')}
                         </button>
                         <button
                           onClick={() => {
@@ -107,7 +119,7 @@ export function ProvidersPage() {
                           }}
                           className="text-sm text-brand-600 hover:underline"
                         >
-                          Edit
+                          {t('edit')}
                         </button>
                       </span>
                     )}
@@ -117,7 +129,7 @@ export function ProvidersPage() {
               {data.content.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">
-                    No providers yet.
+                    {t('empty')}
                   </td>
                 </tr>
               )}

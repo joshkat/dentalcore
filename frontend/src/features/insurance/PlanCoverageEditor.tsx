@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { ApiError } from '../../lib/api';
 import { PROCEDURE_CATEGORIES } from '../../types/api';
@@ -18,6 +19,7 @@ export function PlanCoverageEditor({
   currentFeeScheduleId: string | null;
   canManage: boolean;
 }) {
+  const { t } = useTranslation('insurance');
   const { data: schedules } = useFeeSchedules();
   const { data: rules } = usePlanCoverageRules(planId);
   const saveCoverage = useSavePlanCoverage(planId);
@@ -39,14 +41,14 @@ export function PlanCoverageEditor({
       .filter(([, value]) => value !== '')
       .map(([category, value]) => ({ category, coveragePercent: Number(value) }));
     if (entries.some((e) => e.coveragePercent < 0 || e.coveragePercent > 100)) {
-      setError('Percentages must be 0–100');
+      setError(t('coverageEditor.percentRange'));
       return;
     }
     try {
       await saveCoverage.mutateAsync({ feeScheduleId: scheduleId || null, rules: entries });
       setSaved(true);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to save coverage');
+      setError(e instanceof ApiError ? e.message : t('coverageEditor.failedToSave'));
     }
   };
 
@@ -59,7 +61,7 @@ export function PlanCoverageEditor({
       )}
       {saved && (
         <p role="status" className="text-sm text-green-700">
-          Coverage saved.
+          {t('coverageEditor.saved')}
         </p>
       )}
       <div>
@@ -67,7 +69,7 @@ export function PlanCoverageEditor({
           htmlFor={`fee-sched-${planId}`}
           className="block text-sm font-medium text-gray-700"
         >
-          Fee schedule
+          {t('coverageEditor.feeSchedule')}
         </label>
         <select
           id={`fee-sched-${planId}`}
@@ -76,7 +78,7 @@ export function PlanCoverageEditor({
           disabled={!canManage}
           className="mt-1 rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
         >
-          <option value="">None (use standard fees)</option>
+          <option value="">{t('coverageEditor.noneStandardFees')}</option>
           {schedules?.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -86,12 +88,12 @@ export function PlanCoverageEditor({
       </div>
       <div>
         <span className="block text-sm font-medium text-gray-700">
-          Coverage % by category (blank = not covered)
+          {t('coverageEditor.coverageByCategory')}
         </span>
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {PROCEDURE_CATEGORIES.map((category) => (
             <label key={category} className="text-xs text-gray-600">
-              {category.replace('_', ' ')}
+              {t(`procedureCategory.${category}`)}
               <input
                 type="number"
                 min="0"
@@ -109,7 +111,7 @@ export function PlanCoverageEditor({
       </div>
       {canManage && (
         <Button onClick={save} loading={saveCoverage.isPending}>
-          Save coverage
+          {t('coverageEditor.saveCoverage')}
         </Button>
       )}
     </div>

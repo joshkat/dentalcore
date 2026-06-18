@@ -1,0 +1,19 @@
+{
+  "loadingDocuments": "Cargando documentos…",
+  "category": "Categoría",
+  "uploadFile": "Subir archivo",
+  "uploadHint": "PDF, imágenes o texto · máx. 25 MB",
+  "uploadFailed": "Error al subir",
+  "downloadFailed": "Error al descargar",
+  "noDocuments": "No hay documentos en el archivo.",
+  "download": "Descargar",
+  "delete": "Eliminar",
+  "categoryLabel": {
+    "XRAY": "Radiografía",
+    "PHOTO": "Foto",
+    "CONSENT": "Consentimiento",
+    "INSURANCE": "Seguro",
+    "REFERRAL": "Referencia",
+    "OTHER": "Otro"
+  }
+}

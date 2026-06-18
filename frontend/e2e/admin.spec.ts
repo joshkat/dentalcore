@@ -37,7 +37,8 @@ test.describe('admin page', () => {
     const matrix = page.getByRole('region', { name: 'Permission matrix' });
     await expect(matrix.getByText('Changes apply immediately to active sessions.')).toBeVisible();
 
-    for (const role of ['ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK', 'BILLING', 'READ_ONLY']) {
+    // column headers show the localized role display names
+    for (const role of ['Administrator', 'Dentist', 'Hygienist', 'Front Desk', 'Billing', 'Read Only']) {
       await expect(matrix.getByRole('columnheader', { name: role, exact: true })).toBeVisible();
     }
 
@@ -133,6 +134,6 @@ test.describe('statement runs report', () => {
     );
     const history = page.getByTestId('stmt-run-history');
     await expect(history).toBeVisible();
-    await expect(history.getByText('$999999.00').first()).toBeVisible();
+    await expect(history.getByText('$999,999.00').first()).toBeVisible();
   });
 });

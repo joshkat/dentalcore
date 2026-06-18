@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import type { TreatmentPlanStatus } from '../../types/api';
 import { CompleteProcedureButton } from '../checkout/CompleteProcedureButton';
@@ -10,7 +12,6 @@ import { useProcedureCodes } from '../procedures/api';
 import { useProviders } from '../providers/api';
 import {
   PLAN_NEXT_STATUSES,
-  PLAN_STATUS_LABELS,
   useAddPlanProcedure,
   useCreatePlan,
   useRemovePlanProcedure,
@@ -28,7 +29,7 @@ const planTone: Record<TreatmentPlanStatus, 'blue' | 'green' | 'yellow' | 'gray'
   CANCELLED: 'red',
 };
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+const money = (n: number) => formatMoney(n);
 
 export function TreatmentPlansTab({
   patientId,
@@ -37,23 +38,24 @@ export function TreatmentPlansTab({
   patientId: string;
   canWrite: boolean;
 }) {
+  const { t } = useTranslation('plans');
   const { data: plans, isPending } = useTreatmentPlans(patientId);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  if (isPending) return <Spinner label="Loading treatment plans…" />;
+  if (isPending) return <Spinner label={t('loadingPlans')} />;
 
   return (
     <div className="space-y-4">
       {canWrite && !creating && (
-        <Button onClick={() => setCreating(true)}>New treatment plan</Button>
+        <Button onClick={() => setCreating(true)}>{t('newPlan')}</Button>
       )}
       {creating && (
         <NewPlanForm patientId={patientId} onDone={() => setCreating(false)} />
       )}
 
       {plans && plans.content.length === 0 ? (
-        <p className="text-sm text-gray-500">No treatment plans yet.</p>
+        <p className="text-sm text-gray-500">{t('noPlans')}</p>
       ) : (
         <ul className="space-y-3">
           {plans?.content.map((plan) => (
@@ -65,11 +67,14 @@ export function TreatmentPlansTab({
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{plan.title}</p>
                   <p className="text-xs text-gray-500">
-                    {plan.procedureCount} procedures · {plan.completedCount} completed ·{' '}
-                    {money(plan.totalEstimatedCost)}
+                    {t('planSummary', {
+                      procedures: plan.procedureCount,
+                      completed: plan.completedCount,
+                      cost: money(plan.totalEstimatedCost),
+                    })}
                   </p>
                 </div>
-                <Badge tone={planTone[plan.status]}>{PLAN_STATUS_LABELS[plan.status]}</Badge>
+                <Badge tone={planTone[plan.status]}>{t(`status.${plan.status}`)}</Badge>
               </button>
               {openPlanId === plan.id && (
                 <PlanDetail planId={plan.id} patientId={patientId} canWrite={canWrite} />
@@ -83,6 +88,7 @@ export function TreatmentPlansTab({
 }
 
 function NewPlanForm({ patientId, onDone }: { patientId: string; onDone: () => void }) {
+  const { t } = useTranslation('plans');
   const createPlan = useCreatePlan(patientId);
   const { data: providers } = useProviders(false);
   const [title, setTitle] = useState('');
@@ -90,14 +96,14 @@ function NewPlanForm({ patientId, onDone }: { patientId: string; onDone: () => v
   const [error, setError] = useState<string | null>(null);
 
   const submit = async () => {
-    if (!title.trim()) return setError('Enter a title');
-    if (!providerId) return setError('Select a provider');
+    if (!title.trim()) return setError(t('form.enterTitle'));
+    if (!providerId) return setError(t('form.selectProvider'));
     setError(null);
     try {
       await createPlan.mutateAsync({ providerId, title: title.trim() });
       onDone();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to create plan');
+      setError(e instanceof ApiError ? e.message : t('form.failedToCreate'));
     }
   };
 
@@ -111,19 +117,19 @@ function NewPlanForm({ patientId, onDone }: { patientId: string; onDone: () => v
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-64 flex-1">
           <label htmlFor="plan-title" className="block text-sm font-medium text-gray-700">
-            Title
+            {t('form.title')}
           </label>
           <input
             id="plan-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Phase I — restorative"
+            placeholder={t('form.titlePlaceholder')}
             className="mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
           />
         </div>
         <div>
           <label htmlFor="plan-provider" className="block text-sm font-medium text-gray-700">
-            Provider
+            {t('form.provider')}
           </label>
           <select
             id="plan-provider"
@@ -131,7 +137,7 @@ function NewPlanForm({ patientId, onDone }: { patientId: string; onDone: () => v
             onChange={(e) => setProviderId(e.target.value)}
             className="mt-1 rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
           >
-            <option value="">Select…</option>
+            <option value="">{t('form.selectEllipsis')}</option>
             {providers?.content.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.lastName}, {p.firstName}
@@ -140,10 +146,10 @@ function NewPlanForm({ patientId, onDone }: { patientId: string; onDone: () => v
           </select>
         </div>
         <Button onClick={submit} loading={createPlan.isPending}>
-          Create
+          {t('common:create')}
         </Button>
         <Button variant="secondary" onClick={onDone}>
-          Cancel
+          {t('common:cancel')}
         </Button>
       </div>
     </div>
@@ -159,6 +165,7 @@ function PlanDetail({
   patientId: string;
   canWrite: boolean;
 }) {
+  const { t } = useTranslation('plans');
   const { data: plan, isPending } = useTreatmentPlan(planId);
   const { data: estimate } = usePlanEstimate(planId);
   const updateStatus = useUpdatePlanStatus(patientId);
@@ -170,7 +177,7 @@ function PlanDetail({
   const [error, setError] = useState<string | null>(null);
   const { data: catalog } = useProcedureCodes(codeSearch);
 
-  if (isPending || !plan) return <Spinner label="Loading plan…" />;
+  if (isPending || !plan) return <Spinner label={t('loadingPlan')} />;
 
   const editable = canWrite && (plan.status === 'DRAFT' || plan.status === 'PRESENTED');
   const trackable = canWrite && (plan.status === 'APPROVED' || plan.status === 'IN_PROGRESS');
@@ -180,7 +187,7 @@ function PlanDetail({
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Action failed');
+      setError(e instanceof ApiError ? e.message : t('actionFailed'));
     }
   };
 
@@ -194,12 +201,17 @@ function PlanDetail({
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-600">
         <span>
-          Provider: {plan.providerLastName}, {plan.providerFirstName}
+          {t('detail.providerLabel', {
+            name: `${plan.providerLastName}, ${plan.providerFirstName}`,
+          })}
           {plan.approvedAt &&
-            ` · Approved ${new Date(plan.approvedAt).toLocaleDateString()}`}
+            t('detail.approvedOn', { date: formatDate(plan.approvedAt) })}
         </span>
         <span className="font-medium text-gray-900">
-          Total {money(plan.totalEstimatedCost)} · Completed {money(plan.completedCost)}
+          {t('detail.totals', {
+            total: money(plan.totalEstimatedCost),
+            completed: money(plan.completedCost),
+          })}
         </span>
       </div>
 
@@ -207,12 +219,12 @@ function PlanDetail({
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead>
             <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-              <th className="py-2 pr-3">#</th>
-              <th className="py-2 pr-3">Code</th>
-              <th className="py-2 pr-3">Description</th>
-              <th className="py-2 pr-3">Tooth</th>
-              <th className="py-2 pr-3">Est. cost</th>
-              <th className="py-2 pr-3">Status</th>
+              <th className="py-2 pr-3">{t('detail.columns.number')}</th>
+              <th className="py-2 pr-3">{t('detail.columns.code')}</th>
+              <th className="py-2 pr-3">{t('detail.columns.description')}</th>
+              <th className="py-2 pr-3">{t('detail.columns.tooth')}</th>
+              <th className="py-2 pr-3">{t('detail.columns.estCost')}</th>
+              <th className="py-2 pr-3">{t('detail.columns.status')}</th>
               <th className="py-2" />
             </tr>
           </thead>
@@ -239,7 +251,7 @@ function PlanDetail({
                             : 'gray'
                     }
                   >
-                    {procedure.status}
+                    {t(`procedureStatus.${procedure.status}`)}
                   </Badge>
                 </td>
                 <td className="py-2 text-right">
@@ -252,7 +264,7 @@ function PlanDetail({
                       }
                       className="text-xs text-red-600 hover:underline"
                     >
-                      Remove
+                      {t('detail.remove')}
                     </button>
                   )}
                   {trackable &&
@@ -277,22 +289,27 @@ function PlanDetail({
       {estimate?.hasCoverage && estimate.lines.length > 0 && (
         <div className="rounded-md bg-blue-50/60 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Insurance estimate — {estimate.carrierName} · {estimate.planName}
+            {t('estimate.heading', {
+              carrier: estimate.carrierName,
+              plan: estimate.planName,
+            })}
             {estimate.hasSecondary &&
               estimate.secondaryCarrierName &&
-              ` · 2nd: ${estimate.secondaryCarrierName}`}
+              t('estimate.secondarySuffix', { carrier: estimate.secondaryCarrierName })}
           </p>
           <table className="mt-2 min-w-full text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-                <th className="py-1 pr-3">Code</th>
-                <th className="py-1 pr-3 text-right">Fee</th>
-                <th className="py-1 pr-3 text-right">Allowed</th>
-                <th className="py-1 pr-3 text-right">Ins. pays</th>
+                <th className="py-1 pr-3">{t('estimate.columns.code')}</th>
+                <th className="py-1 pr-3 text-right">{t('estimate.columns.fee')}</th>
+                <th className="py-1 pr-3 text-right">{t('estimate.columns.allowed')}</th>
+                <th className="py-1 pr-3 text-right">{t('estimate.columns.insurancePays')}</th>
                 {estimate.hasSecondary && (
-                  <th className="py-1 pr-3 text-right">2nd ins.</th>
+                  <th className="py-1 pr-3 text-right">
+                    {t('estimate.columns.secondInsurance')}
+                  </th>
                 )}
-                <th className="py-1 text-right">Patient</th>
+                <th className="py-1 text-right">{t('estimate.columns.patient')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-blue-100">
@@ -307,7 +324,9 @@ function PlanDetail({
                     {money(line.insuranceEstimate)}
                     {line.deductibleApplied > 0 && (
                       <span className="ml-1 text-xs text-gray-400">
-                        (ded {money(line.deductibleApplied)})
+                        {t('estimate.deductibleInline', {
+                          amount: money(line.deductibleApplied),
+                        })}
                       </span>
                     )}
                   </td>
@@ -322,7 +341,7 @@ function PlanDetail({
                 </tr>
               ))}
               <tr className="font-semibold">
-                <td className="py-1.5 pr-3">Totals</td>
+                <td className="py-1.5 pr-3">{t('estimate.totals')}</td>
                 <td />
                 <td />
                 <td className="py-1.5 pr-3 text-right text-blue-700">
@@ -338,9 +357,14 @@ function PlanDetail({
             </tbody>
           </table>
           <p className="mt-1 text-xs text-gray-500">
-            Estimate only — based on fee schedule, coverage rules, deductible, and remaining
-            annual max{estimate.benefitsRemaining != null &&
-              ` (${money(estimate.benefitsRemaining)} remaining)`}.
+            {t('estimate.disclaimer', {
+              remaining:
+                estimate.benefitsRemaining != null
+                  ? t('estimate.remainingInline', {
+                      amount: money(estimate.benefitsRemaining),
+                    })
+                  : '',
+            })}
           </p>
         </div>
       )}
@@ -350,14 +374,14 @@ function PlanDetail({
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-64 flex-1">
               <label htmlFor={`code-search-${planId}`} className="block text-sm font-medium text-gray-700">
-                Add procedure
+                {t('detail.addProcedure')}
               </label>
               <input
                 id={`code-search-${planId}`}
                 type="search"
                 value={codeSearch}
                 onChange={(e) => setCodeSearch(e.target.value)}
-                placeholder="Search catalog (e.g. crown, D1110)…"
+                placeholder={t('detail.searchCatalogPlaceholder')}
                 className="mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
               />
               {codeSearch && (
@@ -389,7 +413,7 @@ function PlanDetail({
             </div>
             <div>
               <label htmlFor={`tooth-${planId}`} className="block text-sm font-medium text-gray-700">
-                Tooth #
+                {t('detail.toothNumber')}
               </label>
               <input
                 id={`tooth-${planId}`}
@@ -410,7 +434,7 @@ function PlanDetail({
               variant={status === 'CANCELLED' ? 'danger' : 'secondary'}
               onClick={() => act(() => updateStatus.mutateAsync({ planId, status }))}
             >
-              {status === 'DRAFT' ? 'Back to draft' : PLAN_STATUS_LABELS[status]}
+              {status === 'DRAFT' ? t('detail.backToDraft') : t(`status.${status}`)}
             </Button>
           ))}
         </div>

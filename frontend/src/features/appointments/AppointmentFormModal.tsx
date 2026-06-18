@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
@@ -34,9 +35,10 @@ interface AppointmentFormModalProps {
 }
 
 export function AppointmentFormModal(props: AppointmentFormModalProps) {
+  const { t } = useTranslation('schedule');
   return (
     <Modal
-      title={props.appointment ? 'Edit appointment' : 'New appointment'}
+      title={props.appointment ? t('editAppointment') : t('newAppointment')}
       open={props.open}
       onClose={props.onClose}
     >
@@ -58,6 +60,7 @@ function toLocalDate(iso: string): string {
 }
 
 function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormModalProps) {
+  const { t } = useTranslation('schedule');
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment(appointment?.id ?? '');
   const { data: providers } = useProviders(false);
@@ -99,10 +102,10 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
   const { data: procedureCatalog } = useProcedureCodes(procedureSearch);
 
   const submit = async () => {
-    if (!patientId) return setError('Select a patient');
-    if (!providerId) return setError('Select a provider');
-    if (!operatoryId) return setError('Select an operatory');
-    if (!date || !time) return setError('Pick a date and time');
+    if (!patientId) return setError(t('validation.selectPatient'));
+    if (!providerId) return setError(t('validation.selectProvider'));
+    if (!operatoryId) return setError(t('validation.selectOperatory'));
+    if (!date || !time) return setError(t('validation.pickDateTime'));
 
     const startsAt = new Date(`${date}T${time}:00`);
     const endsAt = new Date(startsAt.getTime() + duration * 60000);
@@ -136,7 +139,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
       }
       onClose();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to save appointment');
+      setError(e instanceof ApiError ? e.message : t('validation.failedToSave'));
     } finally {
       setSubmitting(false);
     }
@@ -152,7 +155,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
 
       <div>
         <label htmlFor="appt-patient" className="block text-sm font-medium text-gray-700">
-          Patient
+          {t('patient')}
         </label>
         <input
           id="appt-patient"
@@ -162,7 +165,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
             setPatientSearch(e.target.value);
             setPatientId('');
           }}
-          placeholder="Search patients…"
+          placeholder={t('searchPatientsPlaceholder')}
           className={selectClass}
         />
         {patientSearch && !patientId && (
@@ -182,7 +185,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
               </li>
             ))}
             {candidates?.content.length === 0 && (
-              <li className="px-3 py-2 text-sm text-gray-500">No matching patients</li>
+              <li className="px-3 py-2 text-sm text-gray-500">{t('noMatchingPatients')}</li>
             )}
             <li className="border-t border-gray-100">
               <button
@@ -190,7 +193,9 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
                 onClick={() => setCreatingPatient(true)}
                 className="block w-full px-3 py-2 text-left text-sm font-medium text-brand-600 hover:bg-brand-50"
               >
-                + New patient{patientSearch ? ` “${patientSearch}”` : ''}
+                {patientSearch
+                  ? t('newPatientNamed', { name: patientSearch })
+                  : t('newPatient')}
               </button>
             </li>
           </ul>
@@ -210,7 +215,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="appt-provider" className="block text-sm font-medium text-gray-700">
-            Provider
+            {t('provider')}
           </label>
           <select
             id="appt-provider"
@@ -218,7 +223,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
             onChange={(e) => setProviderId(e.target.value)}
             className={selectClass}
           >
-            <option value="">Select…</option>
+            <option value="">{t('select')}</option>
             {providers?.content.map((p: Provider) => (
               <option key={p.id} value={p.id}>
                 {p.lastName}, {p.firstName} ({p.type})
@@ -228,7 +233,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
         </div>
         <div>
           <label htmlFor="appt-operatory" className="block text-sm font-medium text-gray-700">
-            Operatory
+            {t('operatory')}
           </label>
           <select
             id="appt-operatory"
@@ -236,7 +241,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
             onChange={(e) => setOperatoryId(e.target.value)}
             className={selectClass}
           >
-            <option value="">Select…</option>
+            <option value="">{t('select')}</option>
             {operatories?.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.name}
@@ -246,7 +251,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
         </div>
         <div>
           <label htmlFor="appt-date" className="block text-sm font-medium text-gray-700">
-            Date
+            {t('date')}
           </label>
           <input
             id="appt-date"
@@ -259,7 +264,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label htmlFor="appt-time" className="block text-sm font-medium text-gray-700">
-              Start
+              {t('start')}
             </label>
             <input
               id="appt-time"
@@ -272,7 +277,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
           </div>
           <div>
             <label htmlFor="appt-duration" className="block text-sm font-medium text-gray-700">
-              Duration
+              {t('duration')}
             </label>
             <select
               id="appt-duration"
@@ -282,7 +287,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
             >
               {DURATIONS.map((d) => (
                 <option key={d} value={d}>
-                  {d} min
+                  {t('durationMinutes', { count: d })}
                 </option>
               ))}
             </select>
@@ -291,7 +296,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
       </div>
 
       <div>
-        <span className="block text-sm font-medium text-gray-700">Planned procedures</span>
+        <span className="block text-sm font-medium text-gray-700">{t('plannedProcedures')}</span>
         {selectedProcedures.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
             {selectedProcedures.map((p) => (
@@ -302,7 +307,7 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
                 <span className="font-mono">{p.code}</span>
                 <button
                   type="button"
-                  aria-label={`Remove ${p.code}`}
+                  aria-label={t('removeCode', { code: p.code })}
                   onClick={() =>
                     setSelectedProcedures((current) =>
                       current.filter((s) => s.procedureCodeId !== p.procedureCodeId),
@@ -318,10 +323,10 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
         )}
         <input
           type="search"
-          aria-label="Search procedures"
+          aria-label={t('searchProcedures')}
           value={procedureSearch}
           onChange={(e) => setProcedureSearch(e.target.value)}
-          placeholder="Add procedure (e.g. D1110, crown)…"
+          placeholder={t('addProcedurePlaceholder')}
           className={selectClass}
         />
         {procedureSearch && (
@@ -357,12 +362,12 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
           onChange={(e) => setAsap(e.target.checked)}
           className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-600"
         />
-        ASAP — wants earlier slot
+        {t('asapWantsEarlier')}
       </label>
 
       <div>
         <label htmlFor="appt-notes" className="block text-sm font-medium text-gray-700">
-          Notes
+          {t('notes')}
         </label>
         <textarea
           id="appt-notes"
@@ -375,10 +380,10 @@ function AppointmentForm({ onClose, appointment, defaultDate }: AppointmentFormM
 
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>
-          Cancel
+          {t('common:cancel')}
         </Button>
         <Button onClick={submit} loading={submitting}>
-          {appointment ? 'Save changes' : 'Book appointment'}
+          {appointment ? t('saveChanges') : t('bookAppointment')}
         </Button>
       </div>
     </div>

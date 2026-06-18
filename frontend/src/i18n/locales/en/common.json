@@ -1,0 +1,33 @@
+{
+  "save": "Save",
+  "cancel": "Cancel",
+  "close": "Close",
+  "delete": "Delete",
+  "edit": "Edit",
+  "search": "Search",
+  "loading": "Loading…",
+  "add": "Add",
+  "create": "Create",
+  "print": "Print",
+  "download": "Download",
+  "status": "Status",
+  "date": "Date",
+  "actions": "Actions",
+  "yes": "Yes",
+  "no": "No",
+  "none": "None",
+  "retry": "Retry",
+  "saved": "Saved",
+  "back": "Back",
+  "next": "Next",
+  "previous": "Previous",
+  "pageOf": "Page {{page}} of {{total}}",
+  "noResults": "No results found",
+  "checkingSession": "Checking session…",
+  "noPermission": "You do not have permission to view this page.",
+  "somethingWentWrong": "Something went wrong. Try again.",
+  "paneCrashed": "This pane crashed",
+  "errors": {
+    "requestFailed": "Request failed ({{status}})"
+  }
+}

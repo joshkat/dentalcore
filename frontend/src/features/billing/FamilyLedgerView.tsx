@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { downloadFamilyStatement, type FamilyLedgerResponse, type LedgerEntryType } from './api';
 
 const typeTone: Record<LedgerEntryType, 'red' | 'green' | 'blue' | 'yellow'> = {
@@ -11,15 +13,6 @@ const typeTone: Record<LedgerEntryType, 'red' | 'green' | 'blue' | 'yellow'> = {
   ADJUSTMENT: 'yellow',
 };
 
-const typeLabel: Record<LedgerEntryType, string> = {
-  CHARGE: 'Charge',
-  PAYMENT: 'Payment',
-  INSURANCE_PAYMENT: 'Ins. payment',
-  ADJUSTMENT: 'Adjustment',
-};
-
-const money = (n: number) => `${n < 0 ? '−' : ''}$${Math.abs(n).toFixed(2)}`;
-
 export function FamilyLedgerView({
   ledger,
   currentPatientId,
@@ -27,6 +20,7 @@ export function FamilyLedgerView({
   ledger: FamilyLedgerResponse;
   currentPatientId: string;
 }) {
+  const { t } = useTranslation('billing');
   const [error, setError] = useState<string | null>(null);
   const owes = ledger.totalBalance > 0;
 
@@ -35,7 +29,7 @@ export function FamilyLedgerView({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-gray-50 p-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Family balance — guarantor {ledger.guarantorName}
+            {t('family.balanceForGuarantor', { name: ledger.guarantorName })}
           </p>
           <p
             data-testid="family-total-balance"
@@ -43,7 +37,7 @@ export function FamilyLedgerView({
               owes ? 'text-red-600' : ledger.totalBalance < 0 ? 'text-green-600' : 'text-gray-900'
             }`}
           >
-            {money(ledger.totalBalance)}
+            {formatMoney(ledger.totalBalance)}
           </p>
         </div>
         <Button
@@ -53,11 +47,11 @@ export function FamilyLedgerView({
             try {
               await downloadFamilyStatement(ledger.guarantorId);
             } catch {
-              setError('Family statement download failed');
+              setError(t('family.statementDownloadFailed'));
             }
           }}
         >
-          Family statement (PDF)
+          {t('family.statementPdf')}
         </Button>
       </div>
 
@@ -73,34 +67,39 @@ export function FamilyLedgerView({
             key={member.patientId}
             to={`/patients/${member.patientId}`}
             className="hover:opacity-80"
-            aria-label={`${member.patientName} balance ${money(member.balance)}`}
+            aria-label={t('family.memberBalanceAria', {
+              name: member.patientName,
+              amount: formatMoney(member.balance),
+            })}
           >
             <Badge tone={member.balance > 0 ? 'yellow' : 'green'}>
               {member.patientName}
-              {member.patientId === currentPatientId ? ' (this patient)' : ''} ·{' '}
-              {money(member.balance)}
+              {member.patientId === currentPatientId ? t('family.thisPatient') : ''} ·{' '}
+              {formatMoney(member.balance)}
             </Badge>
           </Link>
         ))}
       </div>
 
       {ledger.entries.length === 0 ? (
-        <p className="text-sm text-gray-500">No family ledger activity yet.</p>
+        <p className="text-sm text-gray-500">{t('family.noActivity')}</p>
       ) : (
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead>
             <tr className="text-left text-xs font-semibold uppercase text-gray-500">
-              <th className="py-2 pr-3">Date</th>
-              <th className="py-2 pr-3">Patient</th>
-              <th className="py-2 pr-3">Type</th>
-              <th className="py-2 pr-3">Description</th>
-              <th className="py-2 text-right">Amount</th>
+              <th className="py-2 pr-3">{t('columns.date')}</th>
+              <th className="py-2 pr-3">{t('columns.patient')}</th>
+              <th className="py-2 pr-3">{t('columns.type')}</th>
+              <th className="py-2 pr-3">{t('columns.description')}</th>
+              <th className="py-2 text-right">{t('columns.amount')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {ledger.entries.map((entry) => (
               <tr key={entry.id} className={entry.reversed ? 'opacity-50' : ''}>
-                <td className="py-2 pr-3 whitespace-nowrap text-gray-600">{entry.entryDate}</td>
+                <td className="py-2 pr-3 whitespace-nowrap text-gray-600">
+                  {formatDate(entry.entryDate)}
+                </td>
                 <td className="py-2 pr-3">
                   <Link
                     to={`/patients/${entry.patientId}`}
@@ -110,9 +109,9 @@ export function FamilyLedgerView({
                   </Link>
                 </td>
                 <td className="py-2 pr-3">
-                  <Badge tone={typeTone[entry.type]}>{typeLabel[entry.type]}</Badge>
+                  <Badge tone={typeTone[entry.type]}>{t(`type.${entry.type}`)}</Badge>
                   {entry.reversalOf && (
-                    <span className="ml-1 text-xs text-gray-400">(reversal)</span>
+                    <span className="ml-1 text-xs text-gray-400">{t('reversalTag')}</span>
                   )}
                 </td>
                 <td className="py-2 pr-3">
@@ -128,15 +127,15 @@ export function FamilyLedgerView({
                     entry.amount < 0 ? 'text-green-700' : 'text-gray-900'
                   }`}
                 >
-                  {money(entry.amount)}
+                  {formatMoney(entry.amount)}
                 </td>
               </tr>
             ))}
             <tr className="font-semibold">
               <td className="py-2 pr-3" colSpan={4}>
-                Family total
+                {t('family.total')}
               </td>
-              <td className="py-2 text-right">{money(ledger.totalBalance)}</td>
+              <td className="py-2 text-right">{formatMoney(ledger.totalBalance)}</td>
             </tr>
           </tbody>
         </table>

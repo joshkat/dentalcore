@@ -1,0 +1,123 @@
+{
+  "loadingLedger": "Loading ledger…",
+  "patientView": "Patient view",
+  "familyView": "Family view",
+  "accountBalance": "Account balance",
+  "patientOwes": "Patient owes",
+  "creditOnAccount": "Credit on account",
+  "settled": "Settled",
+  "statementPdf": "Statement (PDF)",
+  "statementDownloadFailed": "Statement download failed",
+  "recordPayment": "Record payment",
+  "addCharge": "Add charge",
+  "adjustment": "Adjustment",
+  "noLedgerActivity": "No ledger activity yet.",
+  "reversalTag": "(reversal)",
+  "reversalReasonPrompt": "Reversal reason?",
+  "reversalFailed": "Reversal failed",
+  "reverse": "Reverse",
+  "type": {
+    "CHARGE": "Charge",
+    "PAYMENT": "Payment",
+    "INSURANCE_PAYMENT": "Ins. payment",
+    "ADJUSTMENT": "Adjustment"
+  },
+  "columns": {
+    "date": "Date",
+    "type": "Type",
+    "description": "Description",
+    "amount": "Amount",
+    "patient": "Patient"
+  },
+  "form": {
+    "amount": "Amount ($)",
+    "amountNegativeCredit": "Amount ($, negative = credit)",
+    "description": "Description",
+    "method": "Method",
+    "methodOption": {
+      "CARD": "Card",
+      "CASH": "Cash",
+      "CHECK": "Check",
+      "OTHER": "Other"
+    },
+    "enterPositiveAmount": "Enter a positive amount",
+    "enterDescription": "Enter a description",
+    "enterNonZeroAmount": "Enter a non-zero amount (negative = credit)",
+    "failedRecordPayment": "Failed to record payment",
+    "failedPostCharge": "Failed to post charge",
+    "failedPostAdjustment": "Failed to post adjustment",
+    "fromProcedure": "From procedure (uses catalog fee)",
+    "searchCatalog": "Search catalog…",
+    "orManualCharge": "or post a manual charge:",
+    "postCharge": "Post charge",
+    "postAdjustment": "Post adjustment"
+  },
+  "family": {
+    "balanceForGuarantor": "Family balance — guarantor {{name}}",
+    "statementPdf": "Family statement (PDF)",
+    "statementDownloadFailed": "Family statement download failed",
+    "memberBalanceAria": "{{name}} balance {{amount}}",
+    "thisPatient": " (this patient)",
+    "noActivity": "No family ledger activity yet.",
+    "total": "Family total"
+  },
+  "plans": {
+    "heading": "Payment plans",
+    "new": "New payment plan",
+    "loading": "Loading payment plans…",
+    "none": "No payment plans.",
+    "failedUpdate": "Failed to update payment plan",
+    "status": {
+      "ACTIVE": "Active",
+      "COMPLETED": "Completed",
+      "DEFAULTED": "Defaulted",
+      "CANCELLED": "Cancelled"
+    },
+    "action": {
+      "complete": "Complete",
+      "default": "Default",
+      "cancel": "Cancel"
+    },
+    "confirm": {
+      "complete": "Mark this payment plan as completed?",
+      "default": "Mark this payment plan as defaulted?",
+      "cancel": "Cancel this payment plan?"
+    },
+    "frequency": {
+      "MONTHLY": "monthly",
+      "BIWEEKLY": "biweekly"
+    },
+    "scheduleFrom": "{{amount}} {{frequency}} from {{date}}",
+    "downSuffix": " · {{amount}} down",
+    "progress": "{{received}} received of {{expected}} expected to date",
+    "onTrack": " · on track",
+    "behind": " · behind"
+  },
+  "modal": {
+    "title": "New payment plan",
+    "totalAmount": "Total amount ($)",
+    "downPayment": "Down payment ($, optional)",
+    "installment": "Installment ($)",
+    "frequency": "Frequency",
+    "firstDueDate": "First due date",
+    "notes": "Notes (optional)",
+    "frequencyOption": {
+      "MONTHLY": "Monthly",
+      "BIWEEKLY": "Biweekly"
+    },
+    "installmentPhrase_one": "{{count}} {{frequency}} installment",
+    "installmentPhrase_other": "{{count}} {{frequency}} installments",
+    "previewDown": "{{amount}} down, then ",
+    "previewOf": " of {{amount}}",
+    "previewFinal": " (final payment {{amount}})",
+    "previewStarting": " starting {{date}}.",
+    "createPlan": "Create plan",
+    "enterPositiveTotal": "Enter a positive total amount",
+    "downNegative": "Down payment cannot be negative",
+    "downExceedsTotal": "Down payment must be less than the total",
+    "enterPositiveInstallment": "Enter a positive installment amount",
+    "installmentExceedsTotal": "Installment cannot exceed the total",
+    "chooseFirstDueDate": "Choose the first due date",
+    "failedCreate": "Failed to create payment plan"
+  }
+}

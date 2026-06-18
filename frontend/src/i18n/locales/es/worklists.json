@@ -1,0 +1,28 @@
+{
+  "title": "Listas de trabajo",
+  "noPermission": "No tienes permiso para ver las listas de trabajo.",
+  "tabs": {
+    "unscheduled": "Tratamiento sin agendar",
+    "asap": "Lista ASAP"
+  },
+  "loadingWorklist": "Cargando lista de trabajo…",
+  "noUnscheduledTreatment": "No hay tratamiento sin agendar.",
+  "noAsapRequests": "No hay solicitudes ASAP.",
+  "patient": "Paciente",
+  "phone": "Teléfono",
+  "plan": "Plan",
+  "status": "Estado",
+  "planned": "Planificados",
+  "remainingValue": "Valor restante",
+  "recall": "Control periódico",
+  "provider": "Proveedor",
+  "scheduledFor": "Agendada para",
+  "planStatus": {
+    "DRAFT": "BORRADOR",
+    "PRESENTED": "PRESENTADO",
+    "APPROVED": "APROBADO",
+    "IN_PROGRESS": "EN CURSO",
+    "COMPLETED": "COMPLETADO",
+    "CANCELLED": "CANCELADO"
+  }
+}

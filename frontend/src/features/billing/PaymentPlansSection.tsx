@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import {
@@ -12,8 +14,6 @@ import {
 } from './api';
 import { PaymentPlanModal } from './PaymentPlanModal';
 
-const money = (n: number) => `$${n.toFixed(2)}`;
-
 const statusTone: Record<PaymentPlanStatus, 'blue' | 'green' | 'red' | 'gray'> = {
   ACTIVE: 'blue',
   COMPLETED: 'green',
@@ -22,32 +22,33 @@ const statusTone: Record<PaymentPlanStatus, 'blue' | 'green' | 'red' | 'gray'> =
 };
 
 const STATUS_ACTIONS: Array<{
-  label: string;
+  labelKey: string;
   status: PaymentPlanStatus;
-  confirm: string;
+  confirmKey: string;
   variant: 'secondary' | 'danger';
 }> = [
   {
-    label: 'Complete',
+    labelKey: 'plans.action.complete',
     status: 'COMPLETED',
-    confirm: 'Mark this payment plan as completed?',
+    confirmKey: 'plans.confirm.complete',
     variant: 'secondary',
   },
   {
-    label: 'Default',
+    labelKey: 'plans.action.default',
     status: 'DEFAULTED',
-    confirm: 'Mark this payment plan as defaulted?',
+    confirmKey: 'plans.confirm.default',
     variant: 'danger',
   },
   {
-    label: 'Cancel',
+    labelKey: 'plans.action.cancel',
     status: 'CANCELLED',
-    confirm: 'Cancel this payment plan?',
+    confirmKey: 'plans.confirm.cancel',
     variant: 'danger',
   },
 ];
 
 export function PaymentPlansSection({ patientId }: { patientId: string }) {
+  const { t } = useTranslation('billing');
   const { data: plans, isPending } = usePaymentPlans(patientId);
   const updateStatus = useUpdatePaymentPlanStatus();
   const { hasRole } = useAuth();
@@ -60,11 +61,11 @@ export function PaymentPlansSection({ patientId }: { patientId: string }) {
     <div className="space-y-3 border-t border-gray-100 pt-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Payment plans
+          {t('plans.heading')}
         </h3>
         {canManage && (
           <Button variant="secondary" onClick={() => setCreating(true)}>
-            New payment plan
+            {t('plans.new')}
           </Button>
         )}
       </div>
@@ -76,9 +77,9 @@ export function PaymentPlansSection({ patientId }: { patientId: string }) {
       )}
 
       {isPending ? (
-        <Spinner label="Loading payment plans…" />
+        <Spinner label={t('plans.loading')} />
       ) : !plans || plans.length === 0 ? (
-        <p className="text-sm text-gray-500">No payment plans.</p>
+        <p className="text-sm text-gray-500">{t('plans.none')}</p>
       ) : (
         <ul className="space-y-3">
           {plans.map((plan) => (
@@ -93,7 +94,7 @@ export function PaymentPlansSection({ patientId }: { patientId: string }) {
                   await updateStatus.mutateAsync({ planId: plan.id, status });
                 } catch (e) {
                   setError(
-                    e instanceof ApiError ? e.message : 'Failed to update payment plan',
+                    e instanceof ApiError ? e.message : t('plans.failedUpdate'),
                   );
                 }
               }}
@@ -120,6 +121,7 @@ function PlanRow({
   busy: boolean;
   onStatus: (status: PaymentPlanStatus) => Promise<void>;
 }) {
+  const { t } = useTranslation('billing');
   const onTrack = plan.receivedToDate >= plan.expectedToDate;
   const progress =
     plan.totalAmount > 0
@@ -130,14 +132,18 @@ function PlanRow({
     <li className="space-y-2 rounded-md p-4 ring-1 ring-gray-200">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Badge tone={statusTone[plan.status]}>{plan.status}</Badge>
+          <Badge tone={statusTone[plan.status]}>{t(`plans.status.${plan.status}`)}</Badge>
           <span className="text-sm font-semibold text-gray-900">
-            {money(plan.totalAmount)}
+            {formatMoney(plan.totalAmount)}
           </span>
           <span className="text-xs text-gray-500">
-            {money(plan.installmentAmount)}{' '}
-            {plan.frequency === 'MONTHLY' ? 'monthly' : 'biweekly'} from {plan.firstDueDate}
-            {plan.downPayment > 0 && ` · ${money(plan.downPayment)} down`}
+            {t('plans.scheduleFrom', {
+              amount: formatMoney(plan.installmentAmount),
+              frequency: t(`plans.frequency.${plan.frequency}`),
+              date: formatDate(plan.firstDueDate),
+            })}
+            {plan.downPayment > 0 &&
+              t('plans.downSuffix', { amount: formatMoney(plan.downPayment) })}
           </span>
         </div>
         {canManage && plan.status === 'ACTIVE' && (
@@ -148,10 +154,10 @@ function PlanRow({
                 variant={action.variant}
                 disabled={busy}
                 onClick={() => {
-                  if (window.confirm(action.confirm)) void onStatus(action.status);
+                  if (window.confirm(t(action.confirmKey))) void onStatus(action.status);
                 }}
               >
-                {action.label}
+                {t(action.labelKey)}
               </Button>
             ))}
           </div>
@@ -161,8 +167,11 @@ function PlanRow({
         <p
           className={`text-sm font-medium ${onTrack ? 'text-green-700' : 'text-red-600'}`}
         >
-          {money(plan.receivedToDate)} received of {money(plan.expectedToDate)} expected to
-          date {onTrack ? '· on track' : '· behind'}
+          {t('plans.progress', {
+            received: formatMoney(plan.receivedToDate),
+            expected: formatMoney(plan.expectedToDate),
+          })}
+          {onTrack ? t('plans.onTrack') : t('plans.behind')}
         </p>
         <div className="mt-1 h-2 w-full overflow-hidden rounded bg-gray-100">
           <div

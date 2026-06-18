@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -9,21 +10,25 @@ import { Modal } from '../../components/Modal';
 import { Spinner } from '../../components/Spinner';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { formatMoney } from '../../i18n/format';
 import { PROCEDURE_CATEGORIES, type ProcedureCode } from '../../types/api';
+import type { Translate } from '../auth/schemas';
 import { useCreateProcedureCode, useProcedureCodes, useUpdateProcedureCode } from './api';
 
-const schema = z.object({
-  code: z.string().min(1, 'Code is required').max(20),
-  description: z.string().min(1, 'Description is required').max(500),
-  category: z.enum(PROCEDURE_CATEGORIES as [string, ...string[]]),
-  standardFee: z.coerce.number().min(0, 'Fee cannot be negative').max(99_999_999),
-  cdtCode: z.string().max(10).optional().or(z.literal('')),
-  active: z.boolean(),
-});
+const makeSchema = (t: Translate) =>
+  z.object({
+    code: z.string().min(1, t('procedures:validation.codeRequired')).max(20),
+    description: z.string().min(1, t('procedures:validation.descriptionRequired')).max(500),
+    category: z.enum(PROCEDURE_CATEGORIES as [string, ...string[]]),
+    standardFee: z.coerce.number().min(0, t('procedures:validation.feeNegative')).max(99_999_999),
+    cdtCode: z.string().max(10).optional().or(z.literal('')),
+    active: z.boolean(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
 export function ProcedureCodesPage() {
+  const { t } = useTranslation('procedures');
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ProcedureCode | null>(null);
@@ -35,7 +40,7 @@ export function ProcedureCodesPage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Procedure catalog</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {isAdmin && (
           <Button
             onClick={() => {
@@ -43,7 +48,7 @@ export function ProcedureCodesPage() {
               setModalOpen(true);
             }}
           >
-            New procedure
+            {t('newProcedure')}
           </Button>
         )}
       </div>
@@ -51,29 +56,38 @@ export function ProcedureCodesPage() {
       <div className="mt-4">
         <input
           type="search"
-          placeholder="Search by code or description…"
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search procedures"
+          aria-label={t('searchAriaLabel')}
           className="w-full max-w-md rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600"
         />
       </div>
 
       <div className="mt-4 overflow-hidden rounded-lg bg-white shadow">
         {isPending ? (
-          <Spinner label="Loading catalog…" />
+          <Spinner label={t('loading')} />
         ) : isError ? (
-          <p className="p-8 text-sm text-red-600">Failed to load the catalog.</p>
+          <p className="p-8 text-sm text-red-600">{t('loadFailed')}</p>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {['Code', 'Description', 'Category', 'Standard fee', 'Status', ''].map((h, i) => (
+                {(
+                  [
+                    'colCode',
+                    'colDescription',
+                    'colCategory',
+                    'colStandardFee',
+                    'colStatus',
+                    null,
+                  ] as const
+                ).map((key, i) => (
                   <th
                     key={i}
                     className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500"
                   >
-                    {h}
+                    {key ? t(key) : ''}
                   </th>
                 ))}
               </tr>
@@ -86,16 +100,16 @@ export function ProcedureCodesPage() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">{code.description}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {code.category.replace('_', ' ')}
+                    {t(`category.${code.category}`)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    ${code.standardFee.toFixed(2)}
+                    {formatMoney(code.standardFee)}
                   </td>
                   <td className="px-4 py-3">
                     {code.active ? (
-                      <Badge tone="green">ACTIVE</Badge>
+                      <Badge tone="green">{t('statusBadge.active')}</Badge>
                     ) : (
-                      <Badge tone="gray">INACTIVE</Badge>
+                      <Badge tone="gray">{t('statusBadge.inactive')}</Badge>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -107,7 +121,7 @@ export function ProcedureCodesPage() {
                         }}
                         className="text-sm text-brand-600 hover:underline"
                       >
-                        Edit
+                        {t('edit')}
                       </button>
                     )}
                   </td>
@@ -116,7 +130,7 @@ export function ProcedureCodesPage() {
               {data.content.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
-                    No procedures found.
+                    {t('empty')}
                   </td>
                 </tr>
               )}
@@ -126,7 +140,7 @@ export function ProcedureCodesPage() {
       </div>
 
       <Modal
-        title={editing ? 'Edit procedure' : 'New procedure'}
+        title={editing ? t('editProcedure') : t('newProcedure')}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
       >
@@ -143,9 +157,11 @@ export function ProcedureCodesPage() {
 }
 
 function ProcedureForm({ code, onClose }: { code: ProcedureCode | null; onClose: () => void }) {
+  const { t } = useTranslation('procedures');
   const createCode = useCreateProcedureCode();
   const updateCode = useUpdateProcedureCode(code?.id ?? '');
   const [serverError, setServerError] = useState<string | null>(null);
+  const schema = useMemo(() => makeSchema(t), [t]);
 
   const {
     register,
@@ -176,7 +192,7 @@ function ProcedureForm({ code, onClose }: { code: ProcedureCode | null; onClose:
       }
       onClose();
     } catch (error) {
-      setServerError(error instanceof ApiError ? error.message : 'Failed to save procedure');
+      setServerError(error instanceof ApiError ? error.message : t('saveFailed'));
     }
   };
 
@@ -188,17 +204,17 @@ function ProcedureForm({ code, onClose }: { code: ProcedureCode | null; onClose:
         </div>
       )}
       <div className="grid grid-cols-2 gap-4">
-        <Input label="Code" error={errors.code?.message} {...register('code')} />
-        <Input label="CDT code (optional)" error={errors.cdtCode?.message} {...register('cdtCode')} />
+        <Input label={t('codeLabel')} error={errors.code?.message} {...register('code')} />
+        <Input label={t('cdtCodeLabel')} error={errors.cdtCode?.message} {...register('cdtCode')} />
         <Input
-          label="Description"
+          label={t('descriptionLabel')}
           className="col-span-2"
           error={errors.description?.message}
           {...register('description')}
         />
         <div>
           <label htmlFor="proc-category" className="block text-sm font-medium text-gray-700">
-            Category
+            {t('categoryLabel')}
           </label>
           <select
             id="proc-category"
@@ -207,13 +223,13 @@ function ProcedureForm({ code, onClose }: { code: ProcedureCode | null; onClose:
           >
             {PROCEDURE_CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c.replace('_', ' ')}
+                {t(`category.${c}`)}
               </option>
             ))}
           </select>
         </div>
         <Input
-          label="Standard fee ($)"
+          label={t('standardFeeLabel')}
           type="number"
           step="0.01"
           min="0"
@@ -227,14 +243,14 @@ function ProcedureForm({ code, onClose }: { code: ProcedureCode | null; onClose:
           className="h-4 w-4 rounded border-gray-300 text-brand-600"
           {...register('active')}
         />
-        Active
+        {t('activeLabel')}
       </label>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onClose}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button type="submit" loading={isSubmitting}>
-          {code ? 'Save changes' : 'Create procedure'}
+          {code ? t('saveChanges') : t('createProcedure')}
         </Button>
       </div>
     </form>

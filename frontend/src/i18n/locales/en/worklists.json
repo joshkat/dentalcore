@@ -1,0 +1,28 @@
+{
+  "title": "Worklists",
+  "noPermission": "You do not have permission to view worklists.",
+  "tabs": {
+    "unscheduled": "Unscheduled treatment",
+    "asap": "ASAP list"
+  },
+  "loadingWorklist": "Loading worklist…",
+  "noUnscheduledTreatment": "No unscheduled treatment.",
+  "noAsapRequests": "No ASAP requests.",
+  "patient": "Patient",
+  "phone": "Phone",
+  "plan": "Plan",
+  "status": "Status",
+  "planned": "Planned",
+  "remainingValue": "Remaining value",
+  "recall": "Recall",
+  "provider": "Provider",
+  "scheduledFor": "Scheduled for",
+  "planStatus": {
+    "DRAFT": "DRAFT",
+    "PRESENTED": "PRESENTED",
+    "APPROVED": "APPROVED",
+    "IN_PROGRESS": "IN_PROGRESS",
+    "COMPLETED": "COMPLETED",
+    "CANCELLED": "CANCELLED"
+  }
+}

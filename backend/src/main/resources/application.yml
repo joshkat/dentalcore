@@ -46,6 +46,10 @@ management:
 
 dentalcore:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  i18n:
+    # Instance-wide default language (en|es); validated at startup, fail fast otherwise.
+    # Users inherit this unless they set a personal preference.
+    default-language: ${DEFAULT_LANGUAGE:en}
   storage:
     local-path: ${DOCUMENT_STORAGE_PATH:./data/documents}
   security:

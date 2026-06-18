@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ModalProps {
   title: string;
@@ -10,6 +11,7 @@ interface ModalProps {
 }
 
 export function Modal({ title, open, onClose, size = 'md', children }: ModalProps) {
+  const { t } = useTranslation('common');
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -28,7 +30,7 @@ export function Modal({ title, open, onClose, size = 'md', children }: ModalProp
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative z-10 w-full ${
+        className={`relative z-10 max-h-[90vh] w-full overflow-y-auto ${
           size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
         } rounded-lg bg-white p-6 shadow-xl`}
       >
@@ -36,7 +38,7 @@ export function Modal({ title, open, onClose, size = 'md', children }: ModalProp
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('close')}
             className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
           >
             ✕

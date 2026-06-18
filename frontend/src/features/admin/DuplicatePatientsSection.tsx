@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDate } from '../../i18n/format';
 import type { DuplicateCandidate, DuplicatePair } from '../../types/api';
 import { useDuplicatePatients } from './api';
 import { MergePatientsModal } from './MergePatientsModal';
@@ -12,37 +14,36 @@ export function scorePercent(score: number): number {
 }
 
 function Candidate({ candidate }: { candidate: DuplicateCandidate }) {
+  const { t } = useTranslation('admin');
   return (
     <div>
       <p className="text-sm font-medium text-gray-900">{candidate.name}</p>
       <p className="text-xs text-gray-500">
-        DOB {candidate.dateOfBirth} · {candidate.status}
+        {t('dob', { date: formatDate(candidate.dateOfBirth) })} · {candidate.status}
       </p>
     </div>
   );
 }
 
 export function DuplicatePatientsSection() {
+  const { t } = useTranslation('admin');
   const { data, isPending, isError } = useDuplicatePatients();
   const [merging, setMerging] = useState<DuplicatePair | null>(null);
 
   return (
-    <section aria-label="Duplicate patients" className="rounded-lg bg-white p-6 shadow">
-      <h2 className="text-lg font-semibold text-gray-900">Duplicate patients</h2>
-      <p className="mt-1 text-sm text-gray-500">
-        Likely duplicate records detected by name and date of birth. Merging moves all
-        records to the kept patient and archives the other.
-      </p>
+    <section aria-label={t('duplicatesSectionLabel')} className="rounded-lg bg-white p-6 shadow">
+      <h2 className="text-lg font-semibold text-gray-900">{t('duplicatesTitle')}</h2>
+      <p className="mt-1 text-sm text-gray-500">{t('duplicatesDescription')}</p>
 
       <div className="mt-4">
         {isPending ? (
-          <Spinner label="Scanning for duplicates…" />
+          <Spinner label={t('scanningDuplicates')} />
         ) : isError || !data ? (
           <p role="alert" className="text-sm text-red-600">
-            Failed to load duplicate candidates.
+            {t('duplicatesLoadFailed')}
           </p>
         ) : data.length === 0 ? (
-          <p className="text-sm text-gray-500">No duplicate candidates found.</p>
+          <p className="text-sm text-gray-500">{t('noDuplicates')}</p>
         ) : (
           <ul className="divide-y divide-gray-100 rounded-md ring-1 ring-gray-100">
             {data.map((pair) => (
@@ -57,14 +58,14 @@ export function DuplicatePatientsSection() {
                   </span>
                   <Candidate candidate={pair.second} />
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge tone="blue">{scorePercent(pair.score)}% match</Badge>
+                    <Badge tone="blue">{t('percentMatch', { percent: scorePercent(pair.score) })}</Badge>
                     {pair.reasons.map((reason) => (
                       <Badge key={reason}>{reason}</Badge>
                     ))}
                   </div>
                 </div>
                 <Button variant="secondary" onClick={() => setMerging(pair)}>
-                  Merge…
+                  {t('mergeEllipsis')}
                 </Button>
               </li>
             ))}

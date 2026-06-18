@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { useCreateOperatory, useOperatories, useUpdateOperatory } from './api';
 
 export function OperatoriesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation('schedule');
   const { data: operatories } = useOperatories(true);
   const createOperatory = useCreateOperatory();
   const updateOperatory = useUpdateOperatory();
@@ -16,23 +18,23 @@ export function OperatoriesModal({ open, onClose }: { open: boolean; onClose: ()
   };
 
   return (
-    <Modal title="Operatories" open={open} onClose={onClose}>
+    <Modal title={t('operatories')} open={open} onClose={onClose}>
       <div className="space-y-4">
         <div className="flex items-end gap-2">
           <div className="flex-1">
             <label htmlFor="op-name" className="block text-sm font-medium text-gray-700">
-              New operatory
+              {t('newOperatory')}
             </label>
             <input
               id="op-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Operatory 4"
+              placeholder={t('operatoryNamePlaceholder')}
               className="mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
             />
           </div>
           <Button onClick={add} loading={createOperatory.isPending}>
-            Add
+            {t('common:add')}
           </Button>
         </div>
 
@@ -56,7 +58,7 @@ export function OperatoriesModal({ open, onClose }: { open: boolean; onClose: ()
                   })
                 }
               >
-                {operatory.active ? 'Deactivate' : 'Activate'}
+                {operatory.active ? t('deactivate') : t('activate')}
               </Button>
             </li>
           ))}

@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
+import { formatDate, formatDateTime } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import type { ClinicalNote } from '../../types/api';
 import {
@@ -27,6 +29,7 @@ export function ClinicalNotesTab({
   patientId: string;
   canWriteClinical: boolean;
 }) {
+  const { t } = useTranslation('notes');
   const { data: notes, isPending } = useClinicalNotes(patientId);
   const createNote = useCreateNote(patientId);
   const [adding, setAdding] = useState(false);
@@ -35,17 +38,17 @@ export function ClinicalNotesTab({
   const [error, setError] = useState<string | null>(null);
   const [managingTemplates, setManagingTemplates] = useState(false);
 
-  if (isPending) return <Spinner label="Loading notes…" />;
+  if (isPending) return <Spinner label={t('loading')} />;
 
   const submit = async () => {
-    if (!body.trim()) return setError('Note text is required');
+    if (!body.trim()) return setError(t('bodyRequired'));
     setError(null);
     try {
       await createNote.mutateAsync({ noteType, body: body.trim() });
       setBody('');
       setAdding(false);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to save note');
+      setError(e instanceof ApiError ? e.message : t('saveFailed'));
     }
   };
 
@@ -53,9 +56,9 @@ export function ClinicalNotesTab({
     <div className="space-y-4">
       {canWriteClinical && !adding && (
         <div className="flex gap-2">
-          <Button onClick={() => setAdding(true)}>New clinical note</Button>
+          <Button onClick={() => setAdding(true)}>{t('newNote')}</Button>
           <Button variant="secondary" onClick={() => setManagingTemplates(true)}>
-            Manage templates
+            {t('manageTemplates')}
           </Button>
         </div>
       )}
@@ -68,7 +71,7 @@ export function ClinicalNotesTab({
           )}
           <div>
             <label htmlFor="note-type" className="block text-sm font-medium text-gray-700">
-              Type
+              {t('type')}
             </label>
             <select
               id="note-type"
@@ -76,9 +79,9 @@ export function ClinicalNotesTab({
               onChange={(e) => setNoteType(e.target.value)}
               className={selectClass}
             >
-              {NOTE_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
+              {NOTE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {t(`noteType.${type}`)}
                 </option>
               ))}
             </select>
@@ -89,7 +92,7 @@ export function ClinicalNotesTab({
           />
           <div>
             <label htmlFor="note-body" className="block text-sm font-medium text-gray-700">
-              Note
+              {t('note')}
             </label>
             <textarea
               id="note-body"
@@ -101,17 +104,17 @@ export function ClinicalNotesTab({
           </div>
           <div className="flex gap-2">
             <Button onClick={submit} loading={createNote.isPending}>
-              Save note
+              {t('saveNote')}
             </Button>
             <Button variant="secondary" onClick={() => setAdding(false)}>
-              Cancel
+              {t('common:cancel')}
             </Button>
           </div>
         </div>
       )}
 
       {notes && notes.content.length === 0 ? (
-        <p className="text-sm text-gray-500">No clinical notes on record.</p>
+        <p className="text-sm text-gray-500">{t('none')}</p>
       ) : (
         <ul className="space-y-3">
           {notes?.content.map((note) => (
@@ -136,21 +139,22 @@ function NoteTemplatePicker({
   noteType: string;
   onInsert: (text: string) => void;
 }) {
+  const { t } = useTranslation('notes');
   const { data: templates } = useNoteTemplates();
   const [templateId, setTemplateId] = useState('');
   const [values, setValues] = useState<Record<string, string>>({});
 
   if (!templates || templates.length === 0) return null;
 
-  const matching = templates.filter((t) => t.noteType === noteType);
-  const others = templates.filter((t) => t.noteType !== noteType);
-  const selected = templates.find((t) => t.id === templateId) ?? null;
+  const matching = templates.filter((tpl) => tpl.noteType === noteType);
+  const others = templates.filter((tpl) => tpl.noteType !== noteType);
+  const selected = templates.find((tpl) => tpl.id === templateId) ?? null;
 
   return (
     <div className="space-y-2 rounded-md ring-1 ring-gray-200 p-3">
       <div>
         <label htmlFor="note-template" className="block text-sm font-medium text-gray-700">
-          Use template
+          {t('useTemplate')}
         </label>
         <select
           id="note-template"
@@ -161,21 +165,21 @@ function NoteTemplatePicker({
           }}
           className={selectClass}
         >
-          <option value="">No template</option>
+          <option value="">{t('noTemplate')}</option>
           {matching.length > 0 && (
-            <optgroup label={`${noteType} templates`}>
-              {matching.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+            <optgroup label={t('typeTemplates', { type: t(`noteType.${noteType}`) })}>
+              {matching.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name}
                 </option>
               ))}
             </optgroup>
           )}
           {others.length > 0 && (
-            <optgroup label="Other types">
-              {others.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.noteType})
+            <optgroup label={t('otherTypes')}>
+              {others.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {t('templateWithType', { name: tpl.name, type: t(`noteType.${tpl.noteType}`) })}
                 </option>
               ))}
             </optgroup>
@@ -215,7 +219,7 @@ function NoteTemplatePicker({
             setValues({});
           }}
         >
-          Insert
+          {t('insert')}
         </Button>
       )}
     </div>
@@ -229,6 +233,7 @@ function NoteCard({
   note: ClinicalNote;
   canWriteClinical: boolean;
 }) {
+  const { t } = useTranslation('notes');
   const signNote = useSignNote();
   const deleteNote = useDeleteNote();
   const updateNote = useUpdateNote();
@@ -241,7 +246,7 @@ function NoteCard({
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Action failed');
+      setError(e instanceof ApiError ? e.message : t('actionFailed'));
     }
   };
 
@@ -254,16 +259,14 @@ function NoteCard({
       )}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Badge tone="blue">{note.noteType}</Badge>
+          <Badge tone="blue">{t(`noteType.${note.noteType}`)}</Badge>
           {note.signedAt ? (
-            <Badge tone="green">SIGNED {new Date(note.signedAt).toLocaleDateString()}</Badge>
+            <Badge tone="green">{t('signedBadge', { date: formatDate(note.signedAt) })}</Badge>
           ) : (
-            <Badge tone="yellow">UNSIGNED</Badge>
+            <Badge tone="yellow">{t('unsigned')}</Badge>
           )}
         </div>
-        <span className="text-xs text-gray-500">
-          {new Date(note.createdAt).toLocaleString()}
-        </span>
+        <span className="text-xs text-gray-500">{formatDateTime(note.createdAt)}</span>
       </div>
 
       {editing ? (
@@ -272,7 +275,7 @@ function NoteCard({
             rows={4}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            aria-label="Edit note"
+            aria-label={t('editNoteAria')}
             className="block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
           />
           <div className="flex gap-2">
@@ -284,10 +287,10 @@ function NoteCard({
                 })
               }
             >
-              Save
+              {t('common:save')}
             </Button>
             <Button variant="secondary" onClick={() => setEditing(false)}>
-              Cancel
+              {t('common:cancel')}
             </Button>
           </div>
         </div>
@@ -298,13 +301,13 @@ function NoteCard({
       {canWriteClinical && !note.signedAt && !editing && (
         <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3">
           <Button variant="secondary" onClick={() => act(() => signNote.mutateAsync(note.id))}>
-            Sign (locks note)
+            {t('sign')}
           </Button>
           <Button variant="ghost" onClick={() => setEditing(true)}>
-            Edit
+            {t('common:edit')}
           </Button>
           <Button variant="ghost" onClick={() => act(() => deleteNote.mutateAsync(note.id))}>
-            Delete
+            {t('common:delete')}
           </Button>
         </div>
       )}

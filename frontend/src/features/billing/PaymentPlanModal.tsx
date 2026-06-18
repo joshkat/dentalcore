@@ -1,11 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Modal } from '../../components/Modal';
+import { formatDate, formatMoney } from '../../i18n/format';
 import { ApiError } from '../../lib/api';
 import { useCreatePaymentPlan, type PaymentPlanFrequency } from './api';
-
-const money = (n: number) => `$${n.toFixed(2)}`;
 
 const todayIso = () => {
   const d = new Date();
@@ -23,6 +23,7 @@ export function PaymentPlanModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('billing');
   const createPlan = useCreatePaymentPlan();
   const [total, setTotal] = useState('');
   const [down, setDown] = useState('');
@@ -48,15 +49,15 @@ export function PaymentPlanModal({
       : null;
 
   const submit = async () => {
-    if (!totalValue || totalValue <= 0) return setError('Enter a positive total amount');
-    if (downValue < 0) return setError('Down payment cannot be negative');
+    if (!totalValue || totalValue <= 0) return setError(t('modal.enterPositiveTotal'));
+    if (downValue < 0) return setError(t('modal.downNegative'));
     if (downValue >= totalValue)
-      return setError('Down payment must be less than the total');
+      return setError(t('modal.downExceedsTotal'));
     if (!installmentValue || installmentValue <= 0)
-      return setError('Enter a positive installment amount');
+      return setError(t('modal.enterPositiveInstallment'));
     if (installmentValue > totalValue)
-      return setError('Installment cannot exceed the total');
-    if (!firstDueDate) return setError('Choose the first due date');
+      return setError(t('modal.installmentExceedsTotal'));
+    if (!firstDueDate) return setError(t('modal.chooseFirstDueDate'));
     setError(null);
     try {
       await createPlan.mutateAsync({
@@ -70,12 +71,12 @@ export function PaymentPlanModal({
       });
       onClose();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to create payment plan');
+      setError(e instanceof ApiError ? e.message : t('modal.failedCreate'));
     }
   };
 
   return (
-    <Modal title="New payment plan" open={open} onClose={onClose}>
+    <Modal title={t('modal.title')} open={open} onClose={onClose}>
       <div className="space-y-3">
         {error && (
           <p role="alert" className="rounded-md bg-red-50 p-2 text-sm text-red-700">
@@ -84,7 +85,7 @@ export function PaymentPlanModal({
         )}
         <div className="grid grid-cols-2 gap-3">
           <Input
-            label="Total amount ($)"
+            label={t('modal.totalAmount')}
             type="number"
             min="0.01"
             step="0.01"
@@ -92,7 +93,7 @@ export function PaymentPlanModal({
             onChange={(e) => setTotal(e.target.value)}
           />
           <Input
-            label="Down payment ($, optional)"
+            label={t('modal.downPayment')}
             type="number"
             min="0"
             step="0.01"
@@ -100,7 +101,7 @@ export function PaymentPlanModal({
             onChange={(e) => setDown(e.target.value)}
           />
           <Input
-            label="Installment ($)"
+            label={t('modal.installment')}
             type="number"
             min="0.01"
             step="0.01"
@@ -112,7 +113,7 @@ export function PaymentPlanModal({
               htmlFor="plan-frequency"
               className="block text-sm font-medium text-gray-700"
             >
-              Frequency
+              {t('modal.frequency')}
             </label>
             <select
               id="plan-frequency"
@@ -120,18 +121,18 @@ export function PaymentPlanModal({
               onChange={(e) => setFrequency(e.target.value as PaymentPlanFrequency)}
               className="mt-1 block w-full rounded-md border-0 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300"
             >
-              <option value="MONTHLY">Monthly</option>
-              <option value="BIWEEKLY">Biweekly</option>
+              <option value="MONTHLY">{t('modal.frequencyOption.MONTHLY')}</option>
+              <option value="BIWEEKLY">{t('modal.frequencyOption.BIWEEKLY')}</option>
             </select>
           </div>
           <Input
-            label="First due date"
+            label={t('modal.firstDueDate')}
             type="date"
             value={firstDueDate}
             onChange={(e) => setFirstDueDate(e.target.value)}
           />
           <Input
-            label="Notes (optional)"
+            label={t('modal.notes')}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
@@ -139,15 +140,19 @@ export function PaymentPlanModal({
 
         {installmentCount !== null && finalAmount !== null && (
           <p data-testid="installment-preview" className="rounded-md bg-blue-50/60 p-3 text-sm text-gray-700">
-            {money(downValue)} down, then{' '}
+            {t('modal.previewDown', { amount: formatMoney(downValue) })}
             <span className="font-semibold">
-              {installmentCount} {frequency === 'MONTHLY' ? 'monthly' : 'biweekly'}{' '}
-              installment{installmentCount === 1 ? '' : 's'}
-            </span>{' '}
-            of {money(installmentValue)}
+              {t('modal.installmentPhrase', {
+                count: installmentCount,
+                frequency: t(`plans.frequency.${frequency}`),
+              })}
+            </span>
+            {t('modal.previewOf', { amount: formatMoney(installmentValue) })}
             {finalAmount !== installmentValue &&
-              ` (final payment ${money(finalAmount)})`}{' '}
-            starting {firstDueDate}.
+              t('modal.previewFinal', { amount: formatMoney(finalAmount) })}
+            {t('modal.previewStarting', {
+              date: firstDueDate ? formatDate(firstDueDate) : firstDueDate,
+            })}
           </p>
         )}
 

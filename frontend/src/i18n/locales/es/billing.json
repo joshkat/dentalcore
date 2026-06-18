@@ -1,0 +1,123 @@
+{
+  "loadingLedger": "Cargando estado de cuenta…",
+  "patientView": "Vista del paciente",
+  "familyView": "Vista familiar",
+  "accountBalance": "Saldo de la cuenta",
+  "patientOwes": "El paciente debe",
+  "creditOnAccount": "Crédito en la cuenta",
+  "settled": "Saldado",
+  "statementPdf": "Estado de cuenta (PDF)",
+  "statementDownloadFailed": "Error al descargar el estado de cuenta",
+  "recordPayment": "Registrar pago",
+  "addCharge": "Agregar cargo",
+  "adjustment": "Ajuste",
+  "noLedgerActivity": "Aún no hay actividad en el estado de cuenta.",
+  "reversalTag": "(reversión)",
+  "reversalReasonPrompt": "¿Motivo de la reversión?",
+  "reversalFailed": "Error al revertir",
+  "reverse": "Revertir",
+  "type": {
+    "CHARGE": "Cargo",
+    "PAYMENT": "Pago",
+    "INSURANCE_PAYMENT": "Pago de seguro",
+    "ADJUSTMENT": "Ajuste"
+  },
+  "columns": {
+    "date": "Fecha",
+    "type": "Tipo",
+    "description": "Descripción",
+    "amount": "Importe",
+    "patient": "Paciente"
+  },
+  "form": {
+    "amount": "Importe ($)",
+    "amountNegativeCredit": "Importe ($, negativo = crédito)",
+    "description": "Descripción",
+    "method": "Método",
+    "methodOption": {
+      "CARD": "Tarjeta",
+      "CASH": "Efectivo",
+      "CHECK": "Cheque",
+      "OTHER": "Otro"
+    },
+    "enterPositiveAmount": "Ingrese un importe positivo",
+    "enterDescription": "Ingrese una descripción",
+    "enterNonZeroAmount": "Ingrese un importe distinto de cero (negativo = crédito)",
+    "failedRecordPayment": "Error al registrar el pago",
+    "failedPostCharge": "Error al registrar el cargo",
+    "failedPostAdjustment": "Error al registrar el ajuste",
+    "fromProcedure": "Desde procedimiento (usa la tarifa del catálogo)",
+    "searchCatalog": "Buscar en el catálogo…",
+    "orManualCharge": "o registre un cargo manual:",
+    "postCharge": "Registrar cargo",
+    "postAdjustment": "Registrar ajuste"
+  },
+  "family": {
+    "balanceForGuarantor": "Saldo familiar — garante {{name}}",
+    "statementPdf": "Estado de cuenta familiar (PDF)",
+    "statementDownloadFailed": "Error al descargar el estado de cuenta familiar",
+    "memberBalanceAria": "Saldo de {{name}}: {{amount}}",
+    "thisPatient": " (este paciente)",
+    "noActivity": "Aún no hay actividad en el estado de cuenta familiar.",
+    "total": "Total familiar"
+  },
+  "plans": {
+    "heading": "Planes de pago",
+    "new": "Nuevo plan de pago",
+    "loading": "Cargando planes de pago…",
+    "none": "Sin planes de pago.",
+    "failedUpdate": "Error al actualizar el plan de pago",
+    "status": {
+      "ACTIVE": "Activo",
+      "COMPLETED": "Completado",
+      "DEFAULTED": "Incumplido",
+      "CANCELLED": "Cancelado"
+    },
+    "action": {
+      "complete": "Completar",
+      "default": "Incumplir",
+      "cancel": "Cancelar"
+    },
+    "confirm": {
+      "complete": "¿Marcar este plan de pago como completado?",
+      "default": "¿Marcar este plan de pago como incumplido?",
+      "cancel": "¿Cancelar este plan de pago?"
+    },
+    "frequency": {
+      "MONTHLY": "mensual",
+      "BIWEEKLY": "quincenal"
+    },
+    "scheduleFrom": "{{amount}} {{frequency}} desde {{date}}",
+    "downSuffix": " · {{amount}} de enganche",
+    "progress": "{{received}} recibido de {{expected}} esperado a la fecha",
+    "onTrack": " · al día",
+    "behind": " · atrasado"
+  },
+  "modal": {
+    "title": "Nuevo plan de pago",
+    "totalAmount": "Importe total ($)",
+    "downPayment": "Enganche ($, opcional)",
+    "installment": "Cuota ($)",
+    "frequency": "Frecuencia",
+    "firstDueDate": "Primera fecha de vencimiento",
+    "notes": "Notas (opcional)",
+    "frequencyOption": {
+      "MONTHLY": "Mensual",
+      "BIWEEKLY": "Quincenal"
+    },
+    "installmentPhrase_one": "{{count}} cuota {{frequency}}",
+    "installmentPhrase_other": "{{count}} cuotas {{frequency}}",
+    "previewDown": "{{amount}} de enganche, luego ",
+    "previewOf": " de {{amount}}",
+    "previewFinal": " (pago final {{amount}})",
+    "previewStarting": " a partir del {{date}}.",
+    "createPlan": "Crear plan",
+    "enterPositiveTotal": "Ingrese un importe total positivo",
+    "downNegative": "El enganche no puede ser negativo",
+    "downExceedsTotal": "El enganche debe ser menor que el total",
+    "enterPositiveInstallment": "Ingrese un importe de cuota positivo",
+    "installmentExceedsTotal": "La cuota no puede exceder el total",
+    "chooseFirstDueDate": "Elija la primera fecha de vencimiento",
+    "failedCreate": "Error al crear el plan de pago"
+  }
+}

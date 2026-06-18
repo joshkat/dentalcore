@@ -1,0 +1,13 @@
+{
+  "title": "Configuración",
+  "languageCard": "Language / Idioma",
+  "languageCardHint": "Elige el idioma de los menús y las pantallas. Los cambios se aplican de inmediato.",
+  "exportCard": "Idioma de documentos y exportaciones",
+  "exportCardHint": "Se usa para documentos generados, PDF y exportaciones.",
+  "english": "English",
+  "spanish": "Español",
+  "useClinicDefault": "Usar el idioma predeterminado de la clínica ({{language}})",
+  "useClinicDefaultUnknown": "Usar el idioma predeterminado de la clínica",
+  "saved": "Guardado",
+  "saveFailed": "No se pudo guardar tu preferencia. Inténtalo de nuevo."
+}

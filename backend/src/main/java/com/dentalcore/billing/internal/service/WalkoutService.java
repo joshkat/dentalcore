@@ -4,6 +4,7 @@ import com.dentalcore.appointments.api.AppointmentApi;
 import com.dentalcore.appointments.api.AppointmentView;
 import com.dentalcore.billing.internal.entity.LedgerEntry;
 import com.dentalcore.billing.internal.repository.LedgerEntryRepository;
+import com.dentalcore.infrastructure.i18n.PdfMessages;
 import com.dentalcore.infrastructure.time.ClinicTimeService;
 import com.dentalcore.insurance.api.InsuranceEstimateApi;
 import com.dentalcore.patients.api.PatientApi;
@@ -42,22 +43,25 @@ public class WalkoutService {
     private final PatientApi patientApi;
     private final InsuranceEstimateApi estimateApi;
     private final ClinicTimeService clinicTime;
+    private final PdfMessages messages;
 
     public WalkoutService(AppointmentApi appointmentApi,
                           CompletedProcedureApi completedProcedureApi,
                           LedgerEntryRepository ledger,
                           PatientApi patientApi,
                           InsuranceEstimateApi estimateApi,
-                          ClinicTimeService clinicTime) {
+                          ClinicTimeService clinicTime,
+                          PdfMessages messages) {
         this.appointmentApi = appointmentApi;
         this.completedProcedureApi = completedProcedureApi;
         this.ledger = ledger;
         this.patientApi = patientApi;
         this.estimateApi = estimateApi;
         this.clinicTime = clinicTime;
+        this.messages = messages;
     }
 
-    public byte[] walkoutPdf(UUID appointmentId) {
+    public byte[] walkoutPdf(UUID appointmentId, String lang) {
         AppointmentView appointment = appointmentApi.findView(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         PatientSummary patient = patientApi.findSummary(appointment.patientId())
@@ -82,7 +86,7 @@ public class WalkoutService {
 
         BigDecimal balance = ledger.balanceFor(appointment.patientId());
 
-        String html = buildHtml(patient, date, procedures, payments, estimate, balance);
+        String html = buildHtml(patient, date, procedures, payments, estimate, balance, lang);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             new PdfRendererBuilder()
                     .useFastMode()
@@ -99,8 +103,8 @@ public class WalkoutService {
                              List<CompletedProcedureView> procedures,
                              List<LedgerEntry> payments,
                              InsuranceEstimateApi.EstimateResult estimate,
-                             BigDecimal balance) {
-        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MMM d, yyyy");
+                             BigDecimal balance, String lang) {
+        DateTimeFormatter dateFormat = messages.dateFormatter(lang);
 
         StringBuilder procedureRows = new StringBuilder();
         BigDecimal procedureTotal = BigDecimal.ZERO;
@@ -117,8 +121,8 @@ public class WalkoutService {
                     money(procedure.fee())));
         }
         if (procedures.isEmpty()) {
-            procedureRows.append(
-                    "<tr><td colspan=\"4\">No completed procedures for this visit.</td></tr>");
+            procedureRows.append("<tr><td colspan=\"4\">%s</td></tr>"
+                    .formatted(msg(lang, "walkout.noProcedures")));
         }
 
         StringBuilder paymentRows = new StringBuilder();
@@ -134,24 +138,29 @@ public class WalkoutService {
                     money(payment.getAmount().abs())));
         }
         if (payments.isEmpty()) {
-            paymentRows.append("<tr><td colspan=\"2\">No payments posted today.</td></tr>");
+            paymentRows.append("<tr><td colspan=\"2\">%s</td></tr>"
+                    .formatted(msg(lang, "walkout.noPayments")));
         }
 
         String insuranceBlock = "";
         if (estimate != null && estimate.hasCoverage()) {
             insuranceBlock = """
-                    <h2>Insurance estimate</h2>
+                    <h2>%s</h2>
                     <p class="muted">%s &#183; %s</p>
                     <table class="totals-left">
-                      <tr><td>Estimated insurance portion</td><td class="num">%s</td></tr>
-                      <tr><td>Estimated patient portion</td><td class="num">%s</td></tr>
+                      <tr><td>%s</td><td class="num">%s</td></tr>
+                      <tr><td>%s</td><td class="num">%s</td></tr>
                     </table>
-                    <p class="muted">Estimates are not a guarantee of payment.</p>
+                    <p class="muted">%s</p>
                     """.formatted(
+                    msg(lang, "walkout.insuranceEstimate"),
                     escape(estimate.carrierName()),
                     escape(estimate.planName()),
+                    msg(lang, "walkout.insurancePortion"),
                     money(estimate.totalInsurance()),
-                    money(estimate.totalPatient()));
+                    msg(lang, "walkout.patientPortion"),
+                    money(estimate.totalPatient()),
+                    msg(lang, "walkout.estimateDisclaimer"));
         }
 
         return """
@@ -172,50 +181,68 @@ public class WalkoutService {
                   .balance { font-size: 14px; font-weight: bold; }
                 </style></head>
                 <body>
-                  <h1>DentalCore - Walk-Out Statement</h1>
-                  <p class="muted">Main Clinic</p>
-                  <p><strong>%s, %s</strong><br/>DOB %s</p>
-                  <p class="muted">Visit date: %s &#183; Generated %s</p>
+                  <h1>%s</h1>
+                  <p class="muted">%s</p>
+                  <p><strong>%s, %s</strong><br/>%s %s</p>
+                  <p class="muted">%s</p>
 
-                  <h2>Completed procedures</h2>
+                  <h2>%s</h2>
                   <table>
-                    <thead><tr><th>Code</th><th>Description</th><th>Tooth</th>
-                    <th class="num">Fee</th></tr></thead>
+                    <thead><tr><th>%s</th><th>%s</th><th>%s</th>
+                    <th class="num">%s</th></tr></thead>
                     <tbody>%s</tbody>
                   </table>
                   <table class="totals">
-                    <tr class="balance"><td>Total charges</td><td class="num">%s</td></tr>
+                    <tr class="balance"><td>%s</td><td class="num">%s</td></tr>
                   </table>
 
-                  <h2>Payments today</h2>
+                  <h2>%s</h2>
                   <table>
-                    <thead><tr><th>Method</th><th class="num">Amount</th></tr></thead>
+                    <thead><tr><th>%s</th><th class="num">%s</th></tr></thead>
                     <tbody>%s</tbody>
                   </table>
                   <table class="totals">
-                    <tr><td>Total paid today</td><td class="num">%s</td></tr>
+                    <tr><td>%s</td><td class="num">%s</td></tr>
                   </table>
 
                   %s
 
                   <table class="totals">
-                    <tr class="balance"><td>Current balance</td><td class="num">%s</td></tr>
+                    <tr class="balance"><td>%s</td><td class="num">%s</td></tr>
                   </table>
-                  <p class="muted">A positive balance is the amount due. Please contact the
-                  office with any questions.</p>
+                  <p class="muted">%s</p>
                 </body></html>
                 """.formatted(
+                msg(lang, "walkout.title"),
+                msg(lang, "common.clinic"),
                 escape(patient.lastName()),
                 escape(patient.firstName()),
+                msg(lang, "common.dob"),
                 patient.dateOfBirth(),
-                date.format(dateFormat),
-                LocalDate.now().format(dateFormat),
+                msg(lang, "walkout.visitLine",
+                        date.format(dateFormat), LocalDate.now().format(dateFormat)),
+                msg(lang, "walkout.completedProcedures"),
+                msg(lang, "common.code"),
+                msg(lang, "common.description"),
+                msg(lang, "common.tooth"),
+                msg(lang, "common.fee"),
                 procedureRows,
+                msg(lang, "walkout.totalCharges"),
                 money(procedureTotal),
+                msg(lang, "walkout.paymentsToday"),
+                msg(lang, "common.method"),
+                msg(lang, "common.amount"),
                 paymentRows,
+                msg(lang, "walkout.totalPaidToday"),
                 money(paymentTotal),
                 insuranceBlock,
-                money(balance));
+                msg(lang, "common.currentBalance"),
+                money(balance),
+                msg(lang, "common.balanceFooter"));
+    }
+
+    private String msg(String lang, String key, Object... args) {
+        return escape(messages.get(lang, key, args));
     }
 
     private String escape(String value) {

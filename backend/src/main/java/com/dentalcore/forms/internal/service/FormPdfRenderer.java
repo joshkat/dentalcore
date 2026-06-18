@@ -1,5 +1,6 @@
 package com.dentalcore.forms.internal.service;
 
+import com.dentalcore.infrastructure.i18n.PdfMessages;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.HtmlUtils;
@@ -7,7 +8,6 @@ import org.springframework.web.util.HtmlUtils;
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -16,15 +16,23 @@ import java.util.Map;
  * Renders a signed form as a PDF: template name, patient, ordered Q/A pairs,
  * the drawn signature image and the signing attestation. Strict XHTML with
  * numeric character references only (openhtmltopdf parses XML, not HTML5).
+ * Fixed labels come from the localized PDF message bundles.
  */
 @Component
 public class FormPdfRenderer {
 
+    private final PdfMessages messages;
+
+    public FormPdfRenderer(PdfMessages messages) {
+        this.messages = messages;
+    }
+
     public byte[] render(String templateName, String patientName,
                          List<Map<String, Object>> fields, Map<String, Object> answers,
-                         byte[] signaturePng, String signedByName, Instant signedAt) {
+                         byte[] signaturePng, String signedByName, Instant signedAt,
+                         String lang) {
         String html = buildHtml(templateName, patientName, fields, answers,
-                signaturePng, signedByName, signedAt);
+                signaturePng, signedByName, signedAt, lang);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             new PdfRendererBuilder()
                     .useFastMode()
@@ -39,7 +47,8 @@ public class FormPdfRenderer {
 
     private String buildHtml(String templateName, String patientName,
                              List<Map<String, Object>> fields, Map<String, Object> answers,
-                             byte[] signaturePng, String signedByName, Instant signedAt) {
+                             byte[] signaturePng, String signedByName, Instant signedAt,
+                             String lang) {
         StringBuilder rows = new StringBuilder();
         for (Map<String, Object> field : fields) {
             String key = String.valueOf(field.get("key"));
@@ -50,12 +59,11 @@ public class FormPdfRenderer {
                     </tr>
                     """.formatted(
                     HtmlUtils.htmlEscape(label, "UTF-8"),
-                    HtmlUtils.htmlEscape(answerText(field, answers.get(key)), "UTF-8")));
+                    HtmlUtils.htmlEscape(answerText(field, answers.get(key), lang), "UTF-8")));
         }
 
-        String signedAtText = DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm zzz")
-                .withZone(ZoneId.of("America/New_York"))
-                .format(signedAt);
+        String signedAtText = messages.dateTime(lang, signedAt,
+                ZoneId.of("America/New_York"));
 
         return """
                 <!DOCTYPE html>
@@ -72,31 +80,42 @@ public class FormPdfRenderer {
                 </style></head>
                 <body>
                   <h1>%s</h1>
-                  <p class="muted">DentalCore &#8212; Main Clinic</p>
-                  <p><strong>Patient: %s</strong></p>
+                  <p class="muted">%s</p>
+                  <p><strong>%s: %s</strong></p>
                   <table><tbody>%s</tbody></table>
                   <div class="signature">
-                    <p class="muted">Signature:</p>
+                    <p class="muted">%s</p>
                     <img src="data:image/png;base64,%s" alt="signature"/>
-                    <p>Signed by <strong>%s</strong> on %s</p>
+                    <p>%s <strong>%s</strong> %s %s</p>
                   </div>
                 </body></html>
                 """.formatted(
                 HtmlUtils.htmlEscape(templateName, "UTF-8"),
+                msg(lang, "form.clinicLine"),
+                msg(lang, "form.patient"),
                 HtmlUtils.htmlEscape(patientName, "UTF-8"),
                 rows,
+                msg(lang, "form.signatureLabel"),
                 Base64.getEncoder().encodeToString(signaturePng),
+                msg(lang, "form.signedBy"),
                 HtmlUtils.htmlEscape(signedByName, "UTF-8"),
+                msg(lang, "form.signedOn"),
                 HtmlUtils.htmlEscape(signedAtText, "UTF-8"));
     }
 
-    private String answerText(Map<String, Object> field, Object answer) {
+    private String answerText(Map<String, Object> field, Object answer, String lang) {
         if (answer == null || String.valueOf(answer).isBlank()) {
             return "—"; // em dash for unanswered optional fields
         }
         if ("CHECKBOX".equals(field.get("type"))) {
-            return Boolean.parseBoolean(String.valueOf(answer)) ? "Yes" : "No";
+            return Boolean.parseBoolean(String.valueOf(answer))
+                    ? messages.get(lang, "common.yes")
+                    : messages.get(lang, "common.no");
         }
         return String.valueOf(answer);
+    }
+
+    private String msg(String lang, String key) {
+        return HtmlUtils.htmlEscape(messages.get(lang, key), "UTF-8");
     }
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Spinner } from '../../components/Spinner';
@@ -8,6 +9,7 @@ import { useDeleteFormTemplate, useFormTemplates } from './api';
 import { TemplateBuilderModal } from './TemplateBuilderModal';
 
 export function FormsPage() {
+  const { t } = useTranslation('forms');
   const { hasRole } = useAuth();
   const canView = hasRole('ADMIN', 'DENTIST', 'HYGIENIST', 'FRONT_DESK');
   const isAdmin = hasRole('ADMIN');
@@ -19,32 +21,30 @@ export function FormsPage() {
 
   if (!canView) {
     return (
-      <div className="p-8 text-sm text-gray-600">You do not have permission to view forms.</div>
+      <div className="p-8 text-sm text-gray-600">{t('noPermission')}</div>
     );
   }
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Forms</h1>
-        {isAdmin && <Button onClick={() => setCreating(true)}>New template</Button>}
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        {isAdmin && <Button onClick={() => setCreating(true)}>{t('newTemplate')}</Button>}
       </div>
-      <p className="mt-1 text-sm text-gray-500">
-        Form templates patients fill out and sign from their Forms tab.
-      </p>
+      <p className="mt-1 text-sm text-gray-500">{t('subtitle')}</p>
 
       <div className="mt-6 overflow-hidden rounded-lg bg-white shadow">
         {isPending ? (
-          <Spinner label="Loading templates…" />
+          <Spinner label={t('loadingTemplates')} />
         ) : isError ? (
-          <p className="p-8 text-sm text-red-600">Failed to load form templates.</p>
+          <p className="p-8 text-sm text-red-600">{t('loadFailed')}</p>
         ) : templates && templates.length === 0 ? (
-          <p className="p-8 text-sm text-gray-500">No form templates yet.</p>
+          <p className="p-8 text-sm text-gray-500">{t('noTemplates')}</p>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {['Name', 'Fields', 'Status', ''].map((h, i) => (
+                {[t('col.name'), t('col.fields'), t('col.status'), ''].map((h, i) => (
                   <th
                     key={i}
                     className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500"
@@ -64,18 +64,18 @@ export function FormsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {template.fields.length} field{template.fields.length === 1 ? '' : 's'}
+                    {t('fieldCount', { count: template.fields.length })}
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone={template.active ? 'green' : 'gray'}>
-                      {template.active ? 'ACTIVE' : 'INACTIVE'}
+                      {template.active ? t('active') : t('inactive')}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
                     {isAdmin && (
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" onClick={() => setEditing(template)}>
-                          Edit
+                          {t('edit')}
                         </Button>
                         {template.active && (
                           <Button
@@ -83,7 +83,7 @@ export function FormsPage() {
                             onClick={() => deleteTemplate.mutate(template.id)}
                             disabled={deleteTemplate.isPending}
                           >
-                            Deactivate
+                            {t('deactivate')}
                           </Button>
                         )}
                       </div>

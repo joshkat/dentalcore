@@ -1,0 +1,65 @@
+{
+  "loadingPlans": "Loading treatment plans…",
+  "newPlan": "New treatment plan",
+  "noPlans": "No treatment plans yet.",
+  "planSummary": "{{procedures}} procedures · {{completed}} completed · {{cost}}",
+  "loadingPlan": "Loading plan…",
+  "actionFailed": "Action failed",
+  "form": {
+    "enterTitle": "Enter a title",
+    "selectProvider": "Select a provider",
+    "failedToCreate": "Failed to create plan",
+    "title": "Title",
+    "titlePlaceholder": "e.g. Phase I — restorative",
+    "provider": "Provider",
+    "selectEllipsis": "Select…"
+  },
+  "detail": {
+    "providerLabel": "Provider: {{name}}",
+    "approvedOn": " · Approved {{date}}",
+    "totals": "Total {{total}} · Completed {{completed}}",
+    "columns": {
+      "number": "#",
+      "code": "Code",
+      "description": "Description",
+      "tooth": "Tooth",
+      "estCost": "Est. cost",
+      "status": "Status"
+    },
+    "remove": "Remove",
+    "addProcedure": "Add procedure",
+    "searchCatalogPlaceholder": "Search catalog (e.g. crown, D1110)…",
+    "toothNumber": "Tooth #",
+    "backToDraft": "Back to draft"
+  },
+  "estimate": {
+    "heading": "Insurance estimate — {{carrier}} · {{plan}}",
+    "secondarySuffix": " · 2nd: {{carrier}}",
+    "columns": {
+      "code": "Code",
+      "fee": "Fee",
+      "allowed": "Allowed",
+      "insurancePays": "Ins. pays",
+      "secondInsurance": "2nd ins.",
+      "patient": "Patient"
+    },
+    "deductibleInline": "(ded {{amount}})",
+    "totals": "Totals",
+    "disclaimer": "Estimate only — based on fee schedule, coverage rules, deductible, and remaining annual max{{remaining}}.",
+    "remainingInline": " ({{amount}} remaining)"
+  },
+  "procedureStatus": {
+    "PLANNED": "Planned",
+    "SCHEDULED": "Scheduled",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "PRESENTED": "Presented",
+    "APPROVED": "Approved",
+    "IN_PROGRESS": "In progress",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  }
+}
