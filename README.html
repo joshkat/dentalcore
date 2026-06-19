@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DentalCore PMS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;background:#f4f4f4;color:#222;padding:2rem;}
+  h1,h2,h3,h4{color:#00539b;}
+  a{color:#0066cc;text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  pre{background:#272822;color:#f8f8f2;padding:1rem;border-radius:6px;overflow:auto;}
+  code{background:#e1e1e1;padding:.2rem .4rem;border-radius:4px;}
+  table{width:100%;border-collapse:collapse;margin:1rem 0;}
+  th,td{border:1px solid #ddd;padding:.5rem 1rem;text-align:left;}
+  th{background:#e8e8e8;}
+  nav{background:#fff;padding:.5rem 1rem;border-radius:6px;margin-bottom:2rem;box-shadow:0 2px 4px rgba(0,0,0,.05);}
+  nav ul{list-style:none;margin:0;padding:0;display:flex;gap:1rem;}
+  nav li{margin:0;}
+  .toc{background:#fff;padding:1rem;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,.05);margin-bottom:1rem;}
+  .toc h3{margin:0 0 .5rem;}
+  .toc ul{list-style:none;margin:0;padding:0;}
+  .toc li{margin:0 0 .3rem;}
+  .code-block{background:#272822;color:#f8f8f2;border-radius:6px;overflow:auto;}
+  .code-block pre{margin:0;}
+  .code-block code{background:none;padding:0;}
+  footer{margin-top:2rem;border-top:1px solid #ddd;padding-top:1rem;text-align:center;color:#777;font-size:.9rem;}
+</style>
+</head>
+<body>
+<header><h1>DentalCore PMS</h1></header>
+
+<nav>
+  <ul>
+    <li><a href="#stack">Stack</a></li>
+    <li><a href="#feature-overview">Feature overview</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#quick-start-docker-compose">Quick start</a></li>
+    <li><a href="#configuration-reference">Configuration reference</a></li>
+    <li><a href="#deployment-guides">Deployment guides</a></li>
+    <li><a href="#tls--reverse-proxy">TLS / reverse proxy</a></li>
+    <li><a href="#backups--data">Backups & data</a></li>
+    <li><a href="#local-development">Local development</a></li>
+    <li><a href="#tests">Tests</a></li>
+    <li><a href="#repository-layout">Repository layout</a></li>
+    <li><a href="#demo-data">Demo data</a></li>
+  </ul>
+</nav>
+
+<section id="stack"><h2>Stack</h2>
+<table>
+<thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+<tbody>
+<tr><td>Frontend</td><td>React 18, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS, React Hook Form, Zod, react-i18next</td></tr>
+<tr><td>Backend</td><td>Java 21, Spring Boot 3, Spring Security (JWT), Spring Data JPA / Hibernate</td></tr>
+<tr><td>Database</td><td>PostgreSQL 16, Flyway migrations (V1 → V22)</td></tr>
+<tr><td>Testing</td><td>JUnit 5, Mockito, Testcontainers, ArchUnit, Vitest + React Testing Library, Playwright</td></tr>
+<tr><td>Infra</td><td>Docker, Docker Compose, Nginx (prod static + API proxy)</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="feature-overview"><h2>Feature overview</h2>
+
+<h3>Patients & providers</h3>
+<ul>
+<li>Patient CRUD with demographics, phones, medical alerts, family links, status lifecycle, and soft delete.</li>
+<li>Trigram fuzzy search and a patient timeline that aggregates events across modules.</li>
+<li><strong>Patient merge</strong> with duplicate detection (combines records, ledgers, and history safely).</li>
+<li>Provider management (dentist / hygienist / assistant), NPI / license, per-provider color.</li>
+</ul>
+
+<h3>Scheduling</h3>
+<ul>
+<li>Week / day calendar with operatory lanes, color coding, and status actions.</li>
+<li>Appointment create / edit / cancel / reschedule with a status state machine.</li>
+<li><strong>Double-booking prevention</strong> via a conflict-detection service backed by PostgreSQL GiST exclusion constraints.</li>
+<li><strong>Scheduling power tools (Phase E)</strong>:
+  <ul>
+    <li><strong>Operatory blockouts</strong> — block off a room for a time range with a reason.</li>
+    <li>Recurring appointment series — weekly / biweekly / monthly, auto-skipping occurrences that conflict or fall on blocked time.</li>
+    <li>Appointment confirmations — send / resend confirmation, timestamp tracked.</li>
+    <li>Drag-to-reschedule directly on the calendar grid (duration preserved, backend re-validates).</li>
+  </ul>
+</li>
+<li>Provider availability templates, time-off, and ASAP / unscheduled worklists.</li>
+</ul>
+
+<h3>Clinical</h3>
+<ul>
+<li>CDT-ready <strong>procedure catalog</strong> (seeded), fee schedules, and coverage tables.</li>
+<li><strong>Treatment plans</strong> with planned procedures, priority/status, estimated cost, approval and completion tracking.</li>
+<li><strong>Odontogram charting</strong> and periodontal (perio) charting.</li>
+<li><strong>Clinical notes</strong> with sign-once semantics and reusable note templates.</li>
+</ul>
+
+<h3>Insurance & claims</h3>
+<ul>
+<li>Carriers, plans, and patient insurance with subscriber relationships and priority order.</li>
+<li><strong>Claims</strong> + claim procedures with status tracking and deductible tracking.</li>
+<li><strong>COB</strong> for secondary insurance.</li>
+</ul>
+
+<h3>Billing & RCM</h3>
+<ul>
+<li>Append-only <strong>ledger</strong> (charges / payments / adjustments) with balance computation.</li>
+<li>Event-driven charge posting on appointment completion; reversing-entry corrections.</li>
+<li><strong>Family billing</strong> — guarantor accounts, family-level balances.</li>
+<li><strong>Statement runs</strong> — batch-generate patient statements.</li>
+<li><strong>Guided checkout</strong> flow: complete procedures → take payment → complete appointment.</li>
+<li>Financial dates use the <strong>clinic's timezone</strong> (`clinics.timezone`), never the server clock.</li>
+</ul>
+
+<h3>Forms & e-signature</h3>
+<ul>
+<li>Form templates and patient form submissions with <strong>electronic signature</strong> capture.</li>
+</ul>
+
+<h3>Documents</h3>
+<ul>
+<li>Upload / download behind a `StoragePort` (local volume now, S3-compatible interface defined) with content-type whitelist, size caps, and path-traversal-proof keys.</li>
+</ul>
+
+<h3>Reporting</h3>
+<ul>
+<li>Report registry with date-range filters and CSV export. Built-in reports:
+  <strong>Day sheet</strong>, <strong>Daily production</strong>, <strong>Patient growth</strong>, <strong>Provider utilization</strong>, <strong>Statement runs</strong>.</li>
+</ul>
+
+<h3>Reminders & recall</h3>
+<ul>
+<li>Recall/reminder scheduling via a `NotificationPort` (pluggable SMS/email adapter).</li>
+</ul>
+
+<h3>Security & administration</h3>
+<ul>
+<li>Short-lived JWT access tokens (15 min) + rotating refresh tokens in `httpOnly`, `SameSite=Strict` cookies, with <strong>reuse detection</strong> that revokes the whole token family.</li>
+<li>BCrypt(12) hashing; <strong>account lockout</strong> after 5 failed attempts.</li>
+<li><strong>Granular permissions (Phase C)</strong>: 41 permission codes enforced via `hasAuthority` at the method level, on top of base roles (`ADMIN`, `DENTIST`, `HYGIENIST`, `FRONT_DESK`, `BILLING`, `READ_ONLY`). An admin <strong>permission matrix</strong> UI edits role → permission grants with <strong>live cache invalidation</strong> (no re-login required).</li>
+<li>Append-only <strong>audit log</strong> (who / what / when / before / after / IP) written in independent transactions.</li>
+<li>DTO-only API surface — JPA entities never cross the controller boundary.</li>
+<li>Password reset with single-use, time-boxed, hashed tokens; no account enumeration.</li>
+<li>Per-IP rate limiting on credential endpoints (`AUTH_RATE_LIMIT`, default 15/min → 429).</li>
+</ul>
+
+<h3>Internationalization (Phase F)</h3>
+<ul>
+<li>Full <strong>English / Spanish</strong> UI via react-i18next with per-feature namespace catalogs.</li>
+<li><strong>Per-user language preference</strong> (set in Settings) for the UI and for PDF / data exports.</li>
+<li><strong>Instance default language</strong> set by deployers via the `DEFAULT_LANGUAGE` env var, exposed through a public `/api/v1/config` endpoint.</li>
+<li>Backend PDF / export localization via Spring `MessageSource` with `?lang` resolution.</li>
+</ul>
+</section>
+
+<section id="architecture"><h2>Architecture</h2>
+<p>A <strong>modular monolith</strong>: each business capability is a module under <code>com.dentalcore.<module></code> split into a public <code>api</code> package and an <code>internal</code> package (<code>web</code> / <code>service</code> / <code>repository</code> / <code>entity</code> / <code>dto</code>). Modules communicate only through public APIs and reference each other by UUID — never by sharing entities. Boundaries are enforced in CI by an ArchUnit <code>ModuleBoundaryTest</code>.</p>
+<p>Modules: <code>auth, users, audit, patients, providers, appointments, procedures, treatmentplans, clinicalnotes, insurance, billing, documents, forms, reminders, reporting</code>, plus <code>shared</code> and <code>infrastructure</code>.</p>
+<p>See <code>docs/architecture/</code> for the architecture overview, database design, folder structure, and roadmap.</p>
+</section>
+
+<section id="quick-start-docker-compose"><h2>Quick start (Docker Compose)</h2>
+<p>Requires Docker with Compose v2.</p>
+<pre class="code-block"><code>cp .env.example .env          # then edit secrets (see below)</code></pre>
+<pre class="code-block"><code>docker compose up --build</code></pre>
+<p>Front‑end (Vite dev server): <code>http://localhost:5173</code></p>
+<p>API: <code>http://localhost:8080</code> (Swagger UI at <code>/swagger-ui.html</code>)</p>
+<p>The first admin is created from <code>ADMIN_EMAIL</code> / <code>ADMIN_PASSWORD</code> only when the users table is empty.</p>
+<p>The dev compose runs Postgres, the backend (<code>dev</code> profile), and the frontend Vite server with hot‑reload (<code>./frontend/src</code> is bind‑mounted).</p>
+</section>
+
+<section id="configuration-reference"><h2>Configuration reference</h2>
+<p>All configuration is via environment variables (12‑factor). Copy <code>.env.example</code> → <code>.env</code>.</p>
+<table>
+<thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>DB_NAME</code></td><td>yes</td><td><code>dentalcore</code></td><td>Postgres database name</td></tr>
+<tr><td><code>DB_USER</code></td><td>yes</td><td><code>dentalcore</code></td><td>Postgres user</td></tr>
+<tr><td><code>DB_PASSWORD</code></td><td>yes</td><td><code>dentalcore</code></td><td>Postgres password (change for prod)</td></tr>
+<tr><td><code>DB_HOST</code></td><td>prod</td><td><code>postgres</code></td><td>DB host (set when using managed/external Postgres)</td></tr>
+<tr><td><code>DB_PORT</code></td><td>no</td><td><code>5432</code></td><td>DB port</td></tr>
+<tr><td><code>JWT_SECRET</code></td><td>prod</td><td>dev‑only fallback</td><td>HS512 signing key. Generate: <code>openssl rand -base64 64 | tr -d '\n'</code></td></tr>
+<tr><td><code>ADMIN_EMAIL</code></td><td>yes</td><td><code>admin@dentalcore.local</code></td><td>First‑admin email (first boot only)</td></tr>
+<tr><td><code>ADMIN_PASSWORD</code></td><td>yes</td><td><code>change-me-admin-1</code></td><td>First‑admin password (change immediately)</td></tr>
+<tr><td><code>FRONTEND_URL</code></td><td>yes</td><td><code>http://localhost:5173</code></td><td>Public URL of the SPA; used for links + CORS in prod</td></tr>
+<tr><td><code>CORS_ALLOWED_ORIGINS</code></td><td>dev</td><td>LAN patterns</td><td>Comma‑separated allowed origins (prod pins to <code>FRONTEND_URL</code>)</td></tr>
+<tr><td><code>DEFAULT_LANGUAGE</code></td><td>no</td><td><code>en</code></td><td>Instance default UI/export language (<code>en</code> | <code>es</code>)</td></tr>
+<tr><td><code>AUTH_RATE_LIMIT</code></td><td>no</td><td><code>15</code></td><td>Max login/forgot‑password requests per IP per minute</td></tr>
+<tr><td><code>DOCUMENT_STORAGE_PATH</code></td><td>no</td><td><code>/data/documents</code></td><td>Local document storage root</td></tr>
+<tr><td><code>COOKIE_SECURE</code></td><td>prod</td><td><code>true</code></td><td>Send refresh cookie only over HTTPS</td></tr>
+<tr><td><code>TRUST_PROXY_HEADERS</code></td><td>prod</td><td><code>true</code></td><td>Trust <code>X‑Forwarded‑For</code> (only behind a trusted proxy)</td></tr>
+<tr><td><code>SEED_DEMO_DATA</code></td><td>no</td><td><code>false</code></td><td>Seed demo dataset on startup (evaluation only)</td></tr>
+</tbody>
+</table>
+<p><strong>Production checklist:</strong> set a strong <code>JWT_SECRET</code>, a unique <code>DB_PASSWORD</code>, change <code>ADMIN_PASSWORD</code> on first login, set <code>FRONTEND_URL</code> to your real HTTPS origin, keep <code>COOKIE_SECURE=true</code>, leave <code>SEED_DEMO_DATA=false</code>, and terminate TLS in front of the app.</p>
+</section>
+
+<section id="deployment-guides"><h2>Deployment guides</h2>
+<p>The app is two stateless containers (backend JVM, frontend Nginx) plus a stateful
+PostgreSQL and two volumes (<code>pgdata</code>, <code>documents</code>). Flyway runs migrations automatically on backend startup, so deploys are just “ship the new image and restart.”</p>
+
+<h3>1. Single VM / VPS (Docker Compose)</h3>
+<pre class="code-block"><code># on the server
+git clone <repo> dentalcore && cd dentalcore
+cp .env.example .env
+# edit .env: JWT_SECRET, DB_PASSWORD, ADMIN_*, FRONTEND_URL=https://your-domain
+docker compose -f docker-compose.prod.yml up -d --build</code></pre>
+<p>The prod compose:
+- Runs the backend with <code>SPRING_PROFILES_ACTIVE=prod</code>, <code>COOKIE_SECURE=true</code>, <code>TRUST_PROXY_HEADERS=true</code>, and pins CORS to <code>FRONTEND_URL</code>.
+- Serves the built SPA from Nginx on <strong>port 80</strong>, which also proxies <code>/api</code> to the backend (the backend is <em>not</em> published to the host — only Nginx is).
+- Uses <code>restart: unless-stopped</code> on all services.</p>
+<p>Put a TLS‑terminating reverse proxy (Caddy / Nginx / Traefik) or a cloud load balancer in front of port 80 — see <a href="#tls--reverse-proxy">TLS / reverse proxy</a>.</p>
+
+<h3>2. Bare‑metal / systemd (no Docker)</h3>
+<p><strong>Prerequisites:</strong> JDK 21, Node 22 (build only), PostgreSQL 16, Nginx.</p>
+<pre class="code-block"><code># Database
+createdb dentalcore   # and create a user/role, grant privileges</code></pre>
+
+<p>Backend — build a fat jar</p>
+<pre class="code-block"><code>cd backend
+JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn clean package   # → target/dentalcore-backend-*.jar</code></pre>
+
+<p>Frontend — build static assets</p>
+<pre class="code-block"><code>cd ../frontend
+npm ci
+VITE_API_URL=/api npm run build      # → dist/ (serve behind Nginx; proxy /api to :8080)</code></pre>
+
+<p>Run the backend as a systemd unit:</p>
+<pre class="code-block"><code> # /etc/systemd/system/dentalcore.service
+[Unit]
+Description=DentalCore backend
+After=network.target postgresql.service
+
+[Service]
+User=dentalcore
+Environment=SPRING_PROFILES_ACTIVE=prod
+Environment=DB_HOST=localhost
+Environment=DB_NAME=dentalcore
+Environment=DB_USER=dentalcore
+Environment=DB_PASSWORD=...
+Environment=JWT_SECRET=...
+Environment=ADMIN_EMAIL=admin@your-domain
+Environment=ADMIN_PASSWORD=...
+Environment=FRONTEND_URL=https://your-domain
+Environment=CORS_ALLOWED_ORIGINS=https://your-domain
+Environment=COOKIE_SECURE=true
+Environment=TRUST_PROXY_HEADERS=true
+Environment=DOCUMENT_STORAGE_PATH=/var/lib/dentalcore/documents
+ExecStart=/usr/bin/java -XX:MaxRAMPercentage=75 -jar /opt/dentalcore/app.jar
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+
+<p>Then:</p>
+<pre class="code-block"><code>sudo systemctl daemon-reload && sudo systemctl enable --now dentalcore</code></pre>
+
+<p>Point Nginx at <code>frontend/dist</code> for static files and <code>proxy_pass http://127.0.0.1:8080</code> for <code>/api</code>. Ensure <code>DOCUMENT_STORAGE_PATH</code> is on persistent, backed‑up storage.</p>
+
+<h3>3. Managed Postgres + container host</h3>
+<p>To use a managed database (RDS, Cloud SQL, Neon, Supabase, Azure Database for PostgreSQL):</p>
+<ul>
+<li>Provision PostgreSQL 16 and create the database/user.</li>
+<li>Drop the <code>postgres</code> service from your compose / orchestration and instead set <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code> to the managed instance (use SSL — most managed providers require <code>sslmode=require</code>).</li>
+<li>Run only the <code>backend</code> and <code>frontend</code> containers. Flyway migrates on backend boot.</li>
+<li>Mount <code>documents</code> on durable storage, or implement the S3 <code>StoragePort</code> adapter and point it at object storage so the app stays stateless.</li>
+</ul>
+
+<h3>4. Kubernetes</h3>
+<p>The two app images are stateless and a natural fit for K8s:</p>
+<ul>
+<li>backend <code>Deployment</code> (2+ replicas) — env from a <code>Secret</code>/<code>ConfigMap</code>; liveness/ readiness probes on <code>/actuator/health</code> (the image already defines a HEALTHCHECK). <code>-XX:MaxRAMPercentage=75</code> sizes the heap to the container memory limit.</li>
+<li>frontend <code>Deployment</code> (Nginx, stateless, horizontally scalable) behind a <code>Service</code>.</li>
+<li>postgres as a managed service or a <code>StatefulSet</code> with a <code>PersistentVolumeClaim</code>.</li>
+<li>documents: use the S3 adapter (recommended for multi-replica) or a <code>ReadWriteMany</code> PVC if you must keep the local FS adapter.</li>
+<li>An <code>Ingress</code> (nginx-ingress / Traefik) terminates TLS and routes <code>/</code> → frontend, <code>/api</code> → backend. Run multiple backend replicas safely — JWTs are stateless and the refresh-token family is stored in the DB.</li>
+</ul>
+
+<h3>5. PaaS (Render / Railway / Fly.io / Azure App Service)</h3>
+<p>Each service can be deployed from its <code>Dockerfile</code>:</p>
+<ul>
+<li>Provision a managed Postgres add-on; wire its connection info into the backend env vars.</li>
+<li>Deploy <code>backend/Dockerfile</code> (exposes 8080, has a health check) as a web service.</li>
+<li>Deploy <code>frontend/Dockerfile</code> with build target <code>prod</code> (exposes 80). Set the SPA to proxy/point <code>/api</code> at the backend's URL, and set <code>FRONTEND_URL</code> on the backend to the frontend's public URL so CORS and links resolve.</li>
+<li>Attach a persistent disk for <code>/data/documents</code>, or use the S3 adapter.</li>
+</ul>
+</section>
+
+<section id="tls--reverse-proxy"><h2>TLS / reverse proxy</h2>
+<p>The prod frontend listens on plain HTTP/80 and expects TLS to be terminated upstream.
+Because <code>TRUST_PROXY_HEADERS=true</code>, only put the app behind a <em>trusted</em> proxy that sets <code>X-Forwarded-For</code>/<code>X-Forwarded-Proto</code>. Example with Caddy (automatic HTTPS):</p>
+<pre class="code-block"><code>your-domain {
+    reverse_proxy localhost:80
+}</code></pre>
+<p>With <code>COOKIE_SECURE=true</code>, the refresh-token cookie is only sent over HTTPS — so TLS is required for login to work in production.</p>
+</section>
+
+<section id="backups--data"><h2>Backups & data</h2>
+<p>Two stateful pieces:</p>
+<ul>
+<li><strong>Postgres</strong> (<code>pgdata</code> volume / managed DB) — back up with <code>pg_dump</code>:
+<pre class="code-block"><code>docker compose exec postgres pg_dump -U "$DB_USER" "$DB_NAME" > backup-$(date +%F).sql</code></pre>
+</li>
+<li><strong>Documents</strong> (<code>documents</code> volume / <code>DOCUMENT_STORAGE_PATH</code>) — snapshot the volume or sync to object storage.</li>
+</ul>
+<p>Schema changes are versioned Flyway migrations; never edit a database by hand.</p>
+</section>
+
+<section id="local-development"><h2>Local development</h2>
+<p>Run Postgres in Docker and the apps natively for fast iteration:</p>
+<pre class="code-block"><code>docker compose up postgres</code></pre>
+<p># Backend (JDK 21 required — Homebrew may default to a newer JDK)</p>
+<pre class="code-block"><code>cd backend
+JAVA_HOME=$(/usr/libexec/java_home -v 21) \
+  ADMIN_PASSWORD=change-me-admin-1 mvn spring-boot:run -Dspring-boot.run.profiles=dev</code></pre>
+<p># Frontend</p>
+<pre class="code-block"><code>cd frontend
+npm install
+npm run dev</code></pre>
+</section>
+
+<section id="tests"><h2>Tests</h2>
+<pre class="code-block"><code># Backend: unit + integration (Testcontainers) + ArchUnit boundary checks
+cd backend
+JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn verify</code></pre>
+<pre class="code-block"><code># Frontend: unit/component tests (Vitest + React Testing Library)
+cd frontend
+npm test</code></pre>
+<pre class="code-block"><code># End-to-end (Playwright) — needs the full stack running (docker compose up)
+cd frontend
+npm run test:e2e</code></pre>
+<p>Backend integration tests use Testcontainers and need a running Docker daemon. Build the backend with <strong>JDK 21</strong> (<code>JAVA_HOME=$(/usr/libexec/java_home -v 21)</code>).</p>
+</section>
+
+<section id="repository-layout"><h2>Repository layout</h2>
+<pre class="code-block"><code>backend/    Spring Boot modular monolith (one package per module: api + internal)
+  src/main/resources/db/migration/   Flyway migrations V1 → V22
+frontend/   React SPA, feature-based folders under src/features/
+  src/i18n/locales/{en,es}/          per-namespace translation catalogs
+  e2e/                               Playwright specs
+docs/architecture/                   architecture, DB design, folder structure, roadmap
+docker-compose.yml                   dev stack (Vite hot-reload)
+docker-compose.prod.yml              prod stack (Nginx static + API proxy)</code></pre>
+</section>
+
+<section id="demo-data"><h2>Demo data</h2>
+<p>Set <code>SEED_DEMO_DATA=true</code> (evaluation environments only — <strong>never production</strong>) to seed demo providers, patients, appointments, a treatment plan, charting, and ledger activity on startup. The seeder is idempotent.</p>
+<pre class="code-block"><code>cp .env.example .env          # edit DB_PASSWORD, JWT_SECRET, ADMIN_*, etc.
+docker compose up --build   # the compose will create the database, run migrations, and seed demo data if the flag is set</code></pre>
+</section>
+
+<footer><p>Generated from the Markdown you supplied – no code audit performed due to lack of source files. If you need further validation of the README against the codebase, consider running the repo’s own docs generator or inspecting the source directly.</p></footer>
+</body>
+</html>
