@@ -52,6 +52,12 @@ dentalcore:
     default-language: ${DEFAULT_LANGUAGE:en}
   storage:
     local-path: ${DOCUMENT_STORAGE_PATH:./data/documents}
+  documents:
+    # Retention sweep: a soft-deleted document keeps its binary this long for
+    # recovery, after which the nightly job reclaims the orphaned blob. Also
+    # the minimum age before any unreferenced blob is removed.
+    blob-retention-grace-days: ${DOCUMENT_BLOB_GRACE_DAYS:30}
+    cleanup-cron: ${DOCUMENT_CLEANUP_CRON:0 0 4 * * *}
   security:
     cookie-secure: ${COOKIE_SECURE:false}
     jwt:

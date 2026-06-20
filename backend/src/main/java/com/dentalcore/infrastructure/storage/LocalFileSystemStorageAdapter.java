@@ -12,7 +12,9 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Component
 public class LocalFileSystemStorageAdapter implements StoragePort {
@@ -64,6 +66,31 @@ public class LocalFileSystemStorageAdapter implements StoragePort {
     @Override
     public boolean exists(String key) {
         return Files.exists(resolve(key));
+    }
+
+    @Override
+    public List<StoredBlob> listBlobs() {
+        if (!Files.isDirectory(root)) {
+            return List.of();
+        }
+        try (Stream<Path> entries = Files.list(root)) {
+            return entries
+                    .filter(Files::isRegularFile)
+                    .map(this::toStoredBlob)
+                    .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to list document storage at " + root, e);
+        }
+    }
+
+    private StoredBlob toStoredBlob(Path path) {
+        try {
+            return new StoredBlob(
+                    path.getFileName().toString(),
+                    Files.getLastModifiedTime(path).toInstant());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to stat " + path, e);
+        }
     }
 
     private Path resolve(String key) {
