@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: dentalcore-postgres
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -16,6 +17,7 @@ services:
 
   backend:
     build: ./backend
+    container_name: dentalcore-backend
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_HOST: postgres
@@ -46,6 +48,7 @@ services:
     build:
       context: ./frontend
       target: prod
+    container_name: dentalcore-frontend
     ports:
       - "${FRONTEND_PORT:-8090}:80"
     depends_on:
