@@ -2,13 +2,13 @@ import type { SupportedLanguage } from '../types/api';
 import i18n, { isSupportedLanguage } from './index';
 
 /**
- * Locale mapping for Intl formatting. Spanish uses es-MX: the dominant
- * Spanish-speaking patient population for US dental practices is Mexican
- * Spanish, and es-MX keeps US-style currency/number grouping ($1,234.50).
+ * Locale mapping for Intl formatting. The product is deployed in the
+ * Dominican Republic: Spanish uses es-DO, which renders Dominican pesos as
+ * RD$1,234.50 (the DR groups with commas and a period decimal, like the US).
  */
 const LOCALES: Record<SupportedLanguage, string> = {
   en: 'en-US',
-  es: 'es-MX',
+  es: 'es-DO',
 };
 
 function activeLocale(language?: SupportedLanguage): string {
@@ -18,7 +18,8 @@ function activeLocale(language?: SupportedLanguage): string {
 
 function toDate(value: string | number | Date): Date {
   // Date-only ISO strings (YYYY-MM-DD) are parsed as UTC midnight by Date;
-  // anchor them to noon so they render as the same calendar day in all US zones.
+  // anchor them to noon so they render as the same calendar day in any
+  // plausible clinic zone (the DR runs on UTC-4 year-round).
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return new Date(`${value}T12:00:00`);
   }
@@ -48,10 +49,10 @@ export function formatDateTime(
   }).format(toDate(value));
 }
 
-/** USD currency in the active locale, e.g. en: "$1,234.50". */
+/** Dominican pesos in the active locale, e.g. es: "RD$1,234.50" — en: "DOP 1,234.50". */
 export function formatMoney(amount: number, language?: SupportedLanguage): string {
   return new Intl.NumberFormat(activeLocale(language), {
     style: 'currency',
-    currency: 'USD',
+    currency: 'DOP',
   }).format(amount);
 }

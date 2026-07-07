@@ -30,8 +30,11 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       FRONTEND_URL: ${FRONTEND_URL}
       CORS_ALLOWED_ORIGINS: ${FRONTEND_URL}
-      # Instance default language (en|es) — deployers set this per region.
-      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-en}
+      # Instance default language (en|es) — Spanish for the Dominican Republic.
+      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-es}
+      # Container timezone so @Scheduled crons (reminders, cleanup) fire at
+      # Dominican local time instead of UTC.
+      TZ: ${TZ:-America/Santo_Domingo}
       COOKIE_SECURE: "true"
       # the frontend nginx proxies /api and sets X-Forwarded-For; the backend
       # is not directly exposed, so the proxy header can be trusted here

@@ -30,8 +30,8 @@
     "patient": "Paciente"
   },
   "form": {
-    "amount": "Importe ($)",
-    "amountNegativeCredit": "Importe ($, negativo = crédito)",
+    "amount": "Importe (RD$)",
+    "amountNegativeCredit": "Importe (RD$, negativo = crédito)",
     "description": "Descripción",
     "method": "Método",
     "methodOption": {
@@ -95,9 +95,9 @@
   },
   "modal": {
     "title": "Nuevo plan de pago",
-    "totalAmount": "Importe total ($)",
-    "downPayment": "Enganche ($, opcional)",
-    "installment": "Cuota ($)",
+    "totalAmount": "Importe total (RD$)",
+    "downPayment": "Inicial (RD$, opcional)",
+    "installment": "Cuota (RD$)",
     "frequency": "Frecuencia",
     "firstDueDate": "Primera fecha de vencimiento",
     "notes": "Notas (opcional)",

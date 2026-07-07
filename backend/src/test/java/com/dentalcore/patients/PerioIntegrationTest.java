@@ -77,18 +77,18 @@ class PerioIntegrationTest extends IntegrationTest {
                 "/api/v1/patients/" + patientId + "/perio-exams/" + examId + "/measurements",
                 hygienist, Map.of(
                         "measurements", List.of(
-                                Map.of("tooth", "3", "site", 1, "pocketDepth", 6, "bleeding", true),
-                                Map.of("tooth", "3", "site", 2, "pocketDepth", 4),
-                                Map.of("tooth", "14", "site", 1, "pocketDepth", 2)),
+                                Map.of("tooth", "16", "site", 1, "pocketDepth", 6, "bleeding", true),
+                                Map.of("tooth", "16", "site", 2, "pocketDepth", 4),
+                                Map.of("tooth", "26", "site", 1, "pocketDepth", 2)),
                         "toothFindings", List.of(
-                                Map.of("tooth", "3", "mobility", 1))));
+                                Map.of("tooth", "16", "mobility", 1))));
         assertThat(saved.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat((List<?>) saved.getBody().get("measurements")).hasSize(3);
 
         // upsert: same site overwritten, not duplicated
         api.put("/api/v1/patients/" + patientId + "/perio-exams/" + examId + "/measurements",
                 hygienist, Map.of("measurements", List.of(
-                        Map.of("tooth", "3", "site", 1, "pocketDepth", 5, "bleeding", false))));
+                        Map.of("tooth", "16", "site", 1, "pocketDepth", 5, "bleeding", false))));
         ResponseEntity<Map<String, Object>> reloaded = api.get(
                 "/api/v1/patients/" + patientId + "/perio-exams/" + examId, hygienist);
         @SuppressWarnings("unchecked")
@@ -96,7 +96,7 @@ class PerioIntegrationTest extends IntegrationTest {
                 (List<Map<String, Object>>) reloaded.getBody().get("measurements");
         assertThat(sites).hasSize(3);
         Map<String, Object> site1 = sites.stream()
-                .filter(s -> "3".equals(s.get("tooth")) && Integer.valueOf(1).equals(s.get("site")))
+                .filter(s -> "16".equals(s.get("tooth")) && Integer.valueOf(1).equals(s.get("site")))
                 .findFirst().orElseThrow();
         assertThat(site1.get("pocketDepth")).isEqualTo(5);
         assertThat(site1.get("bleeding")).isEqualTo(false);
@@ -117,15 +117,15 @@ class PerioIntegrationTest extends IntegrationTest {
 
         // site 7
         assertThat(api.put(base, hygienist, Map.of("measurements", List.of(
-                Map.of("tooth", "3", "site", 7, "pocketDepth", 3)))).getStatusCode())
+                Map.of("tooth", "16", "site", 7, "pocketDepth", 3)))).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
-        // primary tooth letter
+        // primary tooth (perio is permanent dentition only)
         assertThat(api.put(base, hygienist, Map.of("measurements", List.of(
-                Map.of("tooth", "A", "site", 1, "pocketDepth", 3)))).getStatusCode())
+                Map.of("tooth", "55", "site", 1, "pocketDepth", 3)))).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
         // depth 25
         assertThat(api.put(base, hygienist, Map.of("measurements", List.of(
-                Map.of("tooth", "3", "site", 1, "pocketDepth", 25)))).getStatusCode())
+                Map.of("tooth", "16", "site", 1, "pocketDepth", 25)))).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 

@@ -19,6 +19,7 @@ import {
   useResolveToothCondition,
   useToothChart,
 } from './api';
+import { LOWER_TEETH, UPPER_TEETH } from './teeth';
 
 // Display labels live in the chart:condition.* catalog entries (per i18n/GUIDE.md)
 export const CONDITION_COLORS: Record<ToothConditionType, string> = {
@@ -54,8 +55,6 @@ const CONDITION_PRIORITY: ToothConditionType[] = [
   'OTHER',
 ];
 
-const UPPER_TEETH = Array.from({ length: 16 }, (_, i) => String(i + 1)); // 1..16
-const LOWER_TEETH = Array.from({ length: 16 }, (_, i) => String(32 - i)); // 32..17
 const SURFACES = ['M', 'O', 'D', 'B', 'L'] as const;
 
 interface ToothState {

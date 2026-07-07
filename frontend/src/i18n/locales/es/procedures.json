@@ -33,7 +33,7 @@
   "cdtCodeLabel": "Código CDT (opcional)",
   "descriptionLabel": "Descripción",
   "categoryLabel": "Categoría",
-  "standardFeeLabel": "Tarifa estándar ($)",
+  "standardFeeLabel": "Tarifa estándar (RD$)",
   "activeLabel": "Activo",
   "cancel": "Cancelar",
   "createProcedure": "Crear procedimiento",

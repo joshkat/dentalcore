@@ -30,8 +30,8 @@
     "patient": "Patient"
   },
   "form": {
-    "amount": "Amount ($)",
-    "amountNegativeCredit": "Amount ($, negative = credit)",
+    "amount": "Amount (RD$)",
+    "amountNegativeCredit": "Amount (RD$, negative = credit)",
     "description": "Description",
     "method": "Method",
     "methodOption": {
@@ -95,9 +95,9 @@
   },
   "modal": {
     "title": "New payment plan",
-    "totalAmount": "Total amount ($)",
-    "downPayment": "Down payment ($, optional)",
-    "installment": "Installment ($)",
+    "totalAmount": "Total amount (RD$)",
+    "downPayment": "Down payment (RD$, optional)",
+    "installment": "Installment (RD$)",
     "frequency": "Frequency",
     "firstDueDate": "First due date",
     "notes": "Notes (optional)",

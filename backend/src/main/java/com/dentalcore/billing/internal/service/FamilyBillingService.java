@@ -246,6 +246,6 @@ public class FamilyBillingService {
     }
 
     private String money(BigDecimal amount) {
-        return (amount.signum() < 0 ? "-$" : "$") + amount.abs();
+        return (amount.signum() < 0 ? "-RD$" : "RD$") + amount.abs();
     }
 }

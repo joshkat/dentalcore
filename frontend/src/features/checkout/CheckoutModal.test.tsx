@@ -163,7 +163,7 @@ describe('CheckoutModal', () => {
     expect(screen.queryByRole('button', { name: 'Complete' })).not.toBeInTheDocument();
 
     // Without coverage the payment defaults to the completed fees total.
-    await waitFor(() => expect(screen.getByLabelText('Amount ($)')).toHaveValue(100));
+    await waitFor(() => expect(screen.getByLabelText('Amount (RD$)')).toHaveValue(100));
   });
 
   it('defaults the payment amount to the estimated patient portion when covered', async () => {
@@ -175,9 +175,9 @@ describe('CheckoutModal', () => {
 
     // Estimate summary appears…
     expect(await screen.findByText(/Est\. patient portion/)).toBeInTheDocument();
-    expect(screen.getByText('$60.00')).toBeInTheDocument();
+    expect(screen.getByText('DOP 60.00')).toBeInTheDocument();
 
     // …and the payment amount follows estimate.totalPatient, not the gross fee.
-    await waitFor(() => expect(screen.getByLabelText('Amount ($)')).toHaveValue(40));
+    await waitFor(() => expect(screen.getByLabelText('Amount (RD$)')).toHaveValue(40));
   });
 });

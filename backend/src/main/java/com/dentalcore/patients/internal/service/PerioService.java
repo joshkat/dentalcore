@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 @Transactional
 public class PerioService {
 
-    /** Perio charting applies to permanent dentition: teeth 1-32. */
-    private static final Pattern PERMANENT_TOOTH = Pattern.compile("^([1-9]|[12][0-9]|3[0-2])$");
+    /** Perio charting applies to permanent dentition: FDI teeth 11-18, 21-28, 31-38, 41-48. */
+    private static final Pattern PERMANENT_TOOTH = Pattern.compile("^[1-4][1-8]$");
     private static final UUID DEFAULT_CLINIC_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000001");
 
@@ -108,7 +108,7 @@ public class PerioService {
     private void requirePermanentTooth(String tooth) {
         if (tooth == null || !PERMANENT_TOOTH.matcher(tooth.trim()).matches()) {
             throw new InvalidRequestException(
-                    "Perio charting uses permanent teeth 1-32, got '%s'".formatted(tooth));
+                    "Perio charting uses FDI permanent teeth 11-48, got '%s'".formatted(tooth));
         }
     }
 

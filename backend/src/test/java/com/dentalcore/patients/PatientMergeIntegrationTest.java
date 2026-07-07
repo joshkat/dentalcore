@@ -284,7 +284,7 @@ class PatientMergeIntegrationTest extends IntegrationTest {
                         + " 'application/pdf', 123, ?)",
                 UUID.randomUUID(), CLINIC, source, "merge-test-" + UUID.randomUUID());
         jdbc.update("INSERT INTO tooth_conditions (id, patient_id, tooth, condition)"
-                        + " VALUES (?, ?, '8', 'CARIES')",
+                        + " VALUES (?, ?, '11', 'CARIES')",
                 UUID.randomUUID(), source);
         jdbc.update("INSERT INTO perio_exams (id, clinic_id, patient_id) VALUES (?, ?, ?)",
                 UUID.randomUUID(), CLINIC, source);

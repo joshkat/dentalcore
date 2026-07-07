@@ -27,9 +27,9 @@ public class ToothCondition extends BaseEntity {
         ACTIVE, RESOLVED
     }
 
-    /** Universal numbering: permanent 1-32 or primary A-T. */
-    private static final Pattern PERMANENT = Pattern.compile("^([1-9]|[12][0-9]|3[0-2])$");
-    private static final Pattern PRIMARY = Pattern.compile("^[A-T]$");
+    /** FDI/ISO 3950 notation: quadrant digit + tooth digit (11-48 permanent, 51-85 primary). */
+    private static final Pattern PERMANENT = Pattern.compile("^[1-4][1-8]$");
+    private static final Pattern PRIMARY = Pattern.compile("^[5-8][1-5]$");
     private static final Set<Character> SURFACE_LETTERS = Set.of('M', 'O', 'D', 'B', 'L', 'I');
 
     @Column(name = "patient_id", nullable = false)
@@ -75,7 +75,8 @@ public class ToothCondition extends BaseEntity {
         String trimmed = tooth == null ? "" : tooth.trim().toUpperCase();
         if (!PERMANENT.matcher(trimmed).matches() && !PRIMARY.matcher(trimmed).matches()) {
             throw new InvalidRequestException(
-                    "Tooth must be 1-32 (permanent) or A-T (primary), got '%s'".formatted(tooth));
+                    "Tooth must be FDI 11-48 (permanent) or 51-85 (primary), got '%s'"
+                            .formatted(tooth));
         }
         return trimmed;
     }

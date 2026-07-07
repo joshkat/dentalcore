@@ -79,7 +79,7 @@ class ToothChartIntegrationTest extends IntegrationTest {
 
     @Test
     void conditionsAreChartedNormalizedAndResolvable() {
-        ResponseEntity<Map<String, Object>> created = addCondition("14", "CARIES", "dom");
+        ResponseEntity<Map<String, Object>> created = addCondition("26", "CARIES", "dom");
         assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(created.getBody().get("surfaces")).isEqualTo("MOD");
         String conditionId = (String) created.getBody().get("id");
@@ -102,10 +102,10 @@ class ToothChartIntegrationTest extends IntegrationTest {
 
     @Test
     void missingToothRulesAreEnforced() {
-        addCondition("19", "CARIES", "O");
+        addCondition("36", "CARIES", "O");
 
         // cannot mark missing while another condition is active
-        assertThat(addCondition("19", "MISSING", null).getStatusCode())
+        assertThat(addCondition("36", "MISSING", null).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
 
         // resolve, then missing works
@@ -117,19 +117,19 @@ class ToothChartIntegrationTest extends IntegrationTest {
         String cariesId = (String) conditions.get(0).get("id");
         api.post("/api/v1/patients/" + patientId + "/tooth-conditions/" + cariesId + "/resolve",
                 dentist, null);
-        assertThat(addCondition("19", "MISSING", null).getStatusCode())
+        assertThat(addCondition("36", "MISSING", null).getStatusCode())
                 .isEqualTo(HttpStatus.CREATED);
 
         // nothing can be charted on a missing tooth
-        assertThat(addCondition("19", "CROWN", null).getStatusCode())
+        assertThat(addCondition("36", "CROWN", null).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void invalidToothAndSurfacesAreRejected() {
-        assertThat(addCondition("33", "CARIES", null).getStatusCode())
+        assertThat(addCondition("49", "CARIES", null).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(addCondition("14", "CARIES", "XY").getStatusCode())
+        assertThat(addCondition("26", "CARIES", "XY").getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
@@ -140,7 +140,7 @@ class ToothChartIntegrationTest extends IntegrationTest {
                 "type", "DENTIST", "firstName", "Chart", "lastName", "Prov",
                 "npi", String.valueOf(NPI_SEQ.incrementAndGet()))).getBody().get("id");
         String planId = (String) api.post("/api/v1/treatment-plans", dentist, Map.of(
-                "patientId", patientId, "providerId", providerId, "title", "Crown 14"))
+                "patientId", patientId, "providerId", providerId, "title", "Crown 26"))
                 .getBody().get("id");
         ResponseEntity<Map<String, Object>> catalog =
                 api.get("/api/v1/procedure-codes?q=D2740", dentist);
@@ -148,7 +148,7 @@ class ToothChartIntegrationTest extends IntegrationTest {
         List<Map<String, Object>> codes =
                 (List<Map<String, Object>>) catalog.getBody().get("content");
         api.post("/api/v1/treatment-plans/" + planId + "/procedures", dentist,
-                Map.of("procedureCodeId", codes.get(0).get("id"), "tooth", "14", "surface", "MOD"));
+                Map.of("procedureCodeId", codes.get(0).get("id"), "tooth", "26", "surface", "MOD"));
 
         ResponseEntity<Map<String, Object>> chart =
                 api.get("/api/v1/patients/" + patientId + "/chart", dentist);
@@ -156,9 +156,9 @@ class ToothChartIntegrationTest extends IntegrationTest {
         List<Map<String, Object>> procedures =
                 (List<Map<String, Object>>) chart.getBody().get("procedures");
         assertThat(procedures).hasSize(1);
-        assertThat(procedures.get(0).get("tooth")).isEqualTo("14");
+        assertThat(procedures.get(0).get("tooth")).isEqualTo("26");
         assertThat(procedures.get(0).get("code")).isEqualTo("D2740");
-        assertThat(procedures.get(0).get("planTitle")).isEqualTo("Crown 14");
+        assertThat(procedures.get(0).get("planTitle")).isEqualTo("Crown 26");
     }
 
     @Test
@@ -166,7 +166,7 @@ class ToothChartIntegrationTest extends IntegrationTest {
         assertThat(api.get("/api/v1/patients/" + patientId + "/chart", frontDesk).getStatusCode())
                 .isEqualTo(HttpStatus.OK);
         assertThat(api.post("/api/v1/patients/" + patientId + "/tooth-conditions", frontDesk,
-                Map.of("tooth", "8", "condition", "WATCH")).getStatusCode())
+                Map.of("tooth", "11", "condition", "WATCH")).getStatusCode())
                 .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
