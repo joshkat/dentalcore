@@ -45,22 +45,22 @@ describe('PaymentPlanModal', () => {
 
     expect(screen.queryByTestId('installment-preview')).not.toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Total amount ($)'), '1200');
-    await user.type(screen.getByLabelText('Down payment ($, optional)'), '200');
-    await user.type(screen.getByLabelText('Installment ($)'), '100');
+    await user.type(screen.getByLabelText('Total amount (RD$)'), '1200');
+    await user.type(screen.getByLabelText('Down payment (RD$, optional)'), '200');
+    await user.type(screen.getByLabelText('Installment (RD$)'), '100');
 
     const preview = screen.getByTestId('installment-preview');
     expect(preview).toHaveTextContent('10 monthly installments');
-    expect(preview).toHaveTextContent('$100.00');
+    expect(preview).toHaveTextContent('DOP 100.00');
 
     // Uneven split surfaces the smaller final payment.
-    await user.clear(screen.getByLabelText('Installment ($)'));
-    await user.type(screen.getByLabelText('Installment ($)'), '300');
+    await user.clear(screen.getByLabelText('Installment (RD$)'));
+    await user.type(screen.getByLabelText('Installment (RD$)'), '300');
     expect(screen.getByTestId('installment-preview')).toHaveTextContent(
       '4 monthly installments',
     );
     expect(screen.getByTestId('installment-preview')).toHaveTextContent(
-      'final payment $100.00',
+      'final payment DOP 100.00',
     );
   });
 
@@ -68,8 +68,8 @@ describe('PaymentPlanModal', () => {
     const user = userEvent.setup();
     renderModal();
 
-    await user.type(screen.getByLabelText('Total amount ($)'), '500');
-    await user.type(screen.getByLabelText('Installment ($)'), '600');
+    await user.type(screen.getByLabelText('Total amount (RD$)'), '500');
+    await user.type(screen.getByLabelText('Installment (RD$)'), '600');
     await user.click(screen.getByRole('button', { name: 'Create plan' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -82,9 +82,9 @@ describe('PaymentPlanModal', () => {
     const user = userEvent.setup();
     renderModal();
 
-    await user.type(screen.getByLabelText('Total amount ($)'), '500');
-    await user.type(screen.getByLabelText('Down payment ($, optional)'), '500');
-    await user.type(screen.getByLabelText('Installment ($)'), '100');
+    await user.type(screen.getByLabelText('Total amount (RD$)'), '500');
+    await user.type(screen.getByLabelText('Down payment (RD$, optional)'), '500');
+    await user.type(screen.getByLabelText('Installment (RD$)'), '100');
     await user.click(screen.getByRole('button', { name: 'Create plan' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -98,8 +98,8 @@ describe('PaymentPlanModal', () => {
     apiMock.mockResolvedValueOnce({ id: 'plan-1' });
     const onClose = renderModal();
 
-    await user.type(screen.getByLabelText('Total amount ($)'), '900');
-    await user.type(screen.getByLabelText('Installment ($)'), '150');
+    await user.type(screen.getByLabelText('Total amount (RD$)'), '900');
+    await user.type(screen.getByLabelText('Installment (RD$)'), '150');
     const dueDate = screen.getByLabelText('First due date');
     await user.clear(dueDate);
     await user.type(dueDate, '2026-07-01');

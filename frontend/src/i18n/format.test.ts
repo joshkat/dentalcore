@@ -4,16 +4,17 @@ import { formatDate, formatDateTime, formatMoney } from './format';
 
 describe('i18n format helpers', () => {
   describe('formatMoney', () => {
-    it('formats USD in English', () => {
-      expect(formatMoney(1234.5, 'en')).toBe('$1,234.50');
-      expect(formatMoney(0, 'en')).toBe('$0.00');
+    it('formats Dominican pesos in English', () => {
+      const result = formatMoney(1234.5, 'en');
+      expect(result).toContain('1,234.50');
+      // explicit DOP marker (DOP or RD$ depending on ICU version)
+      expect(result).toMatch(/DOP|RD\$/);
     });
 
-    it('formats USD in Spanish (es-MX keeps US-style grouping)', () => {
+    it('formats Dominican pesos in Spanish (es-DO keeps comma grouping)', () => {
       const result = formatMoney(1234.5, 'es');
       expect(result).toContain('1,234.50');
-      // explicit USD marker ($, US$ or USD depending on ICU version)
-      expect(result).toMatch(/\$|USD/);
+      expect(result).toMatch(/DOP|RD\$/);
     });
   });
 

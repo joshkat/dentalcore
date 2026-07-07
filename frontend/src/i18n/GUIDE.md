@@ -60,9 +60,9 @@ function LedgerTab() {
    ```
 4. **Dates & money** go through `src/i18n/format.ts` — `formatDate`,
    `formatDateTime`, `formatMoney`. They use the active locale (`en-US` /
-   `es-MX`; es-MX chosen as the dominant US-practice Spanish variant with
-   US-style number grouping). Do not call `toLocaleDateString`/`toFixed` for
-   user-facing values.
+   `es-DO`; the product is deployed in the Dominican Republic, and money is
+   Dominican pesos — es-DO renders `RD$1,234.50`). Do not call
+   `toLocaleDateString`/`toFixed` for user-facing values.
 5. **Zod schemas** bake messages at creation: convert to factories taking `t`
    and build with `useMemo(() => makeXSchema(t), [t])` — see
    `src/features/auth/schemas.ts` for the pattern.

@@ -99,7 +99,7 @@ class TreatmentPlanIntegrationTest extends IntegrationTest {
                 Map.of("procedureCodeId", prophyCodeId));
         ResponseEntity<Map<String, Object>> withCrown = api.post(
                 "/api/v1/treatment-plans/" + planId + "/procedures", dentist,
-                Map.of("procedureCodeId", crownCodeId, "tooth", "14", "surface", "MOD",
+                Map.of("procedureCodeId", crownCodeId, "tooth", "26", "surface", "MOD",
                         "priority", 2));
 
         assertThat(withCrown.getStatusCode()).isEqualTo(HttpStatus.CREATED);

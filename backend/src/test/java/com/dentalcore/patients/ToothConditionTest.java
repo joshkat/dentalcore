@@ -11,15 +11,17 @@ class ToothConditionTest {
 
     @Test
     void permanentAndPrimaryTeethAreAccepted() {
-        assertThat(ToothCondition.normalizeTooth("1")).isEqualTo("1");
-        assertThat(ToothCondition.normalizeTooth("32")).isEqualTo("32");
-        assertThat(ToothCondition.normalizeTooth("a")).isEqualTo("A");
-        assertThat(ToothCondition.normalizeTooth("T")).isEqualTo("T");
+        assertThat(ToothCondition.normalizeTooth("11")).isEqualTo("11");
+        assertThat(ToothCondition.normalizeTooth("48")).isEqualTo("48");
+        assertThat(ToothCondition.normalizeTooth("51")).isEqualTo("51");
+        assertThat(ToothCondition.normalizeTooth(" 85 ")).isEqualTo("85");
     }
 
     @Test
     void invalidTeethAreRejected() {
-        for (String bad : new String[]{"0", "33", "U", "Z", "1A", "", "  "}) {
+        // Universal notation (1-32, A-T) and out-of-range FDI digits are rejected
+        for (String bad : new String[]{"0", "1", "8", "10", "19", "49", "56", "86", "90",
+                "A", "T", "1A", "", "  "}) {
             assertThatThrownBy(() -> ToothCondition.normalizeTooth(bad))
                     .as("tooth '%s'", bad)
                     .isInstanceOf(InvalidRequestException.class);
@@ -44,7 +46,7 @@ class ToothConditionTest {
     @Test
     void resolvedConditionsAreImmutable() {
         ToothCondition condition = new ToothCondition(
-                java.util.UUID.randomUUID(), "14", "MOD",
+                java.util.UUID.randomUUID(), "26", "MOD",
                 ToothCondition.Condition.CARIES, null, null);
         condition.resolve();
 

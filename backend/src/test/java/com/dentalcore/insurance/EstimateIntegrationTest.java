@@ -189,7 +189,7 @@ class EstimateIntegrationTest extends IntegrationTest {
                 "patientId", patientId, "providerId", providerId, "title", "Est plan"))
                 .getBody().get("id");
         api.post("/api/v1/treatment-plans/" + tpId + "/procedures", admin,
-                Map.of("procedureCodeId", crownId, "tooth", "14"));
+                Map.of("procedureCodeId", crownId, "tooth", "26"));
 
         ResponseEntity<Map<String, Object>> estimate =
                 api.get("/api/v1/treatment-plans/" + tpId + "/estimate", admin);

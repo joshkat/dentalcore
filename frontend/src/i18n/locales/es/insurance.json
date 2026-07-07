@@ -55,7 +55,7 @@
     "searchPlaceholder": "Agregar tarifa: buscar en el catálogo…",
     "searchLabel": "Buscar procedimientos para la tarifa",
     "stdFee": "estándar {{amount}}",
-    "allowedPlaceholder": "Permitido $",
+    "allowedPlaceholder": "Permitido RD$",
     "allowedLabel": "Tarifa permitida"
   },
   "coverageEditor": {

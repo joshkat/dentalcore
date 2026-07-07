@@ -162,11 +162,11 @@ class CompletedProcedureIntegrationTest extends IntegrationTest {
                 "/api/v1/completed-procedures", dentist, Map.of(
                         "patientId", patientId, "providerId", providerId,
                         "procedureCodeId", d2391, "plannedProcedureId", plan[1],
-                        "tooth", "30", "surfaces", "O"));
+                        "tooth", "46", "surfaces", "O"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody().get("code")).isEqualTo("D2391");
         assertThat(((Number) response.getBody().get("fee")).doubleValue()).isEqualTo(205.0);
-        assertThat(response.getBody().get("tooth")).isEqualTo("30");
+        assertThat(response.getBody().get("tooth")).isEqualTo("46");
         assertThat(response.getBody().get("plannedProcedureId")).isEqualTo(plan[1]);
         assertThat(response.getBody().get("providerLastName")).isEqualTo("Dentist");
         assertThat(response.getBody().get("entryDate")).isNotNull();
@@ -177,7 +177,7 @@ class CompletedProcedureIntegrationTest extends IntegrationTest {
         assertThat(charge.get("type")).isEqualTo("CHARGE");
         assertThat(((Number) charge.get("amount")).doubleValue()).isEqualTo(205.0);
         assertThat(charge.get("description"))
-                .isEqualTo("D2391 - Resin-based composite - one surface, posterior #30");
+                .isEqualTo("D2391 - Resin-based composite - one surface, posterior #46");
 
         // the planned procedure flipped to COMPLETED
         assertThat(planProcedure(plan[0], "status")).isEqualTo("COMPLETED");
@@ -188,7 +188,7 @@ class CompletedProcedureIntegrationTest extends IntegrationTest {
                 .get("/api/v1/patients/" + patientId + "/chart", dentist)
                 .getBody().get("conditions");
         assertThat(conditions).anyMatch(c -> "RESTORATION".equals(c.get("condition"))
-                && "30".equals(c.get("tooth"))
+                && "46".equals(c.get("tooth"))
                 && "Completed D2391".equals(c.get("notes")));
 
         assertThat(completedList()).hasSize(1);
@@ -248,7 +248,7 @@ class CompletedProcedureIntegrationTest extends IntegrationTest {
 
         String completedId = (String) api.post("/api/v1/completed-procedures", dentist, Map.of(
                 "patientId", patientId, "providerId", providerId,
-                "procedureCodeId", d2740, "plannedProcedureId", plan[1], "tooth", "14"))
+                "procedureCodeId", d2740, "plannedProcedureId", plan[1], "tooth", "26"))
                 .getBody().get("id");
         assertThat(balance()).isEqualTo(1250.0);
         assertThat(planProcedure(plan[0], "status")).isEqualTo("COMPLETED");

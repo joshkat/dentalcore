@@ -55,7 +55,7 @@
     "searchPlaceholder": "Add fee: search catalog…",
     "searchLabel": "Search procedures for fee",
     "stdFee": "std {{amount}}",
-    "allowedPlaceholder": "Allowed $",
+    "allowedPlaceholder": "Allowed RD$",
     "allowedLabel": "Allowed fee"
   },
   "coverageEditor": {

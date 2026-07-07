@@ -112,11 +112,11 @@ public class DemoDataSeeder implements ApplicationRunner {
                 INSERT INTO tooth_conditions (id, patient_id, tooth, surfaces, condition, status, notes)
                 VALUES
                   ('de000000-0000-0000-0000-000000000001', 'da000000-0000-0000-0000-000000000001',
-                   '14', 'MOD', 'CARIES', 'ACTIVE', 'Deep distal decay'),
+                   '26', 'MOD', 'CARIES', 'ACTIVE', 'Deep distal decay'),
                   ('de000000-0000-0000-0000-000000000002', 'da000000-0000-0000-0000-000000000001',
-                   '19', NULL, 'CROWN', 'ACTIVE', 'PFM crown 2019'),
+                   '36', NULL, 'CROWN', 'ACTIVE', 'PFM crown 2019'),
                   ('de000000-0000-0000-0000-000000000003', 'da000000-0000-0000-0000-000000000004',
-                   '1', NULL, 'MISSING', 'ACTIVE', NULL)
+                   '18', NULL, 'MISSING', 'ACTIVE', NULL)
                 ON CONFLICT (id) DO NOTHING
                 """);
 
@@ -129,7 +129,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                    'da000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001',
                    'd0000000-0000-0000-0000-00000000000a',
                    date_trunc('day', now()) + interval '9 hours',
-                   date_trunc('day', now()) + interval '10 hours', 'COMPLETED', 'Crown prep #14'),
+                   date_trunc('day', now()) + interval '10 hours', 'COMPLETED', 'Crown prep #26'),
                   ('df000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001',
                    'da000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000002',
                    'd0000000-0000-0000-0000-00000000000a',
@@ -158,7 +158,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 INSERT INTO planned_procedures (id, treatment_plan_id, procedure_code_id, tooth,
                                                 surface, priority, status, estimated_cost)
                 SELECT 'e1000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001',
-                       pc.id, '14', 'MOD', 1, 'PLANNED', pc.standard_fee
+                       pc.id, '26', 'MOD', 1, 'PLANNED', pc.standard_fee
                 FROM procedure_codes pc WHERE pc.code = 'D2740'
                 ON CONFLICT (id) DO NOTHING
                 """);

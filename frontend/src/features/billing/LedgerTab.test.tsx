@@ -145,7 +145,7 @@ describe('LedgerTab family view', () => {
     // Combined entries carry a patient column and a family total
     expect(screen.getByRole('columnheader', { name: 'Patient' })).toBeInTheDocument();
     expect(screen.getByText('Crown')).toBeInTheDocument();
-    expect(screen.getByTestId('family-total-balance')).toHaveTextContent('$175.00');
+    expect(screen.getByTestId('family-total-balance')).toHaveTextContent('DOP 175.00');
     expect(
       screen.getByRole('button', { name: 'Family statement (PDF)' }),
     ).toBeInTheDocument();

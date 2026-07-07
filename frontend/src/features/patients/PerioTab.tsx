@@ -11,9 +11,8 @@ import {
   useSavePerio,
   useToothChart,
 } from './api';
+import { LOWER_TEETH, UPPER_TEETH } from './teeth';
 
-const UPPER = Array.from({ length: 16 }, (_, i) => String(i + 1)); // 1..16
-const LOWER = Array.from({ length: 16 }, (_, i) => String(32 - i)); // 32..17
 const FACIAL_SITES = [1, 2, 3]; // DB B MB
 const LINGUAL_SITES = [4, 5, 6]; // DL L ML
 
@@ -346,8 +345,8 @@ function PerioGrid({
   return (
     <div className="space-y-4">
       <div ref={gridRef} className="space-y-6 overflow-x-auto pb-2">
-        {renderArch(UPPER, t('perio.upper'))}
-        {renderArch(LOWER, t('perio.lower'))}
+        {renderArch(UPPER_TEETH, t('perio.upper'))}
+        {renderArch(LOWER_TEETH, t('perio.lower'))}
       </div>
       <p className="text-xs text-gray-500">
         {t('perio.help')} <span className="rounded bg-amber-200 px-1">4–5 mm</span>{' '}
